@@ -1,0 +1,9 @@
+{
+  "name": "fluxpay-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "vite",
+    "build": "tsc && vite build"
+  }
+}
