@@ -1,0 +1,13 @@
+{
+  "name": "fluxpay-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "deploy": "hardhat run scripts/deploy.js",
+    "test": "hardhat test"
+  },
+  "devDependencies": {
+    "hardhat": "^2.0.0"
+  }
+}
