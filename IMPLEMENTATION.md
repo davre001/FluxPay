@@ -4,25 +4,8 @@
 
 FluxPay is an AI data marketplace built with a TypeScript backend, React frontend, and Solidity smart contracts. It enables secure payment processing for data transactions using blockchain technology.
 
-## Backend Architecture 
-1. Database Setup (SQL): Initialize PostgreSQL tables `tasks`, `bounties`, and
-`transactions`.
-2. State Management (Redis): Set up a Redis message broker. When the API receives a
-scraping request, it pushes micro-tasks to a Redis queue.
-3. Agent Orchestration (FastAPI):
-- Coordinator Agent: Listens to incoming requests, chunks them into targets, and
-pushes to Redis.
-- Worker Agents: Python background processes that pop tasks, scrape data, and
-return structured JSON.
-4. Agentic Payments: Once the Coordinator verifies the JSON payload, the Python
-backend uses `web3.py` to call `executeMicroPayout` on the Morph smart contract.
+## Architecture 
 
-## Frontend Architecture
-1. Configure Next.js with `ethers.js` and the Morph SDK.
-2. Build the `Deposit` component: Users connect their wallet and approve the transfer
-of Testnet USDC to the Escrow contract.
-3. Establish a WebSocket connection to the FastAPI backend to stream the real-time
-status of Worker Agents.
 
 ### Technology Stack
 
