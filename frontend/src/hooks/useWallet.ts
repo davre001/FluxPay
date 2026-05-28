@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react'
-import { useAccount, useBalance, useContractWrite, useWaitForTransactionReceipt, useReadContract } from 'wagmi'
+import { useAccount, useBalance, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi'
 import { parseEther } from 'viem'
 
 // USDC Contract ABI (minimal)
@@ -63,7 +63,7 @@ export function useUSDCApproval({
     query: { enabled: !!address },
   })
 
-  const { writeContractAsync, data: txHash } = useContractWrite()
+  const { writeContractAsync, data: txHash } = useWriteContract()
 
   const { isLoading: isWaiting, isSuccess, status } = useWaitForTransactionReceipt({
     hash: txHash,
@@ -144,7 +144,7 @@ export function useEscrowFunding({
     args: [jobId as `0x${string}`],
   })
 
-  const { writeContractAsync, data: txHash } = useContractWrite()
+  const { writeContractAsync, data: txHash } = useWriteContract()
 
   const { isLoading: isWaiting, isSuccess, status } = useWaitForTransactionReceipt({
     hash: txHash,
