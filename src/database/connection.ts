@@ -1,10 +1,15 @@
-// Database configuration and connection
+import { config } from '../config/index.ts';
 
-export function initializeDatabase() {
-  // TODO: initialize database connection
+export async function connectDatabase() {
+  if (!config.databaseUrl) {
+    console.log('DATABASE_URL not set; using in-memory payment repository');
+    return { connected: false, driver: 'memory' };
+  }
+
+  console.log('DATABASE_URL is configured, but no database driver is installed yet');
+  return { connected: false, driver: 'pending' };
 }
 
-export function getDatabase() {
-  // TODO: return database instance
-  return {};
+export async function disconnectDatabase() {
+  return { connected: false };
 }

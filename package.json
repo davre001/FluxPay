@@ -2,9 +2,10 @@
   "name": "fluxpay",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "main": "src/index.ts",
   "scripts": {
-    "start": "ts-node src/index.ts",
-    "test": "echo \"No tests configured\""
+    "start": "node src/index.ts",
+    "test": "node --test tests/*.test.ts"
   }
 }

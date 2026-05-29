@@ -1,8 +1,38 @@
-# Node modules
-node_modules/
+# ─── Secrets — NEVER commit ──────────────────────────────────
+.env
+*.env
+!.env.example
+contracts/.env
 
-# Build output
+# ─── Node ────────────────────────────────────────────────────
+node_modules/
 dist/
 
-# Editor state
+# ─── Editor ──────────────────────────────────────────────────
 .vscode/
+.idea/
+
+# ─── Python ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+backend/.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# ─── Foundry / contracts ─────────────────────────────────────
+contracts/lib/
+contracts/cache/
+contracts/out/
+contracts/artifacts/
+contracts/broadcast/*/*/run-*.json
+contracts/node_modules/
+
+# ─── OS ──────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# Local test scratch files
+backend/.tmp_*
+backend/registration_payload*.json

@@ -1,5 +1,22 @@
-// Entry point for FluxPay application
+import { pathToFileURL } from 'node:url';
+import { createApp } from './app.ts';
+import { config } from './config/index.ts';
+import { connectDatabase } from './database/connection.ts';
 
-export function startApp(): void {
-  // TODO: implement application startup logic
+export async function startApp(port = config.port) {
+  await connectDatabase();
+  const app = createApp();
+
+  return new Promise((resolve) => {
+    app.listen(port, () => {
+      const address = app.address();
+      const actualPort = typeof address === 'object' && address ? address.port : port;
+      console.log(`FluxPay backend listening on http://localhost:${actualPort}`);
+      resolve(app);
+    });
+  });
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  startApp();
 }
