@@ -15,11 +15,6 @@ export const morphHoodi = defineChain({
   testnet: true,
 })
 
-export const CONTRACTS = {
-  usdc: '0x2CeF50c5C6059F43180b1d91EFA354A9A837AdE1',
-  escrowFactory: '0x58B92620Ce2Fa3dD61f0143Ea4f1bbF961130856',
-} as const
-
 export const config = getDefaultConfig({
   appName: 'FluxPay',
   projectId: process.env.NEXT_PUBLIC_WALLET_PROJECT_ID || 'fluxpay-default',
@@ -29,3 +24,5 @@ export const config = getDefaultConfig({
   },
   ssr: true,
 })
+
+export default config
