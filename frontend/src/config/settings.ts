@@ -11,15 +11,24 @@ export const config = {
 
   // Blockchain Configuration
   blockchain: {
-    chainId: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '2710'),
-    rpcUrl: process.env.NEXT_PUBLIC_RPC_URL || 'https://hoodi-sandbox.morphl2.io',
-    chainName: 'Morph Hoodi Testnet',
+    chainId: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '2910'),
+    rpcUrl: process.env.NEXT_PUBLIC_RPC_URL || 'https://rpc-hoodi.morphl2.io',
+    chainName: 'Morph Hoodi',
+    explorerUrl: 'https://explorer-hoodi.morphl2.io',
   },
 
   // Contract Addresses
   contracts: {
-    escrow: process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS || '',
-    usdc: process.env.NEXT_PUBLIC_USDC_ADDRESS || '',
+    usdc: process.env.NEXT_PUBLIC_USDC_ADDRESS || '0x2CeF50c5C6059F43180b1d91EFA354A9A837AdE1',
+    escrowFactory: process.env.NEXT_PUBLIC_ESCROW_FACTORY_ADDRESS || '0x58B92620Ce2Fa3dD61f0143Ea4f1bbF961130856',
+  },
+
+  // Token Configuration
+  tokens: {
+    usdc: {
+      decimals: 6,
+      symbol: 'USDC',
+    },
   },
 
   // App Configuration

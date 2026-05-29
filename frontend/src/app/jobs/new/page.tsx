@@ -3,10 +3,11 @@
 import { useState, useMemo } from 'react'
 import { ArrowRight, ArrowLeft, Zap } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useRouter } from 'next/navigation'
 import { useForm } from '@/hooks/useForm'
-import { useCreateJob, useJobQuote } from '@/hooks'
-import { useWalletInfo, useUSDCApproval, useEscrowFunding } from '@/hooks/useWallet'
-import { useAccount } from 'wagmi'
+import { useWalletInfo } from '@/hooks'
+import { jobAPI } from '@/lib/api-client'
+import { executeJobFundingFlow, getFundingProgress, getFundingStepLabel } from '@/utils/jobFunding'
 import {
   FormInput,
   FormTextarea,
@@ -20,24 +21,16 @@ import {
 import { validators, calculations } from '@/utils'
 
 export default function CreateJob() {
+  const router = useRouter()
   const [step, setStep] = useState(1)
-  const [transactionStatus, setTransactionStatus] = useState<'pending' | 'success' | 'error' | null>(null)
-  const [transactionHash, setTransactionHash] = useState<string>('')
-  const { isConnected } = useAccount()
-  const { address } = useWalletInfo()
-  const { createJob, loading: creating, error: createError } = useCreateJob()
-  const { getQuote, quote, loading: quoting } = useJobQuote()
-
-  const { approve, isPending: approvalPending, isWaiting: approvalWaiting } = useUSDCApproval({
-    usdcAddress: process.env.NEXT_PUBLIC_USDC_ADDRESS || '',
-    spenderAddress: process.env.NEXT_PUBLIC_ESCROW_ADDRESS || '',
-    amount: '0',
-  })
-  const { fund, isPending: fundingPending, isWaiting: fundingWaiting } = useEscrowFunding({
-    escrowAddress: process.env.NEXT_PUBLIC_ESCROW_ADDRESS || '',
-    jobId: '',
-    amount: '0',
-  })
+  const [funding, setFunding] = useState(false)
+  const [fundingProgress, setFundingProgress] = useState(0)
+  const [fundingStatus, setFundingStatus] = useState<string>('')
+  const [fundingError, setFundingError] = useState<string>('')
+  const [fundedJobId, setFundedJobId] = useState<string>('')
+  
+  const { address, isConnected } = useWalletInfo()
+  const authToken = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || '' : ''
 
   const categories = [
     { id: 'ecommerce', label: 'E-commerce Price Tracking', description: 'Track prices across marketplaces' },
@@ -86,23 +79,82 @@ export default function CreateJob() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!isConnected) { toast.error('Please connect your wallet'); return }
-    const toastId = toast.loading('Processing...')
-    try {
-      setTransactionStatus('pending')
-      const jobData = await createJob({ ...values })
-      setTransactionHash(jobData.id)
-      setTransactionStatus('success')
-      toast.success('Job created!', { id: toastId })
-      setTimeout(() => window.location.href = `/jobs/${jobData.id}`, 2000)
-    } catch (e) {
-      toast.error('Failed', { id: toastId })
-      setTransactionStatus('error')
+    
+    if (!isConnected || !address) {
+      toast.error('Please connect your wallet first')
+      return
+    }
+
+    if (!authToken) {
+      toast.error('Please log in first')
+      return
+    }
+
+    setFunding(true)
+    setFundingError('')
+    setFundingStatus('')
+    setFundingProgress(0)
+
+    const result = await executeJobFundingFlow(
+      {
+        category: values.category,
+        location: values.location,
+        source: values.source,
+        freshness: values.freshness,
+        budget: parseFloat(values.budget),
+        maxRows: parseInt(values.maxRows) || undefined,
+        description: values.description,
+      },
+      address as `0x${string}`,
+      authToken,
+      (step) => {
+        setFundingProgress(getFundingProgress(step.step))
+        setFundingStatus(`${getFundingStepLabel(step.step)}: ${step.message}`)
+      }
+    )
+
+    setFunding(false)
+
+    if (result.success && result.jobId) {
+      setFundedJobId(result.jobId)
+      toast.success('Job funded successfully!')
+      setTimeout(() => {
+        router.push(`/jobs/${result.jobId}`)
+      }, 2000)
+    } else {
+      setFundingError(result.error || 'Funding failed')
+      toast.error(result.error || 'Funding failed')
     }
   }
 
-  if (transactionStatus === 'success') return <TransactionStatus status="success" txHash={transactionHash} message="Success!" />
-  if (transactionStatus === 'error') return <TransactionStatus status="error" message={createError || 'Failed'} />
+  if (funding) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="max-w-md w-full space-y-6 p-8 bg-white rounded-xl shadow-lg">
+          <h2 className="text-2xl font-bold text-center">Funding Job...</h2>
+          
+          {fundingStatus && (
+            <p className="text-center text-gray-600">{fundingStatus}</p>
+          )}
+          
+          <div className="w-full bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-3 bg-gradient-to-r from-emerald-500 to-green-600 rounded-full transition-all duration-500"
+              style={{ width: `${fundingProgress}%` }}
+            />
+          </div>
+          
+          <p className="text-center text-lg font-bold">{fundingProgress}%</p>
+          
+          {fundingError && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded text-red-700">
+              {fundingError}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="relative min-h-screen bg-slate-50 overflow-hidden pb-16 font-sans">
@@ -218,8 +270,8 @@ export default function CreateJob() {
                 Next <ArrowRight size={18} />
               </button>
             ) : (
-              <button type="submit" className="flex items-center gap-2 px-8 py-2.5 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold rounded-lg hover:from-emerald-600 hover:to-green-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0" disabled={creating || !isConnected}>
-                {creating ? 'Processing...' : 'Create Job & Fund'} <Zap size={18} />
+              <button type="submit" className="flex items-center gap-2 px-8 py-2.5 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold rounded-lg hover:from-emerald-600 hover:to-green-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0" disabled={funding || !isConnected}>
+                {funding ? 'Funding...' : 'Create Job & Fund'} <Zap size={18} />
               </button>
             )}
           </div>

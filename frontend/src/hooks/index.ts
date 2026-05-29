@@ -19,4 +19,12 @@ export {
 } from './useForm'
 
 export { useToast } from './useToast'
-// `usePayment` removed — no default export available
+
+export {
+  useWalletInfo,
+  useUSDCBalance,
+  useCreateEscrow,
+  useUSDCApproval,
+  useFundEscrow,
+  useEscrowFunding,
+} from './useWallet'

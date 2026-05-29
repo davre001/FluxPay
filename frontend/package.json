@@ -19,6 +19,7 @@
     "@walletconnect/ethereum-provider": "^2.23.9",
     "accounts": "^0.14.5",
     "autoprefixer": "^10.5.0",
+    "framer-motion": "^12.40.0",
     "lucide-react": "latest",
     "next": "^14.2.3",
     "porto": "^0.2.37",

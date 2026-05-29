@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { TrendingUp, Clock, CheckCircle, DollarSign, Zap, Plus } from 'lucide-react'
 import Link from 'next/link'
+import { jobAPI } from '@/lib/api-client'
 import { useJobs } from '@/hooks'
 import { useJobStore } from '@/stores'
 import { Alert, LoadingPage, Badge } from '@/components/shared'
@@ -18,9 +19,9 @@ export default function Dashboard() {
   }, [jobs, setJobs])
 
   const stats = useMemo(() => {
-    const activeJobs = jobs.filter((j) => j.status === 'active').length
+    const activeJobs = jobs.filter((j) => j.status === 'active' || j.status === 'in_progress').length
     const completedJobs = jobs.filter((j) => j.status === 'completed').length
-    const totalSpend = jobs.reduce((sum, j) => sum + (j.totalSpent || 0), 0)
+    const totalSpend = jobs.reduce((sum, j) => sum + (j.totalSpent || j.budget || 0), 0)
 
     return [
       { label: 'Active Jobs', value: activeJobs, icon: Clock, color: 'text-emerald-500' },
@@ -42,14 +43,14 @@ export default function Dashboard() {
   const statusData = useMemo(() => {
     const statuses = {
       completed: jobs.filter((j) => j.status === 'completed').length,
-      active: jobs.filter((j) => j.status === 'active').length,
+      active: jobs.filter((j) => j.status === 'active' || j.status === 'in_progress').length,
       failed: jobs.filter((j) => j.status === 'failed').length,
       pending: jobs.filter((j) => j.status === 'pending').length,
     }
 
     return [
       { name: 'Completed', value: statuses.completed || 1, color: '#10b981' },
-      { name: 'In Progress', value: statuses.active || 1, color: '#3b82f6' }, // Changed to Blue
+      { name: 'In Progress', value: statuses.active || 1, color: '#3b82f6' },
       { name: 'Failed', value: statuses.failed || 1, color: '#ef4444' },
       { name: 'Pending', value: statuses.pending || 1, color: '#f59e0b' },
     ]

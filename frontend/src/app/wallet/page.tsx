@@ -2,17 +2,17 @@
 
 import { useState } from 'react'
 import { Wallet, Check, AlertCircle, TrendingUp, TrendingDown, Copy, ExternalLink } from 'lucide-react'
+import { useWalletInfo, useUSDCBalance } from '@/hooks'
+import { morphHoodi, CONTRACTS } from '@/config/wagmi'
 
 export default function WalletPage() {
-  const [walletConnected, setWalletConnected] = useState(true)
-  const [walletAddress] = useState('0x1234567890123456789012345678901234567890')
+  const { address, ethBalance, isConnected } = useWalletInfo()
+  const { balance: usdcBalance } = useUSDCBalance()
 
   const walletInfo = {
-    network: 'Morph Hoodi Testnet',
-    chainId: '2710',
-    balance: 5000.50,
-    usdcBalance: 2450.75,
-    inEscrow: 650.00,
+    network: morphHoodi.name,
+    chainId: String(morphHoodi.id),
+    explorerUrl: morphHoodi.blockExplorers?.default?.url || 'https://explorer-hoodi.morphl2.io',
   }
 
   const escrowHistory = [
@@ -49,7 +49,9 @@ export default function WalletPage() {
   ]
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(walletAddress)
+    if (address) {
+      navigator.clipboard.writeText(address)
+    }
   }
 
   return (
@@ -61,7 +63,7 @@ export default function WalletPage() {
       </div>
 
       {/* Wallet Connection Status */}
-      {walletConnected && (
+      {isConnected && address && (
         <div className="card bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
@@ -71,7 +73,7 @@ export default function WalletPage() {
               <div>
                 <p className="text-sm text-gray-600">Connected Wallet</p>
                 <p className="font-mono text-gray-900 mt-1">
-                  {walletAddress.slice(0, 10)}...{walletAddress.slice(-8)}
+                  {address.slice(0, 10)}...{address.slice(-8)}
                 </p>
               </div>
             </div>
@@ -84,7 +86,9 @@ export default function WalletPage() {
                 <Copy size={18} className="text-blue-600" />
               </button>
               <a
-                href="#"
+                href={`${walletInfo.explorerUrl}/address/${address}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-2 hover:bg-blue-200 rounded-lg transition-colors"
                 title="View on explorer"
               >

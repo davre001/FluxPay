@@ -18,31 +18,62 @@ apiClient.interceptors.request.use((config) => {
   return config
 })
 
+// Auth API calls
+export const authAPI = {
+  register: (data: { email: string; password: string; role: string }) =>
+    apiClient.post('/api/auth/register', data),
+  login: (data: { email: string; password: string }) =>
+    apiClient.post('/api/auth/login', data),
+}
+
+// Template API calls (data products)
+export const templateAPI = {
+  list: (category?: string, featured?: boolean) =>
+    apiClient.get('/api/templates', { params: { category, featured } }),
+  detail: (templateId: string) => apiClient.get(`/api/templates/${templateId}`),
+  launch: (templateId: string, data: any) =>
+    apiClient.post(`/api/templates/${templateId}/launch`, data),
+  submitRequest: (data: any) => apiClient.post('/api/templates/requests', data),
+}
+
 // Job API calls
 export const jobAPI = {
-  quote: (data: any) => apiClient.post('/jobs/quote', data),
-  create: (data: any) => apiClient.post('/jobs', data),
-  list: () => apiClient.get('/jobs'),
-  detail: (jobId: string) => apiClient.get(`/jobs/${jobId}`),
-  results: (jobId: string) => apiClient.get(`/jobs/${jobId}/results`),
-  events: (jobId: string) => apiClient.get(`/jobs/${jobId}/events`),
-  confirmFunding: (jobId: string, data: any) => apiClient.post(`/jobs/${jobId}/funding-confirmation`, data),
-  cancel: (jobId: string) => apiClient.post(`/jobs/${jobId}/cancel`),
+  quote: (data: any) => apiClient.post('/api/jobs/quote', data),
+  list: (page?: number, page_size?: number) =>
+    apiClient.get('/api/jobs', { params: { page, page_size } }),
+  detail: (jobId: string) => apiClient.get(`/api/jobs/${jobId}`),
+  results: (jobId: string) => apiClient.get(`/api/jobs/${jobId}/results`),
+  confirmFunding: (jobId: string, data: any) =>
+    apiClient.post(`/api/jobs/${jobId}/funding-confirmation`, data),
+  cancel: (jobId: string) => apiClient.post(`/api/jobs/${jobId}/cancel`),
+}
+
+// Results API calls
+export const resultsAPI = {
+  summary: (jobId: string) => apiClient.get(`/api/results/jobs/${jobId}/summary`),
+  exportJSON: (jobId: string) => apiClient.get(`/api/results/jobs/${jobId}/export/json`),
+  exportCSV: (jobId: string) => apiClient.get(`/api/results/jobs/${jobId}/export/csv`),
+}
+
+// Schedules API calls (recurring jobs)
+export const scheduleAPI = {
+  create: (data: any) => apiClient.post('/api/schedules', data),
+  list: () => apiClient.get('/api/schedules'),
+  pause: (scheduleId: string) => apiClient.post(`/api/schedules/${scheduleId}/pause`),
+  resume: (scheduleId: string) => apiClient.post(`/api/schedules/${scheduleId}/resume`),
 }
 
 // Worker API calls
 export const workerAPI = {
-  list: () => apiClient.get('/workers'),
-  register: (data: any) => apiClient.post('/workers/register', data),
-  heartbeat: (workerId: string) => apiClient.post('/workers/heartbeat', { workerId }),
+  list: () => apiClient.get('/api/workers'),
+  detail: (workerId: string) => apiClient.get(`/api/workers/${workerId}`),
 }
 
 // Admin API calls
 export const adminAPI = {
-  flaggedJobs: () => apiClient.get('/admin/jobs/flagged'),
-  disputes: () => apiClient.get('/admin/disputes'),
-  sources: () => apiClient.get('/admin/sources'),
-  cancelJob: (jobId: string, reason: string) => apiClient.post(`/admin/jobs/${jobId}/cancel`, { reason }),
+  jobs: () => apiClient.get('/api/admin/jobs'),
+  cancelJob: (jobId: string) => apiClient.post(`/api/admin/jobs/${jobId}/cancel`),
+  retryTask: (taskId: string) => apiClient.post(`/api/admin/tasks/${taskId}/retry`),
 }
 
 export default apiClient

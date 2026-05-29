@@ -3,53 +3,95 @@
 import { useState, useEffect } from 'react'
 import { Clock, CheckCircle, AlertCircle, Download, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
+import { jobAPI, resultsAPI } from '@/lib/api-client'
+import { createJobWebSocket } from '@/services/api'
 
 export default function JobDetail({ params }: { params: { jobId: string } }) {
   const [job, setJob] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const authToken = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || '' : ''
 
   useEffect(() => {
-    // Mock job data - replace with API call
-    setJob({
-      id: params.jobId,
-      name: 'Lazada Price Tracking',
-      category: 'E-commerce',
-      status: 'in_progress',
-      progress: 65,
-      createdAt: '2024-05-20T10:00:00Z',
-      budget: 100,
-      totalSpent: 65,
-      tasks: {
-        total: 350,
-        completed: 225,
-        failed: 10,
-        pending: 115,
-      },
-      workers: {
-        active: 5,
-        completed: 12,
-      },
-      verification: {
-        verified: 200,
-        pending: 25,
-      },
-      escrow: {
-        address: '0x1234567890123456789012345678901234567890',
-        token: 'USDC',
-        fundedAmount: 100,
-        paidOut: 65,
-        remaining: 35,
-      },
-      timeline: [
-        { status: 'created', label: 'Job Created', time: '2024-05-20 10:00 AM', completed: true },
-        { status: 'funded', label: 'Escrow Funded', time: '2024-05-20 10:15 AM', completed: true },
-        { status: 'executing', label: 'Executing Tasks', time: '2024-05-20 10:30 AM', completed: true },
-        { status: 'verifying', label: 'Verifying Results', time: 'In Progress', completed: false },
-        { status: 'completed', label: 'Job Completed', time: 'Pending', completed: false },
-      ],
-    })
-  }, [])
+    // Fetch initial job data
+    jobAPI.detail(params.jobId)
+      .then(res => {
+        setJob(res.data)
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error('Failed to load job:', err)
+        setError('Failed to load job details')
+        setLoading(false)
+      })
+  }, [params.jobId])
 
-  if (!job) return <div>Loading...</div>
+  useEffect(() => {
+    if (!job) return
+
+    // Connect to WebSocket for live updates
+    const ws = createJobWebSocket(params.jobId, authToken || undefined)
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        console.log('Job update:', data)
+        
+        // Update job state based on WebSocket message
+        setJob((prev: any) => ({
+          ...prev,
+          status: data.status || prev.status,
+          progress: data.progress !== undefined ? data.progress : prev.progress,
+          tasks: data.tasks || prev.tasks,
+        }))
+      } catch (e) {
+        console.error('Failed to parse WebSocket message:', e)
+      }
+    }
+
+    ws.onerror = () => {
+      console.error('WebSocket error')
+    }
+
+    return () => {
+      ws.close()
+    }
+  }, [job, params.jobId, authToken])
+
+  const handleExportJSON = async () => {
+    try {
+      const response = await resultsAPI.exportJSON(params.jobId)
+      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' })
+      downloadFile(blob, `job-${params.jobId}.json`)
+    } catch (err) {
+      console.error('Export failed:', err)
+    }
+  }
+
+  const handleExportCSV = async () => {
+    try {
+      const response = await resultsAPI.exportCSV(params.jobId)
+      const blob = new Blob([response.data], { type: 'text/csv' })
+      downloadFile(blob, `job-${params.jobId}.csv`)
+    } catch (err) {
+      console.error('Export failed:', err)
+    }
+  }
+
+  function downloadFile(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  if (loading) return <div className="p-8 text-center">Loading job details...</div>
+  if (error) return <div className="p-8 text-center text-red-600">{error}</div>
+  if (!job) return <div className="p-8 text-center">Job not found</div>
 
   return (
     <div className="fade-in space-y-8">
@@ -176,9 +218,20 @@ export default function JobDetail({ params }: { params: { jobId: string } }) {
       <div className="card">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-gray-900">Results Preview</h2>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            <Download size={18} /> Export CSV
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={handleExportJSON}
+              className="flex items-center gap-2 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 font-medium"
+            >
+              <Download size={18} /> JSON
+            </button>
+            <button 
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+            >
+              <Download size={18} /> CSV
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
