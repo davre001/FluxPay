@@ -3,12 +3,19 @@
 
 import { keccak256, toHex, parseUnits, Address } from 'viem'
 import { writeContract, readContract } from '@wagmi/core'
-import { CONTRACTS, morphHoodi } from '../config/wagmi'
+import { morphHoodi, config } from '../config/wagmi'
+import appConfig from '../config/settings'
 
 // Import ABIs
-import factoryAbi from '../../../contracts/abis/FluxPayEscrowFactory.json'
-import escrowAbi from '../../../contracts/abis/FluxPayEscrow.json'
-import usdcAbi from '../../../contracts/abis/MockUSDC.json'
+import factoryAbi from '../contracts/abis/FluxPayEscrowFactory.json'
+import escrowAbi from '../contracts/abis/FluxPayEscrow.json'
+import usdcAbi from '../contracts/abis/MockUSDC.json'
+
+// Deployed contract addresses (from app settings / env)
+const CONTRACTS = {
+  usdc: appConfig.contracts.usdc as Address,
+  escrowFactory: appConfig.contracts.escrowFactory as Address,
+}
 
 /**
  * Convert a UUID job ID to bytes32 for on-chain use
@@ -24,11 +31,11 @@ export async function createEscrow(
   jobId: string,
   userAddress: Address,
   deadline: number // Unix timestamp
-): Promise<{ hash: string; escrowAddress?: string }> {
+): Promise<{ hash: string }> {
   const jobIdBytes32 = jobIdToBytes32(jobId)
 
-  const hash = await writeContract({
-    address: CONTRACTS.escrowFactory as Address,
+  const hash = await writeContract(config, {
+    address: CONTRACTS.escrowFactory,
     abi: factoryAbi.abi,
     functionName: 'createEscrow',
     args: [jobIdBytes32, userAddress, BigInt(deadline)],
@@ -45,12 +52,11 @@ export async function getEscrowAddress(jobId: string): Promise<Address | null> {
   const jobIdBytes32 = jobIdToBytes32(jobId)
 
   try {
-    const escrowAddress = await readContract({
-      address: CONTRACTS.escrowFactory as Address,
+    const escrowAddress = await readContract(config, {
+      address: CONTRACTS.escrowFactory,
       abi: factoryAbi.abi,
       functionName: 'getEscrow',
       args: [jobIdBytes32],
-      chain: morphHoodi,
     } as any)
 
     return escrowAddress as Address
@@ -69,8 +75,8 @@ export async function approveUSDC(
 ): Promise<{ hash: string }> {
   const amountWei = parseUnits(String(amount), 6)
 
-  const hash = await writeContract({
-    address: CONTRACTS.usdc as Address,
+  const hash = await writeContract(config, {
+    address: CONTRACTS.usdc,
     abi: usdcAbi.abi,
     functionName: 'approve',
     args: [escrowAddress, amountWei],
@@ -89,8 +95,8 @@ export async function fundEscrow(
 ): Promise<{ hash: string }> {
   const amountWei = parseUnits(String(amount), 6)
 
-  const hash = await writeContract({
-    address: escrowAddress as Address,
+  const hash = await writeContract(config, {
+    address: escrowAddress,
     abi: escrowAbi.abi,
     functionName: 'fund',
     args: [amountWei],
@@ -105,12 +111,11 @@ export async function fundEscrow(
  */
 export async function getUSDCBalance(address: Address): Promise<bigint> {
   try {
-    const balance = await readContract({
-      address: CONTRACTS.usdc as Address,
+    const balance = await readContract(config, {
+      address: CONTRACTS.usdc,
       abi: usdcAbi.abi,
       functionName: 'balanceOf',
       args: [address],
-      chain: morphHoodi,
     } as any)
 
     return balance as bigint
@@ -128,12 +133,11 @@ export async function getUSDCAllowance(
   spender: Address
 ): Promise<bigint> {
   try {
-    const allowance = await readContract({
-      address: CONTRACTS.usdc as Address,
+    const allowance = await readContract(config, {
+      address: CONTRACTS.usdc,
       abi: usdcAbi.abi,
       functionName: 'allowance',
       args: [owner, spender],
-      chain: morphHoodi,
     } as any)
 
     return allowance as bigint
