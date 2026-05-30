@@ -32,13 +32,35 @@ export default function Dashboard() {
   }, [jobs])
 
   const jobData = useMemo(() => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
-    return months.map((month) => ({
-      name: month,
-      completed: Math.floor(Math.random() * 10),
-      active: Math.floor(Math.random() * 8),
+    // Real data: bucket the last 6 months by job created date + status
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const now = new Date()
+    const labels: string[] = []
+    const buckets: Record<string, { completed: number; active: number }> = {}
+
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`
+      labels.push(key)
+      buckets[key] = { completed: 0, active: 0 }
+    }
+
+    jobs.forEach((j: any) => {
+      const raw = j.createdAt || j.created_at
+      if (!raw) return
+      const d = new Date(raw)
+      const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`
+      if (!buckets[key]) return
+      if (j.status === 'completed') buckets[key].completed += 1
+      else buckets[key].active += 1
+    })
+
+    return labels.map((key) => ({
+      name: key.split(' ')[0],
+      completed: buckets[key].completed,
+      active: buckets[key].active,
     }))
-  }, [])
+  }, [jobs])
 
   const statusData = useMemo(() => {
     const statuses = {
@@ -69,7 +91,7 @@ export default function Dashboard() {
   if (loading) return <LoadingPage />
 
   return (
-    <div className="relative min-h-screen bg-slate-50 overflow-hidden pb-16 font-sans">
+    <div className="relative min-h-screen bg-slate-50 overflow-x-hidden pb-16 font-sans">
       
       {/* Background Motion Graphics (Glowing Orbs) */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-300/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDuration: '4s' }}></div>
