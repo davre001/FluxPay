@@ -1,6 +1,7 @@
 'use client';
 
 import './globals.css'
+import '@rainbow-me/rainbowkit/styles.css'
 import { ReactNode } from 'react'
 import { Toaster } from 'react-hot-toast'
 import Navbar from '@/components/shared/Navbar'
