@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Production
+build/
+dist/
+out/
+
+# Misc
+.DS_Store
+*.env
+*.env.local
+*.env.*.local
+.git
+.gitignore
+README.md
+docker-compose.yml
+Dockerfile
+DEPLOY_TESTNET.md
+FRONTEND_HANDOFF.md
+IMPLEMENTATION.md
+LICENSE
+install-foundry.ps1
+setup.ps1
+start.ps1
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Backend files
+backend/
+contracts/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
