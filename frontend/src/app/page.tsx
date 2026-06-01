@@ -8,9 +8,13 @@ export default function Home() {
     <main className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-slate-50 font-sans selection:bg-emerald-200 selection:text-emerald-900">
       
       {/* Background Motion Graphics (Glowing Orbs) */}
-      <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-emerald-300/40 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDuration: '4s' }}></div>
-      <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-green-300/40 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }}></div>
-      <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-teal-200/40 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }}></div>
+      <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-emerald-300/40 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-glow" style={{ animationDuration: '4s' }}></div>
+      <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-green-300/40 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-glow" style={{ animationDuration: '5s', animationDelay: '1s' }}></div>
+      <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-teal-200/40 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-glow" style={{ animationDuration: '6s', animationDelay: '2s' }}></div>
+
+      {/* Additional floating orbs for depth */}
+      <div className="absolute top-1/2 right-1/3 w-60 h-60 bg-emerald-200/30 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-float" style={{ animationDuration: '8s' }}></div>
+      <div className="absolute bottom-1/3 right-1/4 w-72 h-72 bg-green-200/30 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-float-delayed" style={{ animationDuration: '9s', animationDelay: '1.5s' }}></div>
 
       <div className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-16 pb-20">
         
@@ -29,13 +33,13 @@ export default function Home() {
         {/* CTA Buttons (Slightly more compact) */}
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up" style={{ animationDelay: '150ms' }}>
           <Link href="/jobs/new">
-            <button className="group flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold rounded-xl hover:from-emerald-600 hover:to-green-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 w-full sm:w-auto text-sm">
-              Create Job 
+            <button className="group flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold rounded-xl hover:from-emerald-600 hover:to-green-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 w-full sm:w-auto text-sm hover:scale-105">
+              Create Job
               <ArrowRight size={16} className="transform group-hover:translate-x-1 transition-transform" />
             </button>
           </Link>
           <Link href="/dashboard">
-            <button className="flex items-center justify-center px-6 py-3 bg-white text-gray-700 font-bold rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-emerald-200 hover:text-emerald-700 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-300 w-full sm:w-auto text-sm">
+            <button className="flex items-center justify-center px-6 py-3 bg-white text-gray-700 font-bold rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-emerald-200 hover:text-emerald-700 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-300 w-full sm:w-auto text-sm hover:scale-105">
               View Dashboard
             </button>
           </Link>

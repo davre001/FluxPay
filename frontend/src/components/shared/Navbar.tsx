@@ -48,12 +48,10 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Wallet Button (Black 3D Gradient Box) */}
+        {/* Wallet Button */}
         <div className="hidden md:flex items-center">
-          <div className="bg-gradient-to-b from-gray-800 to-black p-[2px] rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105">
-            <div className="px-4 py-2 bg-gray-900 rounded-lg text-white">
-              <ConnectButton accountStatus="avatar" chainStatus="icon" />
-            </div>
+          <div className="bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-2xl border border-emerald-200 hover:border-emerald-400 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 text-sm">
+            <ConnectButton accountStatus="avatar" chainStatus="icon" showBalance={false} />
           </div>
         </div>
 
@@ -85,8 +83,8 @@ export default function Navbar() {
               </Link>
             ))}
             <div className="pt-4 border-t border-emerald-50">
-               <div className="bg-gray-900 inline-block px-4 py-2 rounded-lg text-white">
-                <ConnectButton />
+              <div className="bg-white/80 backdrop-blur-sm inline-block px-3 py-1.5 rounded-2xl border border-emerald-200 text-sm">
+                <ConnectButton showBalance={false} />
               </div>
             </div>
           </div>
