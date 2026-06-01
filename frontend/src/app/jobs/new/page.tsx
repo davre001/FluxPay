@@ -46,40 +46,7 @@ export default function CreateJob() {
     { id: 'manual', label: 'Manual Worker', description: 'Human verification' },
   ]
 
-  const { values, errors, touched, handleChange, handleBlur, resetForm } = useForm({
-    initialValues: {
-      category: '', location: '', source: '', freshness: 'once', budget: '', maxRows: '', compliance: false, description: '',
-    },
-    validate: (vals) => {
-      const errs: Record<string, string> = {}
-      if (step === 1) {
-        if (!vals.category) errs.category = 'Please select a category'
-        if (!vals.location) errs.location = 'Location is required'
-      }
-      if (step === 2) {
-        if (!vals.source) errs.source = 'Please select a source'
-        if (validators.description(vals.description)) errs.description = validators.description(vals.description)!.message
-      }
-      if (step === 3) {
-        if (validators.budget(vals.budget)) errs.budget = validators.budget(vals.budget)!.message
-        if (validators.maxRows(vals.maxRows)) errs.maxRows = validators.maxRows(vals.maxRows)!.message
-        if (!vals.compliance) errs.compliance = 'You must agree to the policy'
-      }
-      return errs
-    },
-  })
-
-  const estimatedCost = useMemo(() => {
-    const budget = parseFloat(values.budget) || 0
-    return budget ? calculations.jobCost(budget * 0.6, budget * 0.15, 20) : null
-  }, [values.budget])
-
-  const handleNext = () => step < 3 && setStep(step + 1)
-  const handlePrev = () => step > 1 && setStep(step - 1)
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    
+  const handleFormSubmit = async (vals: Record<string, any>) => {
     if (!isConnected || !address) {
       toast.error('Please connect your wallet first')
       return
@@ -97,13 +64,13 @@ export default function CreateJob() {
 
     const result = await executeJobFundingFlow(
       {
-        category: values.category,
-        location: values.location,
-        source: values.source,
-        freshness: values.freshness,
-        budget: parseFloat(values.budget),
-        maxRows: parseInt(values.maxRows) || undefined,
-        description: values.description,
+        category: vals.category,
+        location: vals.location,
+        source: vals.source,
+        freshness: vals.freshness,
+        budget: parseFloat(vals.budget),
+        maxRows: parseInt(vals.maxRows) || undefined,
+        description: vals.description,
       },
       address as `0x${string}`,
       authToken,
@@ -126,6 +93,38 @@ export default function CreateJob() {
       toast.error(result.error || 'Funding failed')
     }
   }
+
+  const { values, errors, touched, handleChange, handleBlur, resetForm } = useForm({
+    initialValues: {
+      category: '', location: '', source: '', freshness: 'once', budget: '', maxRows: '', compliance: false, description: '',
+    },
+    validate: (vals) => {
+      const errs: Record<string, string> = {}
+      if (step === 1) {
+        if (!vals.category) errs.category = 'Please select a category'
+        if (!vals.location) errs.location = 'Location is required'
+      }
+      if (step === 2) {
+        if (!vals.source) errs.source = 'Please select a source'
+        if (validators.description(vals.description)) errs.description = validators.description(vals.description)!.message
+      }
+      if (step === 3) {
+        if (validators.budget(vals.budget)) errs.budget = validators.budget(vals.budget)!.message
+        if (validators.maxRows(vals.maxRows)) errs.maxRows = validators.maxRows(vals.maxRows)!.message
+        if (!vals.compliance) errs.compliance = 'You must agree to the policy'
+      }
+      return errs
+    },
+    onSubmit: handleFormSubmit,
+  })
+
+  const estimatedCost = useMemo(() => {
+    const budget = parseFloat(values.budget) || 0
+    return budget ? calculations.jobCost(budget * 0.6, budget * 0.15, 20) : null
+  }, [values.budget])
+
+  const handleNext = () => step < 3 && setStep(step + 1)
+  const handlePrev = () => step > 1 && setStep(step - 1)
 
   if (funding) {
     return (
