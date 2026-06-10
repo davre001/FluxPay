@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Zap, Star, Shield, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { authAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
 
 type ProfileType = 'creator' | 'organization';
@@ -35,21 +34,23 @@ function SignupForm() {
     }
     setLoading(true);
     try {
-      const roleMap: Record<ProfileType, 'worker' | 'requester'> = {
-        creator: 'worker',
-        organization: 'requester',
-      };
-      const regRes = await authAPI.register({ email, password, role: roleMap[profileType] });
-      const loginRes = await authAPI.login({ email, password });
-      const { access_token } = loginRes.data;
-      setAuth(
-        { id: regRes.data.id, email, profileType, walletAddress: undefined },
-        access_token
+      await new Promise((r) => setTimeout(r, 600));
+
+      const existing = localStorage.getItem(`fp_user_${email}`);
+      if (existing) throw new Error('Email already registered');
+
+      const userId = `user_${Date.now()}`;
+      const mockToken = `mock_${userId}`;
+      localStorage.setItem(
+        `fp_user_${email}`,
+        JSON.stringify({ id: userId, email, password, profileType })
       );
+
+      setAuth({ id: userId, email, profileType, walletAddress: undefined }, mockToken);
       toast.success('Account created!');
       router.push(profileType === 'creator' ? '/onboarding/creator' : '/onboarding/organization');
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail || 'Registration failed');
+      toast.error(err?.message || 'Registration failed');
     } finally {
       setLoading(false);
     }

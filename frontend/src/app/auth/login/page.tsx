@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Zap, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { authAPI, profileAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
 
 export default function LoginPage() {
@@ -20,28 +19,22 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await authAPI.login({ email, password });
-      const { access_token } = res.data;
+      await new Promise((r) => setTimeout(r, 600));
 
-      // Fetch profile to get profile_type
-      localStorage.setItem('auth_token', access_token);
-      const profileRes = await profileAPI.getMe();
-      const profile = profileRes.data;
+      const raw = localStorage.getItem(`fp_user_${email}`);
+      if (!raw) throw new Error('No account found for this email');
+      const saved = JSON.parse(raw);
+      if (saved.password !== password) throw new Error('Incorrect password');
 
+      const mockToken = `mock_${saved.id}_${Date.now()}`;
       setAuth(
-        {
-          id: profile.user_id || profile.id,
-          email,
-          profileType: profile.profile_type,
-          walletAddress: profile.wallet_address,
-        },
-        access_token
+        { id: saved.id, email, profileType: saved.profileType, walletAddress: undefined },
+        mockToken
       );
-
       toast.success('Welcome back!');
-      router.push(profile.profile_type === 'organization' ? '/organization/dashboard' : '/creator/dashboard');
+      router.push(saved.profileType === 'organization' ? '/organization/dashboard' : '/creator/dashboard');
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail || 'Invalid credentials');
+      toast.error(err?.message || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
@@ -114,12 +107,21 @@ export default function LoginPage() {
           {/* Demo quick-access */}
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: 'Demo Creator', type: 'creator', email: 'creator@demo.com', pw: 'demo12345' },
-              { label: 'Demo Brand',   type: 'organization', email: 'brand@demo.com',   pw: 'demo12345' },
+              { label: 'Demo Creator', profileType: 'creator' as const, email: 'creator@demo.com', pw: 'demo12345' },
+              { label: 'Demo Brand',   profileType: 'organization' as const, email: 'brand@demo.com',   pw: 'demo12345' },
             ].map((d) => (
               <button
-                key={d.type}
-                onClick={() => { setEmail(d.email); setPassword(d.pw); }}
+                key={d.profileType}
+                onClick={() => {
+                  // Auto-register demo account if it doesn't exist, then login
+                  const key = `fp_user_${d.email}`;
+                  if (!localStorage.getItem(key)) {
+                    const id = `demo_${d.profileType}`;
+                    localStorage.setItem(key, JSON.stringify({ id, email: d.email, password: d.pw, profileType: d.profileType }));
+                  }
+                  setEmail(d.email);
+                  setPassword(d.pw);
+                }}
                 className="py-2.5 rounded-xl text-xs font-bold transition-all"
                 style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#94a3b8' }}
               >
