@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Briefcase, Users, DollarSign, Star, Plus, ArrowRight, Clock, CheckCircle, AlertCircle, Zap } from 'lucide-react';
-import { jobAPI } from '@/lib/api-client';
+import { Briefcase, Users, DollarSign, Star, Plus, ArrowRight, CheckCircle, Zap } from 'lucide-react';
+import { mockDB, MockJob } from '@/lib/mock-data';
 import { useUserStore } from '@/stores/userStore';
 
 const STATUS_BADGE: Record<string, string> = {
@@ -29,21 +29,17 @@ function StatCard({ icon: Icon, label, value, color }: any) {
 
 export default function OrgDashboard() {
   const { user } = useUserStore();
-  const [jobs, setJobs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [jobs, setJobs] = useState<MockJob[]>([]);
 
   useEffect(() => {
-    jobAPI.listMine({})
-      .then((r) => setJobs(r.data?.items ?? []))
-      .catch(() => setJobs([]))
-      .finally(() => setLoading(false));
-  }, []);
+    if (!user?.id) return;
+    setJobs(mockDB.getMyJobs(user.id));
+  }, [user?.id]);
 
   const activeJobs = jobs.filter((j) => ['open', 'in_progress'].includes(j.status)).length;
   const completedJobs = jobs.filter((j) => j.status === 'completed').length;
-  const totalEscrowed = jobs.filter((j) => !['draft', 'expired', 'cancelled'].includes(j.status))
-    .reduce((s, j) => s + (j.total_budget || 0), 0);
-  const pendingApplicants = jobs.reduce((s, j) => s + (j.application_count || 0), 0);
+  const totalEscrowed = jobs.reduce((s, j) => s + j.total_budget, 0);
+  const totalApplicants = jobs.reduce((s, j) => s + (j.application_count ?? 0), 0);
 
   return (
     <div className="p-6 md:p-10 space-y-8 min-h-screen" style={{ background: '#0a0a0f' }}>
@@ -54,18 +50,19 @@ export default function OrgDashboard() {
           <h1 className="text-3xl font-black text-white">
             Hey, <span className="gradient-text">{user?.email?.split('@')[0]}</span> 👋
           </h1>
+          <p className="text-slate-400 text-sm mt-1">Manage your creator deals and campaigns.</p>
         </div>
-        <Link href="/jobs/new" className="btn-primary btn-shimmer self-start sm:self-auto">
+        <Link href="/organization/jobs/new" className="btn-primary btn-shimmer self-start sm:self-auto">
           <Plus size={16} /> Post a Deal
         </Link>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children fade-in">
-        <StatCard icon={Briefcase}    label="Active Jobs"       value={loading ? '–' : activeJobs}        color="bg-gradient-to-br from-brand-600 to-brand-500" />
-        <StatCard icon={CheckCircle}  label="Completed"         value={loading ? '–' : completedJobs}     color="bg-gradient-to-br from-emerald-600 to-green-500" />
-        <StatCard icon={DollarSign}   label="Total Escrowed"    value={`$${totalEscrowed.toFixed(0)}`}    color="bg-gradient-to-br from-accent-600 to-accent-500" />
-        <StatCard icon={Users}        label="Applicants"        value={loading ? '–' : pendingApplicants} color="bg-gradient-to-br from-yellow-600 to-amber-500" />
+        <StatCard icon={Briefcase}   label="Active Jobs"    value={activeJobs}      color="bg-gradient-to-br from-brand-600 to-brand-500" />
+        <StatCard icon={CheckCircle} label="Completed"      value={completedJobs}   color="bg-gradient-to-br from-emerald-600 to-green-500" />
+        <StatCard icon={DollarSign}  label="Total Escrowed" value={`$${totalEscrowed}`} color="bg-gradient-to-br from-accent-600 to-accent-500" />
+        <StatCard icon={Users}       label="Applicants"     value={totalApplicants} color="bg-gradient-to-br from-yellow-600 to-amber-500" />
       </div>
 
       {/* Recent jobs */}
@@ -79,14 +76,12 @@ export default function OrgDashboard() {
           </Link>
         </div>
 
-        {loading ? (
-          <div className="space-y-3">{[1,2,3].map((i) => <div key={i} className="skeleton h-16 rounded-xl" />)}</div>
-        ) : jobs.length === 0 ? (
+        {jobs.length === 0 ? (
           <div className="text-center py-12">
             <Briefcase size={32} className="text-slate-600 mx-auto mb-3" />
             <p className="text-slate-400 font-semibold">No jobs posted yet</p>
             <p className="text-slate-600 text-sm mt-1">Create your first brand deal and find creators</p>
-            <Link href="/jobs/new" className="btn-primary mt-5 inline-flex">
+            <Link href="/organization/jobs/new" className="btn-primary mt-5 inline-flex">
               <Plus size={16} /> Post a Deal
             </Link>
           </div>
@@ -105,7 +100,7 @@ export default function OrgDashboard() {
                   <tr key={job.id} className="hover:bg-white/[0.02] transition-colors">
                     <td className="py-4 px-3">
                       <p className="font-bold text-white">{job.title}</p>
-                      <p className="text-xs text-slate-500 capitalize">{job.post_type?.replace('_',' ')}</p>
+                      <p className="text-xs text-slate-500 capitalize">{job.post_type?.replace('_', ' ')}</p>
                     </td>
                     <td className="py-4 px-3"><span className="badge badge-slate capitalize">{job.target_platform}</span></td>
                     <td className="py-4 px-3 font-bold text-emerald-400">${job.total_budget}</td>
@@ -130,9 +125,9 @@ export default function OrgDashboard() {
       {/* Quick links */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { href: '/organization/profile',    icon: Star,       label: 'Brand Profile',  sub: 'Edit logo & info',         color: 'from-brand-600 to-brand-500' },
-          { href: '/organization/wallet',     icon: DollarSign, label: 'Wallet',         sub: 'Manage escrow funds',      color: 'from-accent-600 to-accent-500' },
-          { href: '/organization/reputation', icon: Zap,        label: 'Reputation',     sub: 'View your brand score',    color: 'from-emerald-600 to-green-500' },
+          { href: '/organization/profile',    icon: Star,       label: 'Brand Profile',  sub: 'Edit logo & info',       color: 'from-brand-600 to-brand-500' },
+          { href: '/organization/wallet',     icon: DollarSign, label: 'Wallet',         sub: 'Manage escrow funds',    color: 'from-accent-600 to-accent-500' },
+          { href: '/organization/reputation', icon: Zap,        label: 'Reputation',     sub: 'View your brand score',  color: 'from-emerald-600 to-green-500' },
         ].map(({ href, icon: Icon, label, sub, color }) => (
           <Link key={href} href={href}
                 className="card flex items-center gap-4 group hover:border-brand-600/40 transition-all">

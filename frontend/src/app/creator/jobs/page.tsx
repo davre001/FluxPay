@@ -3,74 +3,72 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import {
-  Search, Filter, DollarSign, Calendar, Instagram, Twitter,
-  Youtube, Music2, ArrowRight, Loader2, Zap, X,
+  Search, DollarSign, ArrowRight, Zap, X, Loader2,
+  Instagram, Twitter, Youtube, Music2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { jobAPI } from '@/lib/api-client';
+import { mockDB, MockJob } from '@/lib/mock-data';
+import { useUserStore } from '@/stores/userStore';
 
 const PLATFORMS = ['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'other'];
 const POST_TYPES = ['all', 'video', 'image', 'content_writing', 'other'];
 
 const PLATFORM_ICON: Record<string, any> = {
-  instagram: Instagram,
-  twitter: Twitter,
-  youtube: Youtube,
-  tiktok: Music2,
+  instagram: Instagram, twitter: Twitter, youtube: Youtube, tiktok: Music2,
 };
 
 const PLATFORM_COLOR: Record<string, string> = {
-  instagram: '#e1306c',
-  twitter: '#1da1f2',
-  youtube: '#ff0000',
-  tiktok: '#69c9d0',
-  other: '#8b5cf6',
+  instagram: '#e1306c', twitter: '#1da1f2', youtube: '#ff0000',
+  tiktok: '#69c9d0', other: '#8b5cf6',
 };
 
 export default function CreatorJobsPage() {
-  const [jobs, setJobs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useUserStore();
+  const [jobs, setJobs] = useState<MockJob[]>([]);
   const [search, setSearch] = useState('');
   const [platform, setPlatform] = useState('all');
   const [postType, setPostType] = useState('all');
   const [minBudget, setMinBudget] = useState('');
   const [maxBudget, setMaxBudget] = useState('');
-  const [applyingId, setApplyingId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState<string | null>(null);
   const [coverNote, setCoverNote] = useState('');
+  const [applying, setApplying] = useState(false);
+  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
 
-  const fetchJobs = useCallback(() => {
-    setLoading(true);
-    jobAPI.list({
-      status: 'open',
-      platform: platform !== 'all' ? platform : undefined,
-      min_budget: minBudget ? Number(minBudget) : undefined,
-      max_budget: maxBudget ? Number(maxBudget) : undefined,
-    })
-      .then((r) => setJobs(r.data?.items ?? []))
-      .catch(() => setJobs([]))
-      .finally(() => setLoading(false));
-  }, [platform, minBudget, maxBudget]);
+  useEffect(() => {
+    const all = mockDB.getOpenJobs();
+    setJobs(all);
+    if (user?.id) {
+      const myApps = mockDB.getMyApplications(user.id);
+      setAppliedIds(new Set(myApps.map((a) => a.job_id)));
+    }
+  }, [user?.id]);
 
-  useEffect(() => { fetchJobs(); }, [fetchJobs]);
+  const filtered = jobs.filter((j) => {
+    if (platform !== 'all' && j.target_platform !== platform) return false;
+    if (postType !== 'all' && j.post_type !== postType) return false;
+    if (minBudget && j.total_budget < Number(minBudget)) return false;
+    if (maxBudget && j.total_budget > Number(maxBudget)) return false;
+    if (search && !j.title.toLowerCase().includes(search.toLowerCase()) &&
+        !(j.organization?.brand_name ?? '').toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
 
-  const filtered = jobs.filter((j) =>
-    (postType === 'all' || j.post_type === postType) &&
-    (search === '' || j.title.toLowerCase().includes(search.toLowerCase()) ||
-     (j.organization?.brand_name ?? '').toLowerCase().includes(search.toLowerCase()))
-  );
-
-  const handleApply = async (jobId: string) => {
-    setApplyingId(jobId);
+  const handleApply = async () => {
+    if (!showModal || !user?.id) return;
+    setApplying(true);
+    await new Promise((r) => setTimeout(r, 700));
     try {
-      await jobAPI.apply(jobId, { cover_note: coverNote });
+      mockDB.applyToJob(showModal, user.id, user.email, coverNote);
+      setAppliedIds((prev) => new Set([...prev, showModal]));
       toast.success('Application submitted!');
       setShowModal(null);
       setCoverNote('');
+      setJobs(mockDB.getOpenJobs());
     } catch (e: any) {
-      toast.error(e?.response?.data?.detail || 'Failed to apply');
+      toast.error(e?.message || 'Failed to apply');
     } finally {
-      setApplyingId(null);
+      setApplying(false);
     }
   };
 
@@ -80,20 +78,17 @@ export default function CreatorJobsPage() {
       <div className="mb-8 fade-in">
         <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Opportunities</p>
         <h1 className="text-3xl font-black text-white">Browse <span className="gradient-text">Jobs</span></h1>
-        <p className="text-slate-400 text-sm mt-1">Discover brand deals matching your content niche</p>
+        <p className="text-slate-400 text-sm mt-1">{jobs.length} open brand deals available</p>
       </div>
 
       {/* Filters */}
       <div className="card mb-6 space-y-4">
-        {/* Search */}
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
                  placeholder="Search by job title or brand..." className="input pl-10" />
         </div>
-
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {/* Platform */}
           <div>
             <label className="label">Platform</label>
             <select value={platform} onChange={(e) => setPlatform(e.target.value)} className="input">
@@ -104,8 +99,6 @@ export default function CreatorJobsPage() {
               ))}
             </select>
           </div>
-
-          {/* Post type */}
           <div>
             <label className="label">Post Type</label>
             <select value={postType} onChange={(e) => setPostType(e.target.value)} className="input">
@@ -116,32 +109,21 @@ export default function CreatorJobsPage() {
               ))}
             </select>
           </div>
-
-          {/* Budget range */}
           <div>
             <label className="label">Min Budget ($)</label>
-            <input type="number" value={minBudget} onChange={(e) => setMinBudget(e.target.value)}
-                   placeholder="0" className="input" />
+            <input type="number" value={minBudget} onChange={(e) => setMinBudget(e.target.value)} placeholder="0" className="input" />
           </div>
           <div>
             <label className="label">Max Budget ($)</label>
-            <input type="number" value={maxBudget} onChange={(e) => setMaxBudget(e.target.value)}
-                   placeholder="Any" className="input" />
+            <input type="number" value={maxBudget} onChange={(e) => setMaxBudget(e.target.value)} placeholder="Any" className="input" />
           </div>
         </div>
       </div>
 
-      {/* Results count */}
-      <p className="text-xs text-slate-500 mb-4 font-semibold">
-        {loading ? 'Loading...' : `${filtered.length} job${filtered.length !== 1 ? 's' : ''} found`}
-      </p>
+      <p className="text-xs text-slate-500 mb-4 font-semibold">{filtered.length} job{filtered.length !== 1 ? 's' : ''} found</p>
 
       {/* Job cards */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {[1,2,3,4,5,6].map((i) => <div key={i} className="skeleton h-52 rounded-2xl" />)}
-        </div>
-      ) : filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="text-center py-20">
           <Zap size={36} className="text-slate-600 mx-auto mb-3" />
           <p className="text-slate-400 font-semibold">No jobs match your filters</p>
@@ -153,7 +135,7 @@ export default function CreatorJobsPage() {
           {filtered.map((job) => {
             const PlatformIcon = PLATFORM_ICON[job.target_platform] ?? Zap;
             const platColor = PLATFORM_COLOR[job.target_platform] ?? '#8b5cf6';
-            const milestoneCount = job.milestones?.length ?? 0;
+            const alreadyApplied = appliedIds.has(job.id);
             return (
               <div key={job.id} className="card fade-in flex flex-col">
                 {/* Brand row */}
@@ -173,7 +155,6 @@ export default function CreatorJobsPage() {
                   </span>
                 </div>
 
-                {/* Title */}
                 <h3 className="font-black text-white mb-2 leading-tight">{job.title}</h3>
                 <p className="text-sm text-slate-400 leading-relaxed line-clamp-2 flex-1">{job.description}</p>
 
@@ -185,7 +166,7 @@ export default function CreatorJobsPage() {
                   </div>
                   <div className="text-center p-2 rounded-xl" style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}>
                     <p className="text-xs text-slate-500">Steps</p>
-                    <p className="font-black text-brand-400 text-sm">{milestoneCount}</p>
+                    <p className="font-black text-brand-400 text-sm">{job.milestones?.length ?? 0}</p>
                   </div>
                   <div className="text-center p-2 rounded-xl" style={{ background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.2)' }}>
                     <p className="text-xs text-slate-500">Deadline</p>
@@ -195,10 +176,10 @@ export default function CreatorJobsPage() {
                   </div>
                 </div>
 
-                {/* Post type tags */}
+                {/* Tags */}
                 <div className="flex flex-wrap gap-1.5 mb-4">
-                  <span className="badge badge-slate capitalize">{job.post_type?.replace('_',' ')}</span>
-                  {(job.required_elements?.hashtags ?? []).slice(0,2).map((h: string) => (
+                  <span className="badge badge-slate capitalize">{job.post_type?.replace('_', ' ')}</span>
+                  {(job.required_elements?.hashtags ?? []).slice(0, 2).map((h) => (
                     <span key={h} className="badge badge-slate">#{h}</span>
                   ))}
                 </div>
@@ -208,10 +189,16 @@ export default function CreatorJobsPage() {
                   <Link href={`/creator/deals/${job.id}`} className="btn-secondary flex-1 text-sm py-2">
                     View Details
                   </Link>
-                  <button onClick={() => { setShowModal(job.id); setCoverNote(''); }}
-                          className="btn-primary flex-1 text-sm py-2 btn-shimmer">
-                    Apply <ArrowRight size={14} />
-                  </button>
+                  {alreadyApplied ? (
+                    <div className="btn-secondary flex-1 text-sm py-2 text-emerald-400 border-emerald-500/30 text-center">
+                      ✓ Applied
+                    </div>
+                  ) : (
+                    <button onClick={() => { setShowModal(job.id); setCoverNote(''); }}
+                            className="btn-primary flex-1 text-sm py-2 btn-shimmer">
+                      Apply <ArrowRight size={14} />
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -226,9 +213,7 @@ export default function CreatorJobsPage() {
           <div className="glass rounded-2xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-black text-white text-lg">Apply for this deal</h3>
-              <button onClick={() => setShowModal(null)} className="text-slate-500 hover:text-white">
-                <X size={20} />
-              </button>
+              <button onClick={() => setShowModal(null)} className="text-slate-500 hover:text-white"><X size={20} /></button>
             </div>
             <label className="label">Cover Note (optional)</label>
             <textarea value={coverNote} onChange={(e) => setCoverNote(e.target.value)}
@@ -236,10 +221,9 @@ export default function CreatorJobsPage() {
                       rows={4} className="input resize-none mb-4" />
             <div className="flex gap-3">
               <button onClick={() => setShowModal(null)} className="btn-secondary flex-1">Cancel</button>
-              <button onClick={() => handleApply(showModal)} disabled={!!applyingId}
-                      className="btn-primary flex-1 btn-shimmer">
-                {applyingId ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
-                {applyingId ? 'Submitting...' : 'Submit Application'}
+              <button onClick={handleApply} disabled={applying} className="btn-primary flex-1 btn-shimmer">
+                {applying ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+                {applying ? 'Submitting...' : 'Submit Application'}
               </button>
             </div>
           </div>

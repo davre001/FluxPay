@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star, Instagram, Twitter, Youtube, Music2, ArrowRight, Loader2, Plus, X } from 'lucide-react';
+import { Star, Instagram, Twitter, Youtube, Music2, ArrowRight, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { profileAPI } from '@/lib/api-client';
+import { mockDB } from '@/lib/mock-data';
+import { useUserStore } from '@/stores/userStore';
 
 const NICHE_OPTIONS = [
   'Fashion', 'Beauty', 'Tech', 'Gaming', 'Fitness', 'Food',
@@ -13,6 +14,7 @@ const NICHE_OPTIONS = [
 
 export default function CreatorOnboarding() {
   const router = useRouter();
+  const { user } = useUserStore();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -26,30 +28,23 @@ export default function CreatorOnboarding() {
   const [picUrl, setPicUrl] = useState('');
 
   const toggleNiche = (n: string) =>
-    setSelectedNiches((prev) =>
-      prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]
-    );
+    setSelectedNiches((prev) => prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]);
 
   const handleSubmit = async () => {
     setLoading(true);
-    try {
-      await profileAPI.updateMe({
-        name,
-        bio,
-        niche_tags: selectedNiches,
-        instagram: instagram || null,
-        twitter: twitter || null,
-        youtube: youtube || null,
-        tiktok: tiktok || null,
-        profile_picture_url: picUrl || null,
-      });
-      toast.success('Profile created!');
-      router.push('/creator/dashboard');
-    } catch {
-      toast.error('Failed to save profile');
-    } finally {
-      setLoading(false);
-    }
+    await new Promise((r) => setTimeout(r, 800));
+    mockDB.saveProfile(user?.id ?? 'anon', {
+      name, bio,
+      niche_tags: selectedNiches,
+      instagram: instagram || null,
+      twitter: twitter || null,
+      youtube: youtube || null,
+      tiktok: tiktok || null,
+      profile_picture_url: picUrl || null,
+    });
+    toast.success('Profile created!');
+    router.push('/creator/dashboard');
+    setLoading(false);
   };
 
   const steps = ['About You', 'Content Niches', 'Social Accounts'];

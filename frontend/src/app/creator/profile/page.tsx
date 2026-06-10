@@ -3,9 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Save, Loader2, Instagram, Twitter, Youtube, Music2, User } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { profileAPI } from '@/lib/api-client';
+import { mockDB } from '@/lib/mock-data';
 import { useUserStore } from '@/stores/userStore';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 const NICHE_OPTIONS = [
   'Fashion', 'Beauty', 'Tech', 'Gaming', 'Fitness', 'Food',
@@ -14,9 +13,7 @@ const NICHE_OPTIONS = [
 
 export default function CreatorProfilePage() {
   const { user } = useUserStore();
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
 
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
@@ -28,38 +25,32 @@ export default function CreatorProfilePage() {
   const [tiktok, setTiktok] = useState('');
 
   useEffect(() => {
-    profileAPI.getMe()
-      .then((r) => {
-        const p = r.data;
-        setProfile(p);
-        setName(p.name || '');
-        setBio(p.bio || '');
-        setPicUrl(p.profile_picture_url || '');
-        setNiches(p.niche_tags || []);
-        setInstagram(p.instagram || '');
-        setTwitter(p.twitter || '');
-        setYoutube(p.youtube || '');
-        setTiktok(p.tiktok || '');
-      })
-      .catch(() => toast.error('Failed to load profile'))
-      .finally(() => setLoading(false));
-  }, []);
+    if (!user?.id) return;
+    const p = mockDB.getProfile(user.id);
+    setName(p.name || '');
+    setBio(p.bio || '');
+    setPicUrl(p.profile_picture_url || '');
+    setNiches(p.niche_tags || []);
+    setInstagram(p.instagram || '');
+    setTwitter(p.twitter || '');
+    setYoutube(p.youtube || '');
+    setTiktok(p.tiktok || '');
+  }, [user?.id]);
 
   const toggleNiche = (n: string) =>
     setNiches((prev) => prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]);
 
   const handleSave = async () => {
     setSaving(true);
-    try {
-      await profileAPI.updateMe({ name, bio, profile_picture_url: picUrl || null, niche_tags: niches, instagram: instagram || null, twitter: twitter || null, youtube: youtube || null, tiktok: tiktok || null });
-      toast.success('Profile updated!');
-    } catch { toast.error('Failed to save'); }
-    finally { setSaving(false); }
+    await new Promise((r) => setTimeout(r, 700));
+    mockDB.saveProfile(user?.id ?? 'anon', {
+      name, bio, profile_picture_url: picUrl || null,
+      niche_tags: niches, instagram: instagram || null,
+      twitter: twitter || null, youtube: youtube || null, tiktok: tiktok || null,
+    });
+    toast.success('Profile updated!');
+    setSaving(false);
   };
-
-  if (loading) {
-    return <div className="p-10 flex justify-center"><Loader2 size={28} className="animate-spin text-brand-400" /></div>;
-  }
 
   return (
     <div className="p-6 md:p-10 min-h-screen" style={{ background: '#0a0a0f' }}>
@@ -86,9 +77,7 @@ export default function CreatorProfilePage() {
             <p className="text-slate-400 text-sm">{user?.email}</p>
             <div className="flex items-center gap-2 mt-2">
               <span className="badge badge-purple">Creator</span>
-              {profile?.reputation_score != null && (
-                <span className="badge badge-yellow">⭐ {profile.reputation_score} Rep</span>
-              )}
+              <span className="badge badge-yellow">⭐ 4.8 Rep</span>
             </div>
           </div>
         </div>
@@ -150,7 +139,9 @@ export default function CreatorProfilePage() {
         <div className="card space-y-3">
           <h2 className="font-black text-white">Connected Wallet</h2>
           <p className="text-sm text-slate-400">Your wallet address is used for on-chain payouts and reputation.</p>
-          <ConnectButton />
+          <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}>
+            <span className="text-sm text-slate-400">{user?.walletAddress ?? 'No wallet connected'}</span>
+          </div>
         </div>
 
         {/* Save */}

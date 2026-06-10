@@ -1,28 +1,23 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Wallet, ArrowDownToLine, ArrowUpFromLine, ArrowRight, Loader2, Clock } from 'lucide-react';
+import { Wallet, ArrowDownToLine, ArrowUpFromLine, Loader2, Clock, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { walletAPI } from '@/lib/api-client';
+import { mockDB } from '@/lib/mock-data';
 
 const TX_TYPE_BADGE: Record<string, string> = {
-  deposit:        'badge-green',
-  withdrawal:     'badge-red',
-  escrow_lock:    'badge-yellow',
-  escrow_release: 'badge-purple',
+  deposit: 'badge-green', withdrawal: 'badge-red',
+  escrow_lock: 'badge-yellow', escrow_release: 'badge-purple',
 };
 
 const TX_LABEL: Record<string, string> = {
-  deposit:        'Deposit',
-  withdrawal:     'Withdrawal',
-  escrow_lock:    'Escrow Lock',
-  escrow_release: 'Escrow Release',
+  deposit: 'Deposit', withdrawal: 'Withdrawal',
+  escrow_lock: 'Escrow Lock', escrow_release: 'Escrow Release',
 };
 
 export default function CreatorWalletPage() {
-  const [balance, setBalance] = useState<number | null>(null);
+  const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [depositAmt, setDepositAmt] = useState('');
   const [withdrawAmt, setWithdrawAmt] = useState('');
   const [withdrawAddr, setWithdrawAddr] = useState('');
@@ -32,42 +27,39 @@ export default function CreatorWalletPage() {
   const [tab, setTab] = useState<'deposit' | 'withdraw'>('deposit');
 
   useEffect(() => {
-    Promise.all([walletAPI.getBalance(), walletAPI.getTransactions()])
-      .then(([bRes, tRes]) => {
-        setBalance(bRes.data?.balance ?? 0);
-        setTransactions(tRes.data?.items ?? []);
-      })
-      .catch(() => { setBalance(0); setTransactions([]); })
-      .finally(() => setLoading(false));
+    setBalance(mockDB.getBalance());
+    setTransactions(mockDB.getTransactions());
   }, []);
 
   const handleDeposit = async () => {
-    if (!depositAmt || !txHash) { toast.error('Enter amount and transaction hash'); return; }
+    if (!depositAmt) { toast.error('Enter an amount'); return; }
     setDepositing(true);
-    try {
-      await walletAPI.deposit({ amount: Number(depositAmt), tx_hash: txHash });
-      toast.success('Deposit recorded!');
-      setBalance((b) => (b ?? 0) + Number(depositAmt));
-      setDepositAmt(''); setTxHash('');
-      const tRes = await walletAPI.getTransactions();
-      setTransactions(tRes.data?.items ?? []);
-    } catch { toast.error('Deposit failed'); }
-    finally { setDepositing(false); }
+    await new Promise((r) => setTimeout(r, 800));
+    const amt = Number(depositAmt);
+    const newBal = balance + amt;
+    mockDB.setBalance(newBal);
+    mockDB.addTransaction({ type: 'deposit', amount: amt, tx_hash: txHash || undefined });
+    setBalance(newBal);
+    setTransactions(mockDB.getTransactions());
+    setDepositAmt(''); setTxHash('');
+    toast.success('Deposit recorded!');
+    setDepositing(false);
   };
 
   const handleWithdraw = async () => {
-    if (!withdrawAmt || !withdrawAddr) { toast.error('Enter amount and address'); return; }
-    if (Number(withdrawAmt) > (balance ?? 0)) { toast.error('Insufficient balance'); return; }
+    if (!withdrawAmt) { toast.error('Enter an amount'); return; }
+    if (Number(withdrawAmt) > balance) { toast.error('Insufficient balance'); return; }
     setWithdrawing(true);
-    try {
-      await walletAPI.withdraw({ amount: Number(withdrawAmt), to_address: withdrawAddr });
-      toast.success('Withdrawal initiated!');
-      setBalance((b) => (b ?? 0) - Number(withdrawAmt));
-      setWithdrawAmt(''); setWithdrawAddr('');
-      const tRes = await walletAPI.getTransactions();
-      setTransactions(tRes.data?.items ?? []);
-    } catch { toast.error('Withdrawal failed'); }
-    finally { setWithdrawing(false); }
+    await new Promise((r) => setTimeout(r, 800));
+    const amt = Number(withdrawAmt);
+    const newBal = balance - amt;
+    mockDB.setBalance(newBal);
+    mockDB.addTransaction({ type: 'withdrawal', amount: amt });
+    setBalance(newBal);
+    setTransactions(mockDB.getTransactions());
+    setWithdrawAmt(''); setWithdrawAddr('');
+    toast.success('Withdrawal initiated!');
+    setWithdrawing(false);
   };
 
   return (
@@ -88,15 +80,15 @@ export default function CreatorWalletPage() {
               <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Available Balance</p>
             </div>
             <p className="text-5xl font-black text-white">
-              {loading ? '–' : `$${(balance ?? 0).toFixed(2)}`}
+              ${balance.toFixed(2)}
               <span className="text-xl text-slate-400 ml-2">USDC</span>
             </p>
+            <p className="text-xs text-slate-500 mt-3">Morph Hoodi Testnet · Chain 2910</p>
           </div>
         </div>
 
         {/* Actions */}
         <div className="card">
-          {/* Tab */}
           <div className="flex gap-1 p-1 rounded-xl mb-6 w-fit"
                style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(99,102,241,0.2)' }}>
             {(['deposit', 'withdraw'] as const).map((t) => (
@@ -109,17 +101,15 @@ export default function CreatorWalletPage() {
 
           {tab === 'deposit' ? (
             <div className="space-y-4">
-              <p className="text-sm text-slate-400">Send USDC to your wallet, then record the transaction hash below.</p>
+              <p className="text-sm text-slate-400">Add USDC to your FluxPay wallet to fund escrow or receive payouts.</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Amount (USDC)</label>
-                  <input type="number" value={depositAmt} onChange={(e) => setDepositAmt(e.target.value)}
-                         placeholder="0.00" className="input" />
+                  <input type="number" value={depositAmt} onChange={(e) => setDepositAmt(e.target.value)} placeholder="0.00" className="input" />
                 </div>
                 <div>
-                  <label className="label">Transaction Hash</label>
-                  <input value={txHash} onChange={(e) => setTxHash(e.target.value)}
-                         placeholder="0x..." className="input" />
+                  <label className="label">Transaction Hash (optional)</label>
+                  <input value={txHash} onChange={(e) => setTxHash(e.target.value)} placeholder="0x..." className="input" />
                 </div>
               </div>
               <button onClick={handleDeposit} disabled={depositing} className="btn-success btn-shimmer">
@@ -129,17 +119,19 @@ export default function CreatorWalletPage() {
             </div>
           ) : (
             <div className="space-y-4">
+              <p className="text-sm text-slate-400">Withdraw USDC to your connected wallet address.</p>
               <div>
                 <label className="label">Amount (USDC)</label>
-                <input type="number" value={withdrawAmt} onChange={(e) => setWithdrawAmt(e.target.value)}
-                       placeholder="0.00" className="input" />
+                <input type="number" value={withdrawAmt} onChange={(e) => setWithdrawAmt(e.target.value)} placeholder="0.00" className="input" />
+                <p className="text-xs text-slate-600 mt-1">Available: ${balance.toFixed(2)} USDC</p>
               </div>
               <div>
-                <label className="label">Destination Wallet Address</label>
-                <input value={withdrawAddr} onChange={(e) => setWithdrawAddr(e.target.value)}
-                       placeholder="0x..." className="input" />
+                <label className="label">Destination Address</label>
+                <input value={withdrawAddr} onChange={(e) => setWithdrawAddr(e.target.value)} placeholder="0x..." className="input" />
               </div>
-              <button onClick={handleWithdraw} disabled={withdrawing} className="btn-danger py-3">
+              <button onClick={handleWithdraw} disabled={withdrawing}
+                      className="px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all"
+                      style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}>
                 {withdrawing ? <Loader2 size={15} className="animate-spin" /> : <ArrowUpFromLine size={15} />}
                 {withdrawing ? 'Withdrawing...' : 'Withdraw USDC'}
               </button>
@@ -152,9 +144,7 @@ export default function CreatorWalletPage() {
           <h2 className="font-black text-white mb-5 flex items-center gap-2">
             <Clock size={17} className="text-slate-500" /> Transaction History
           </h2>
-          {loading ? (
-            <div className="space-y-3">{[1,2,3].map((i) => <div key={i} className="skeleton h-14 rounded-xl" />)}</div>
-          ) : transactions.length === 0 ? (
+          {transactions.length === 0 ? (
             <p className="text-slate-500 text-sm text-center py-8">No transactions yet</p>
           ) : (
             <div className="divide-y divide-white/5">
@@ -166,14 +156,14 @@ export default function CreatorWalletPage() {
                     </span>
                     {tx.tx_hash && (
                       <a href={`https://explorer.morphl2.io/tx/${tx.tx_hash}`} target="_blank" rel="noopener noreferrer"
-                         className="text-xs text-slate-600 hover:text-accent-400 transition-colors truncate max-w-[140px]">
-                        {tx.tx_hash.slice(0, 10)}…
+                         className="text-xs text-slate-600 hover:text-accent-400 transition-colors flex items-center gap-1">
+                        {tx.tx_hash.slice(0, 12)}… <ExternalLink size={10} />
                       </a>
                     )}
                   </div>
                   <div className="text-right">
-                    <p className={`font-bold ${['deposit','escrow_release'].includes(tx.type) ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {['deposit','escrow_release'].includes(tx.type) ? '+' : '-'}${tx.amount}
+                    <p className={`font-bold ${['deposit', 'escrow_release'].includes(tx.type) ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {['deposit', 'escrow_release'].includes(tx.type) ? '+' : '-'}${tx.amount}
                     </p>
                     <p className="text-xs text-slate-600">{new Date(tx.created_at).toLocaleDateString()}</p>
                   </div>

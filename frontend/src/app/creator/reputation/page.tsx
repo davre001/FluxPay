@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, Star, TrendingUp, Loader2, ArrowRight } from 'lucide-react';
+import { Search, Star, TrendingUp, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { reputationAPI, profileAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
+import { mockDB } from '@/lib/mock-data';
+
+const MOCK_SCORE = 240; // Silver-tier demo score
 
 function ScoreRing({ score }: { score: number }) {
   const max = 500;
@@ -41,28 +43,27 @@ function ScoreRing({ score }: { score: number }) {
 
 export default function CreatorReputationPage() {
   const { user } = useUserStore();
-  const [myScore, setMyScore] = useState<number | null>(null);
-  const [loadingMine, setLoadingMine] = useState(false);
+  const [showScore, setShowScore] = useState(false);
   const [lookup, setLookup] = useState('');
   const [lookupResult, setLookupResult] = useState<any>(null);
   const [lookupLoading, setLookupLoading] = useState(false);
 
-  const loadMine = () => {
-    if (!user?.walletAddress) { toast.error('Connect your wallet first'); return; }
-    setLoadingMine(true);
-    reputationAPI.lookup(user.walletAddress)
-      .then((r) => setMyScore(r.data?.score ?? 0))
-      .catch(() => toast.error('Failed to load score'))
-      .finally(() => setLoadingMine(false));
-  };
+  const applications = user?.id ? mockDB.getMyApplications(user.id) : [];
+  const accepted = applications.filter((a) => a.status === 'accepted').length;
 
-  const handleLookup = () => {
+  const handleLookup = async () => {
     if (!lookup) { toast.error('Enter a wallet address'); return; }
     setLookupLoading(true);
-    reputationAPI.lookup(lookup)
-      .then((r) => setLookupResult(r.data))
-      .catch(() => toast.error('Address not found'))
-      .finally(() => setLookupLoading(false));
+    await new Promise((r) => setTimeout(r, 600));
+    // Simulate a result
+    const mockResult = {
+      wallet_address: lookup,
+      score: Math.floor(Math.random() * 400) + 50,
+      profile_type: Math.random() > 0.5 ? 'creator' : 'organization',
+      name: 'Anonymous User',
+    };
+    setLookupResult(mockResult);
+    setLookupLoading(false);
   };
 
   return (
@@ -77,14 +78,14 @@ export default function CreatorReputationPage() {
         {/* My score */}
         <div className="card text-center space-y-6">
           <h2 className="font-black text-white text-left">My Score</h2>
-          {myScore !== null ? (
+          {showScore ? (
             <>
-              <ScoreRing score={myScore} />
+              <ScoreRing score={MOCK_SCORE} />
               <div className="grid grid-cols-3 gap-4 text-center mt-4">
                 {[
-                  { label: 'Deals Done', val: '–' },
-                  { label: 'Disputes', val: '–' },
-                  { label: 'Avg. Rating', val: '–' },
+                  { label: 'Deals Done',  val: applications.length },
+                  { label: 'Accepted',    val: accepted },
+                  { label: 'Avg. Rating', val: '4.8 ★' },
                 ].map(({ label, val }) => (
                   <div key={label} className="rounded-xl p-3" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)' }}>
                     <p className="text-lg font-black text-white">{val}</p>
@@ -92,14 +93,32 @@ export default function CreatorReputationPage() {
                   </div>
                 ))}
               </div>
+              <div className="space-y-2 text-left">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Score breakdown</p>
+                {[
+                  { label: 'Deals completed on time', pts: '+120', ok: true },
+                  { label: 'Positive brand reviews', pts: '+90', ok: true },
+                  { label: 'Disputes raised', pts: '-10', ok: false },
+                  { label: 'Wallet verified', pts: '+40', ok: true },
+                ].map(({ label, pts, ok }) => (
+                  <div key={label} className="flex items-center justify-between py-2 border-b border-white/5">
+                    <div className="flex items-center gap-2">
+                      {ok
+                        ? <CheckCircle size={14} className="text-emerald-400" />
+                        : <AlertCircle size={14} className="text-red-400" />}
+                      <span className="text-sm text-slate-300">{label}</span>
+                    </div>
+                    <span className={`text-sm font-bold ${ok ? 'text-emerald-400' : 'text-red-400'}`}>{pts}</span>
+                  </div>
+                ))}
+              </div>
             </>
           ) : (
             <div className="py-8">
               <Star size={32} className="text-slate-600 mx-auto mb-3" />
-              <p className="text-slate-400 text-sm mb-4">Connect your wallet to view your on-chain score</p>
-              <button onClick={loadMine} disabled={loadingMine} className="btn-primary btn-shimmer">
-                {loadingMine ? <Loader2 size={15} className="animate-spin" /> : <TrendingUp size={15} />}
-                {loadingMine ? 'Loading...' : 'View My Score'}
+              <p className="text-slate-400 text-sm mb-4">View your on-chain reputation score</p>
+              <button onClick={() => setShowScore(true)} className="btn-primary btn-shimmer">
+                <TrendingUp size={15} /> View My Score
               </button>
             </div>
           )}
@@ -141,15 +160,13 @@ export default function CreatorReputationPage() {
 
           {lookupResult && (
             <div className="rounded-xl p-5" style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)' }}>
-              <p className="text-xs text-slate-500 mb-1">{lookupResult.wallet_address}</p>
+              <p className="text-xs text-slate-500 mb-1 font-mono truncate">{lookupResult.wallet_address}</p>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xl font-black text-white">{lookupResult.score ?? 0} pts</p>
-                  <p className="text-sm text-slate-400 capitalize">{lookupResult.profile_type ?? 'Unknown'}</p>
+                  <p className="text-xl font-black text-white">{lookupResult.score} pts</p>
+                  <p className="text-sm text-slate-400 capitalize">{lookupResult.profile_type}</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-brand-400">{lookupResult.name || lookupResult.brand_name || '–'}</p>
-                </div>
+                <ScoreRing score={lookupResult.score} />
               </div>
             </div>
           )}

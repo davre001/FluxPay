@@ -4,17 +4,14 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   LayoutDashboard, Briefcase, DollarSign, Star, TrendingUp,
-  Clock, CheckCircle, AlertCircle, ArrowRight, Zap,
+  Clock, CheckCircle, ArrowRight, Zap,
 } from 'lucide-react';
-import { jobAPI } from '@/lib/api-client';
+import { mockDB, MockJob } from '@/lib/mock-data';
 import { useUserStore } from '@/stores/userStore';
 
 const STATUS_BADGE: Record<string, string> = {
-  open:        'badge-green',
-  in_progress: 'badge-cyan',
-  completed:   'badge-purple',
-  expired:     'badge-slate',
-  cancelled:   'badge-red',
+  open: 'badge-green', in_progress: 'badge-cyan', completed: 'badge-purple',
+  expired: 'badge-slate', cancelled: 'badge-red',
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -41,19 +38,21 @@ function StatCard({ icon: Icon, label, value, sub, color }: any) {
 
 export default function CreatorDashboard() {
   const { user } = useUserStore();
-  const [deals, setDeals] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [myApplications, setMyApplications] = useState<any[]>([]);
+  const [appliedJobs, setAppliedJobs] = useState<MockJob[]>([]);
+  const [earnings] = useState(350);
 
   useEffect(() => {
-    jobAPI.list({ status: 'in_progress' })
-      .then((r) => setDeals(r.data?.items ?? []))
-      .catch(() => setDeals([]))
-      .finally(() => setLoading(false));
-  }, []);
+    if (!user?.id) return;
+    const apps = mockDB.getMyApplications(user.id);
+    setMyApplications(apps);
+    const jobs = mockDB.getJobs();
+    const applied = apps.map((a) => jobs.find((j) => j.id === a.job_id)).filter(Boolean) as MockJob[];
+    setAppliedJobs(applied);
+  }, [user?.id]);
 
-  const active = deals.filter((d) => d.status === 'in_progress').length;
-  const completed = deals.filter((d) => d.status === 'completed').length;
-  const earnings = deals.reduce((s: number, d: any) => s + (d.total_budget || 0), 0);
+  const active = myApplications.filter((a) => a.status === 'accepted').length;
+  const pending = myApplications.filter((a) => a.status === 'pending').length;
 
   return (
     <div className="p-6 md:p-10 space-y-8 min-h-screen" style={{ background: '#0a0a0f' }}>
@@ -64,6 +63,7 @@ export default function CreatorDashboard() {
           <h1 className="text-3xl font-black text-white">
             Hey, <span className="gradient-text">{user?.email?.split('@')[0]}</span> 👋
           </h1>
+          <p className="text-slate-400 text-sm mt-1">Here's what's happening with your deals today.</p>
         </div>
         <Link href="/creator/jobs" className="btn-primary btn-shimmer self-start sm:self-auto">
           Browse Jobs <ArrowRight size={16} />
@@ -72,31 +72,27 @@ export default function CreatorDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children fade-in">
-        <StatCard icon={Clock}        label="Active Deals"    value={loading ? '–' : active}    color="bg-gradient-to-br from-brand-600 to-brand-500" />
-        <StatCard icon={CheckCircle}  label="Completed"       value={loading ? '–' : completed} color="bg-gradient-to-br from-emerald-600 to-green-500" />
-        <StatCard icon={DollarSign}   label="Total Earned"    value={`$${earnings.toFixed(0)}`} color="bg-gradient-to-br from-accent-600 to-accent-500" sub="USDC" />
-        <StatCard icon={Star}         label="Reputation"      value="–"                         color="bg-gradient-to-br from-yellow-600 to-amber-500" sub="Score" />
+        <StatCard icon={Clock}       label="Applications"  value={myApplications.length} color="bg-gradient-to-br from-brand-600 to-brand-500" />
+        <StatCard icon={CheckCircle} label="Active Deals"  value={active}                color="bg-gradient-to-br from-emerald-600 to-green-500" />
+        <StatCard icon={DollarSign}  label="Total Earned"  value={`$${earnings}`}        color="bg-gradient-to-br from-accent-600 to-accent-500" sub="USDC" />
+        <StatCard icon={Star}        label="Reputation"    value="4.8 ★"                 color="bg-gradient-to-br from-yellow-600 to-amber-500" sub="Score" />
       </div>
 
-      {/* Active deals */}
+      {/* My applications */}
       <div className="card">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-black text-white flex items-center gap-2">
-            <Briefcase size={18} className="text-brand-400" /> My Active Deals
+            <Briefcase size={18} className="text-brand-400" /> My Applications
           </h2>
           <Link href="/creator/jobs" className="text-xs font-bold text-brand-400 hover:text-brand-300 transition-colors flex items-center gap-1">
             Browse more <ArrowRight size={12} />
           </Link>
         </div>
 
-        {loading ? (
-          <div className="space-y-3">
-            {[1,2,3].map((i) => <div key={i} className="skeleton h-16 rounded-xl" />)}
-          </div>
-        ) : deals.length === 0 ? (
+        {myApplications.length === 0 ? (
           <div className="text-center py-12">
             <Zap size={32} className="text-slate-600 mx-auto mb-3" />
-            <p className="text-slate-400 font-semibold">No active deals yet</p>
+            <p className="text-slate-400 font-semibold">No applications yet</p>
             <p className="text-slate-600 text-sm mt-1">Browse open jobs and apply to get started</p>
             <Link href="/creator/jobs" className="btn-primary mt-5 inline-flex">
               Browse Jobs <ArrowRight size={16} />
@@ -107,42 +103,44 @@ export default function CreatorDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/5">
-                  {['Deal', 'Platform', 'Budget', 'Milestones', 'Deadline', 'Status', ''].map((h) => (
+                  {['Deal', 'Platform', 'Budget', 'Applied', 'Status', ''].map((h) => (
                     <th key={h} className="text-left py-3 px-3 text-xs font-bold uppercase tracking-widest text-slate-500">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {deals.map((deal) => (
-                  <tr key={deal.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="py-4 px-3">
-                      <p className="font-bold text-white">{deal.title}</p>
-                      <p className="text-xs text-slate-500">{deal.organization?.brand_name || 'Brand'}</p>
-                    </td>
-                    <td className="py-4 px-3">
-                      <span className="badge badge-slate capitalize">{deal.target_platform}</span>
-                    </td>
-                    <td className="py-4 px-3 font-bold text-emerald-400">${deal.total_budget}</td>
-                    <td className="py-4 px-3 text-slate-400">
-                      {deal.milestones?.filter((m: any) => m.status === 'approved').length ?? 0}/
-                      {deal.milestones?.length ?? 0}
-                    </td>
-                    <td className="py-4 px-3 text-slate-400 text-xs">
-                      {deal.deadline ? new Date(deal.deadline).toLocaleDateString() : '–'}
-                    </td>
-                    <td className="py-4 px-3">
-                      <span className={`badge ${STATUS_BADGE[deal.status] ?? 'badge-slate'}`}>
-                        {STATUS_LABEL[deal.status] ?? deal.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-3">
-                      <Link href={`/creator/deals/${deal.id}`}
-                            className="text-xs font-bold text-brand-400 hover:text-brand-300 flex items-center gap-1 transition-colors">
-                        View <ArrowRight size={11} />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                {appliedJobs.map((job) => {
+                  const app = myApplications.find((a) => a.job_id === job.id);
+                  return (
+                    <tr key={job.id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="py-4 px-3">
+                        <p className="font-bold text-white">{job.title}</p>
+                        <p className="text-xs text-slate-500">{job.organization?.brand_name}</p>
+                      </td>
+                      <td className="py-4 px-3">
+                        <span className="badge badge-slate capitalize">{job.target_platform}</span>
+                      </td>
+                      <td className="py-4 px-3 font-bold text-emerald-400">${job.total_budget}</td>
+                      <td className="py-4 px-3 text-slate-400 text-xs">
+                        {app ? new Date(app.applied_at).toLocaleDateString() : '–'}
+                      </td>
+                      <td className="py-4 px-3">
+                        <span className={`badge ${
+                          app?.status === 'accepted' ? 'badge-green' :
+                          app?.status === 'rejected' ? 'badge-red' : 'badge-cyan'
+                        }`}>
+                          {app?.status ?? 'pending'}
+                        </span>
+                      </td>
+                      <td className="py-4 px-3">
+                        <Link href={`/creator/deals/${job.id}`}
+                              className="text-xs font-bold text-brand-400 hover:text-brand-300 flex items-center gap-1 transition-colors">
+                          View <ArrowRight size={11} />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -152,9 +150,9 @@ export default function CreatorDashboard() {
       {/* Quick links */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { href: '/creator/profile',    icon: Star,       label: 'Edit Profile',    sub: 'Update bio & socials',   color: 'from-brand-600 to-brand-500'    },
-          { href: '/creator/wallet',     icon: DollarSign, label: 'Wallet',          sub: 'View balance & history', color: 'from-accent-600 to-accent-500'   },
-          { href: '/creator/reputation', icon: TrendingUp, label: 'Reputation',      sub: 'Check your score',       color: 'from-emerald-600 to-green-500'   },
+          { href: '/creator/profile',    icon: Star,       label: 'Edit Profile',   sub: 'Update bio & socials',   color: 'from-brand-600 to-brand-500'    },
+          { href: '/creator/wallet',     icon: DollarSign, label: 'Wallet',         sub: 'View balance & history', color: 'from-accent-600 to-accent-500'   },
+          { href: '/creator/reputation', icon: TrendingUp, label: 'Reputation',     sub: 'Check your score',       color: 'from-emerald-600 to-green-500'   },
         ].map(({ href, icon: Icon, label, sub, color }) => (
           <Link key={href} href={href}
                 className="card flex items-center gap-4 group hover:border-brand-600/40 transition-all">

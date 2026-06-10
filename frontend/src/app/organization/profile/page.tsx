@@ -3,15 +3,12 @@
 import { useEffect, useState } from 'react';
 import { Save, Loader2, Globe, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { profileAPI } from '@/lib/api-client';
+import { mockDB } from '@/lib/mock-data';
 import { useUserStore } from '@/stores/userStore';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export default function OrgProfilePage() {
   const { user } = useUserStore();
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
 
   const [brandName, setBrandName] = useState('');
   const [description, setDescription] = useState('');
@@ -19,29 +16,26 @@ export default function OrgProfilePage() {
   const [picUrl, setPicUrl] = useState('');
 
   useEffect(() => {
-    profileAPI.getMe()
-      .then((r) => {
-        const p = r.data;
-        setProfile(p);
-        setBrandName(p.brand_name || '');
-        setDescription(p.description || '');
-        setWebsiteUrl(p.website_url || '');
-        setPicUrl(p.profile_picture_url || '');
-      })
-      .catch(() => toast.error('Failed to load profile'))
-      .finally(() => setLoading(false));
-  }, []);
+    if (!user?.id) return;
+    const p = mockDB.getProfile(user.id);
+    setBrandName(p.brand_name || '');
+    setDescription(p.description || '');
+    setWebsiteUrl(p.website_url || '');
+    setPicUrl(p.profile_picture_url || '');
+  }, [user?.id]);
 
   const handleSave = async () => {
     setSaving(true);
-    try {
-      await profileAPI.updateMe({ brand_name: brandName, description, website_url: websiteUrl || null, profile_picture_url: picUrl || null });
-      toast.success('Brand profile updated!');
-    } catch { toast.error('Failed to save'); }
-    finally { setSaving(false); }
+    await new Promise((r) => setTimeout(r, 700));
+    mockDB.saveProfile(user?.id ?? 'anon', {
+      brand_name: brandName,
+      description,
+      website_url: websiteUrl || null,
+      profile_picture_url: picUrl || null,
+    });
+    toast.success('Brand profile updated!');
+    setSaving(false);
   };
-
-  if (loading) return <div className="p-10 flex justify-center"><Loader2 size={28} className="animate-spin text-brand-400" /></div>;
 
   return (
     <div className="p-6 md:p-10 min-h-screen" style={{ background: '#0a0a0f' }}>
@@ -68,7 +62,7 @@ export default function OrgProfilePage() {
             <p className="text-slate-400 text-sm">{user?.email}</p>
             <div className="flex items-center gap-2 mt-2">
               <span className="badge badge-cyan">Brand</span>
-              {profile?.reputation_score != null && <span className="badge badge-yellow">⭐ {profile.reputation_score} Rep</span>}
+              <span className="badge badge-yellow">⭐ 4.5 Rep</span>
             </div>
           </div>
         </div>
@@ -101,7 +95,9 @@ export default function OrgProfilePage() {
         <div className="card space-y-3">
           <h2 className="font-black text-white">Payment Wallet</h2>
           <p className="text-sm text-slate-400">Connect the wallet that will fund escrow contracts.</p>
-          <ConnectButton />
+          <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.2)' }}>
+            <span className="text-sm text-slate-400">{user?.walletAddress ?? 'No wallet connected'}</span>
+          </div>
         </div>
 
         <button onClick={handleSave} disabled={saving} className="btn-primary w-full btn-shimmer">
