@@ -2,10 +2,32 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star, Instagram, Twitter, Youtube, Music2, ArrowRight, Loader2 } from 'lucide-react';
+import { Star, X, Music2, ArrowRight, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { mockDB } from '@/lib/mock-data';
 import { useUserStore } from '@/stores/userStore';
+
+// Inline SVG icons for social platforms removed from lucide-react
+const InstagramIcon = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+  </svg>
+);
+
+const YoutubeIcon = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z" />
+    <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" />
+  </svg>
+);
+
+const TikTokIcon = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none">
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z" />
+  </svg>
+);
 
 const NICHE_OPTIONS = [
   'Fashion', 'Beauty', 'Tech', 'Gaming', 'Fitness', 'Food',
@@ -155,10 +177,10 @@ export default function CreatorOnboarding() {
             <div className="space-y-5 fade-in">
               <p className="text-sm text-slate-400">Enter your handles without the @ symbol.</p>
               {[
-                { icon: Instagram, label: 'Instagram',    color: '#e1306c', val: instagram, set: setInstagram, ph: 'yourhandle' },
-                { icon: Twitter,   label: 'Twitter / X',  color: '#1da1f2', val: twitter,   set: setTwitter,   ph: 'yourhandle' },
-                { icon: Youtube,   label: 'YouTube',      color: '#ff0000', val: youtube,   set: setYoutube,   ph: 'channelname' },
-                { icon: Music2,    label: 'TikTok',       color: '#69c9d0', val: tiktok,    set: setTiktok,    ph: 'yourhandle' },
+                { icon: InstagramIcon, label: 'Instagram',    color: '#e1306c', val: instagram, set: setInstagram, ph: 'yourhandle' },
+                { icon: X,            label: 'Twitter / X',  color: '#1da1f2', val: twitter,   set: setTwitter,   ph: 'yourhandle' },
+                { icon: YoutubeIcon,  label: 'YouTube',      color: '#ff0000', val: youtube,   set: setYoutube,   ph: 'channelname' },
+                { icon: TikTokIcon,   label: 'TikTok',       color: '#69c9d0', val: tiktok,    set: setTiktok,    ph: 'yourhandle' },
               ].map(({ icon: Icon, label, color, val, set, ph }) => (
                 <div key={label}>
                   <label className="label">{label}</label>
