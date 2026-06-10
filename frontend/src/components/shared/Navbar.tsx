@@ -41,8 +41,11 @@ export default function Navbar() {
     router.push('/');
   };
 
-  // Public landing pages — minimal top navbar
-  if (!isAuthenticated) {
+  // Onboarding pages — no sidebar even when authenticated
+  const isOnboarding = pathname.startsWith('/onboarding');
+
+  // Public landing pages OR onboarding — minimal top navbar only
+  if (!isAuthenticated || isOnboarding) {
     return (
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5"
            style={{ background: 'rgba(10,10,15,0.85)', backdropFilter: 'blur(20px)' }}>
@@ -53,10 +56,20 @@ export default function Navbar() {
             </div>
             <span className="font-extrabold text-lg text-white tracking-tight">Flux<span className="gradient-text">Pay</span></span>
           </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/auth/login" className="text-sm font-semibold text-slate-400 hover:text-white transition-colors">Sign In</Link>
-            <Link href="/auth/signup" className="btn-primary text-sm py-2 px-5 btn-shimmer">Get Started</Link>
-          </div>
+          {isAuthenticated && (
+            <button
+              onClick={handleLogout}
+              className="text-sm font-semibold text-slate-400 hover:text-white transition-colors flex items-center gap-1.5"
+            >
+              <LogOut size={14} /> Sign out
+            </button>
+          )}
+          {!isAuthenticated && (
+            <div className="flex items-center gap-4">
+              <Link href="/auth/login" className="text-sm font-semibold text-slate-400 hover:text-white transition-colors">Sign In</Link>
+              <Link href="/auth/signup" className="btn-primary text-sm py-2 px-5 btn-shimmer">Get Started</Link>
+            </div>
+          )}
         </div>
       </nav>
     );

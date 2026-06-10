@@ -7,14 +7,20 @@ import { Toaster } from 'react-hot-toast'
 import Navbar from '@/components/shared/Navbar'
 import { WalletProvider } from '@/context/WalletContext'
 import { useUserStore } from '@/stores/userStore'
+import { usePathname } from 'next/navigation'
 
 function LayoutInner({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useUserStore()
+  const pathname = usePathname()
+  const isOnboarding = pathname?.startsWith('/onboarding')
+
+  // Use top-bar padding (pt-16) for unauthenticated pages and onboarding pages
+  const needsTopPad = !isAuthenticated || isOnboarding
 
   return (
     <div className="flex min-h-screen">
       <Navbar />
-      <main className={`flex-1 min-h-screen ${isAuthenticated ? 'md:pl-0' : 'pt-16'}`}>
+      <main className={`flex-1 min-h-screen ${needsTopPad ? 'pt-16' : 'md:pl-0'}`}>
         {children}
       </main>
     </div>
