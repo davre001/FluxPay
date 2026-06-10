@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Zap, Star, Shield, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConnect } from 'wagmi';
 import { useUserStore } from '@/stores/userStore';
 
 type ProfileType = 'creator' | 'organization';
@@ -21,6 +22,7 @@ function SignupForm() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const { setAuth } = useUserStore();
+  const { connectAsync, connectors } = useConnect();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,12 +43,22 @@ function SignupForm() {
 
       const userId = `user_${Date.now()}`;
       const mockToken = `mock_${userId}`;
+
+      // Create Porto smart account as part of signup
+      let walletAddress: string | undefined;
+      try {
+        const result = await connectAsync({ connector: connectors[0] });
+        walletAddress = result.accounts[0];
+      } catch {
+        toast.error('Smart account creation cancelled — please connect your wallet after signing in');
+      }
+
       localStorage.setItem(
         `fp_user_${email}`,
-        JSON.stringify({ id: userId, email, password, profileType })
+        JSON.stringify({ id: userId, email, password, profileType, walletAddress })
       );
 
-      setAuth({ id: userId, email, profileType, walletAddress: undefined }, mockToken);
+      setAuth({ id: userId, email, profileType, walletAddress }, mockToken);
       toast.success('Account created!');
       router.push(profileType === 'creator' ? '/onboarding/creator' : '/onboarding/organization');
     } catch (err: any) {
@@ -148,7 +160,7 @@ function SignupForm() {
 
             <button type="submit" disabled={loading} className="btn-primary w-full btn-shimmer mt-2">
               {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
-              {loading ? 'Creating account...' : 'Create Account'}
+              {loading ? 'Creating smart account...' : 'Create Account & Smart Wallet'}
             </button>
           </form>
         </div>

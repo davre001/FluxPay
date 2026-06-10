@@ -36,3 +36,5 @@ Thumbs.db
 # Local test scratch files
 backend/.tmp_*
 backend/registration_payload*.json
+
+.env

@@ -1,5 +1,6 @@
-import { getDefaultConfig } from '@rainbow-me/rainbowkit'
+import { createConfig } from 'wagmi'
 import { http, defineChain } from 'viem'
+import { porto } from 'porto/wagmi'
 
 // Define Morph Hoodi testnet chain
 export const morphHoodi = defineChain({
@@ -15,10 +16,9 @@ export const morphHoodi = defineChain({
   testnet: true,
 })
 
-export const config = getDefaultConfig({
-  appName: 'FluxPay',
-  projectId: process.env.NEXT_PUBLIC_WALLET_PROJECT_ID || 'fluxpay-default',
+export const config = createConfig({
   chains: [morphHoodi],
+  connectors: [porto()],
   transports: {
     [morphHoodi.id]: http('https://rpc-hoodi.morphl2.io'),
   },

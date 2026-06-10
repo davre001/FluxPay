@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Zap, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConnect } from 'wagmi';
 import { useUserStore } from '@/stores/userStore';
 
 export default function LoginPage() {
@@ -13,7 +14,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { setAuth } = useUserStore();
+  const { setAuth, updateWallet } = useUserStore();
+  const { connectAsync, connectors } = useConnect();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,9 +30,21 @@ export default function LoginPage() {
 
       const mockToken = `mock_${saved.id}_${Date.now()}`;
       setAuth(
-        { id: saved.id, email, profileType: saved.profileType, walletAddress: undefined },
+        { id: saved.id, email, profileType: saved.profileType, walletAddress: saved.walletAddress },
         mockToken
       );
+
+      // Reconnect Porto smart account on login
+      try {
+        const result = await connectAsync({ connector: connectors[0] });
+        const walletAddress = result.accounts[0];
+        updateWallet(walletAddress);
+        // Persist updated wallet address
+        localStorage.setItem(`fp_user_${email}`, JSON.stringify({ ...saved, walletAddress }));
+      } catch {
+        // User dismissed Porto dialog — they can connect from the sidebar
+      }
+
       toast.success('Welcome back!');
       router.push(saved.profileType === 'organization' ? '/organization/dashboard' : '/creator/dashboard');
     } catch (err: any) {

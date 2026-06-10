@@ -7,7 +7,7 @@ import {
   LogOut, Menu, X, ChevronRight, Building2, Search,
 } from 'lucide-react';
 import { useState } from 'react';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { useUserStore } from '@/stores/userStore';
 
 const creatorLinks = [
@@ -32,6 +32,9 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, logout } = useUserStore();
+  const { address, isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
 
   const links = user?.profileType === 'organization' ? orgLinks : creatorLinks;
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
@@ -123,9 +126,25 @@ export default function Navbar() {
 
         {/* Wallet + Logout */}
         <div className="px-4 py-4 border-t border-white/5 space-y-3">
-          <div className="scale-90 origin-left">
-            <ConnectButton accountStatus="avatar" chainStatus="none" showBalance={false} />
-          </div>
+          {isConnected ? (
+            <button
+              onClick={() => disconnect()}
+              className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white transition-all"
+              style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}
+            >
+              <Wallet size={14} className="text-brand-400" />
+              <span className="truncate">{address?.slice(0, 6)}…{address?.slice(-4)}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => connect({ connector: connectors[0] })}
+              className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white transition-all"
+              style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}
+            >
+              <Wallet size={14} className="text-brand-400" />
+              <span>Connect Wallet</span>
+            </button>
+          )}
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-all"
