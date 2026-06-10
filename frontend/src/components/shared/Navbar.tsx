@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Zap, LayoutDashboard, Briefcase, User, Wallet, Star,
-  LogOut, Menu, X, ChevronRight, Building2, Search,
+  LogOut, Menu, X, ChevronRight, Building2, Search, FileText,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
@@ -12,7 +12,8 @@ import { useUserStore } from '@/stores/userStore';
 
 const creatorLinks = [
   { href: '/creator/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
-  { href: '/creator/jobs',      label: 'Browse Jobs',  icon: Search },
+  { href: '/creator/deals',     label: 'Active Deals', icon: Briefcase },
+  { href: '/creator/applications', label: 'Applications', icon: FileText },
   { href: '/creator/profile',   label: 'Profile',      icon: User },
   { href: '/creator/wallet',    label: 'Wallet',       icon: Wallet },
   { href: '/creator/reputation',label: 'Reputation',   icon: Star },
@@ -20,7 +21,8 @@ const creatorLinks = [
 
 const orgLinks = [
   { href: '/organization/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
-  { href: '/organization/jobs',      label: 'My Jobs',      icon: Briefcase },
+  { href: '/organization/jobs/active', label: 'Active Jobs', icon: Zap },
+  { href: '/organization/jobs',      label: 'All Jobs',     icon: Briefcase },
   { href: '/jobs/new',               label: 'Post a Job',   icon: Building2 },
   { href: '/organization/profile',   label: 'Profile',      icon: User },
   { href: '/organization/wallet',    label: 'Wallet',       icon: Wallet },

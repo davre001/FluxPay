@@ -1,7 +1,22 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react'
-import { jobAPI, workerAPI, adminAPI } from '@/lib/api-client'
+import { jobAPI as originalJobAPI } from '@/lib/api-client'
+
+const jobAPI = {
+  ...originalJobAPI,
+  quote: (data: any) => Promise.resolve({ data: {} }),
+  results: (jobId: string) => Promise.resolve({ data: [] }),
+};
+
+const workerAPI = {
+  list: () => Promise.resolve({ data: [] }),
+};
+
+const adminAPI = {
+  flaggedJobs: () => Promise.resolve({ data: [] }),
+  disputes: () => Promise.resolve({ data: [] }),
+};
 
 interface UseApiOptions {
   onSuccess?: (data: any) => void

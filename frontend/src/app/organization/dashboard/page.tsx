@@ -41,6 +41,8 @@ export default function OrgDashboard() {
   const totalEscrowed = jobs.reduce((s, j) => s + j.total_budget, 0);
   const totalApplicants = jobs.reduce((s, j) => s + (j.application_count ?? 0), 0);
 
+  const activeJobsList = jobs.filter((j) => ['open', 'in_progress'].includes(j.status));
+
   return (
     <div className="p-6 md:p-10 space-y-8 min-h-screen" style={{ background: '#0a0a0f' }}>
       {/* Header */}
@@ -69,18 +71,18 @@ export default function OrgDashboard() {
       <div className="card">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-black text-white flex items-center gap-2">
-            <Briefcase size={18} className="text-brand-400" /> My Posted Jobs
+            <Briefcase size={18} className="text-brand-400" /> My Active Jobs
           </h2>
-          <Link href="/organization/jobs" className="text-xs font-bold text-brand-400 hover:text-brand-300 flex items-center gap-1 transition-colors">
+          <Link href="/organization/jobs/active" className="text-xs font-bold text-brand-400 hover:text-brand-300 flex items-center gap-1 transition-colors">
             View all <ArrowRight size={12} />
           </Link>
         </div>
 
-        {jobs.length === 0 ? (
+        {activeJobsList.length === 0 ? (
           <div className="text-center py-12">
             <Briefcase size={32} className="text-slate-600 mx-auto mb-3" />
-            <p className="text-slate-400 font-semibold">No jobs posted yet</p>
-            <p className="text-slate-600 text-sm mt-1">Create your first brand deal and find creators</p>
+            <p className="text-slate-400 font-semibold">No active jobs yet</p>
+            <p className="text-slate-600 text-sm mt-1">Post a new deal or hire creators to get active campaigns</p>
             <Link href="/organization/jobs/new" className="btn-primary mt-5 inline-flex">
               <Plus size={16} /> Post a Deal
             </Link>
@@ -96,7 +98,7 @@ export default function OrgDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {jobs.slice(0, 8).map((job) => (
+                {activeJobsList.slice(0, 8).map((job) => (
                   <tr key={job.id} className="hover:bg-white/[0.02] transition-colors">
                     <td className="py-4 px-3">
                       <p className="font-bold text-white">{job.title}</p>

@@ -1,6 +1,6 @@
 // Re-export all shared components for easier imports
 
-export { Navbar as default } from './Navbar'
+export { default as Navbar } from './Navbar'
 
 // Alert Components
 export {
