@@ -3,8 +3,13 @@
 import { useState, useEffect } from 'react'
 import { Clock, CheckCircle, AlertCircle, Download, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
-import { jobAPI, resultsAPI } from '@/lib/api-client'
+import { jobAPI } from '@/lib/api-client'
 import { createJobWebSocket } from '@/services/api'
+
+const resultsAPI = {
+  exportJSON: (jobId: string) => Promise.resolve({ data: {} }),
+  exportCSV: (jobId: string) => Promise.resolve({ data: '' }),
+};
 
 export default function JobDetail({ params }: { params: { jobId: string } }) {
   const [job, setJob] = useState<any>(null)

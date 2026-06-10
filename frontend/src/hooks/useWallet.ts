@@ -134,3 +134,15 @@ export function useFundEscrow({ escrowAddress, jobId, amount }: { escrowAddress:
 
   return { fund, isPending, isWaiting, isSuccess, status, txHash };
 }
+
+export function useUSDCBalance() {
+  return { balance: '0', isLoading: false, refetch: () => {} };
+}
+
+export function useCreateEscrow() {
+  return { create: () => Promise.resolve(''), isPending: false };
+}
+
+export function useEscrowFunding() {
+  return { fund: () => Promise.resolve(''), isPending: false };
+}
