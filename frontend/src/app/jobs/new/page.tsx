@@ -1,281 +1,477 @@
 'use client';
 
-import { useState, useMemo } from 'react'
-import { ArrowRight, ArrowLeft, Zap } from 'lucide-react'
-import toast from 'react-hot-toast'
-import { useRouter } from 'next/navigation'
-import { useForm } from '@/hooks/useForm'
-import { useWalletInfo } from '@/hooks'
-import { jobAPI } from '@/lib/api-client'
-import { executeJobFundingFlow, getFundingProgress, getFundingStepLabel } from '@/utils/jobFunding'
+import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
-  FormInput,
-  FormTextarea,
-  FormSelect,
-  FormCheckbox,
-  ValidationAlert,
-  Alert,
-  PaymentBreakdown,
-  TransactionStatus,
-} from '@/components/shared'
-import { validators, calculations } from '@/utils'
+  ArrowRight, ArrowLeft, Plus, Trash2, Zap, Calendar,
+  CheckCircle, Loader2, Instagram, Twitter, Youtube, Music2,
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+import { jobAPI } from '@/lib/api-client';
 
-export default function CreateJob() {
-  const router = useRouter()
-  const [step, setStep] = useState(1)
-  const [funding, setFunding] = useState(false)
-  const [fundingProgress, setFundingProgress] = useState(0)
-  const [fundingStatus, setFundingStatus] = useState<string>('')
-  const [fundingError, setFundingError] = useState<string>('')
-  const [fundedJobId, setFundedJobId] = useState<string>('')
-  
-  const { address, isConnected } = useWalletInfo()
-  const authToken = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || '' : ''
+// ─── Types ───────────────────────────────────────────────────────────────────
+interface Milestone { title: string; description: string; amount: string; deadline: string }
+const EMPTY_MILESTONE: Milestone = { title: '', description: '', amount: '', deadline: '' }
 
-  const categories = [
-    { id: 'ecommerce', label: 'E-commerce Price Tracking', description: 'Track prices across marketplaces' },
-    { id: 'leads', label: 'Merchant Leads', description: 'Collect merchant contact information' },
-    { id: 'realestate', label: 'Real Estate Listings', description: 'Track property listings and prices' },
-    { id: 'custom', label: 'Custom Source List', description: 'Provide your own sources' },
-  ]
+const PLATFORMS = ['instagram', 'twitter', 'youtube', 'tiktok', 'other'];
+const POST_TYPES = ['video', 'image', 'content_writing', 'other'];
+const STEPS = ['Deal Info', 'Payout', 'Deadline', 'Eligibility', 'Review'];
 
-  const sources = [
-    { id: 'approved', label: 'Approved Source', description: 'Pre-verified data sources' },
-    { id: 'urls', label: 'Customer-provided URLs', description: 'Your own URL list' },
-    { id: 'api', label: 'Official API', description: 'Official platform APIs' },
-    { id: 'manual', label: 'Manual Worker', description: 'Human verification' },
-  ]
+const PLATFORM_ICON: Record<string, any> = {
+  instagram: Instagram, twitter: Twitter, youtube: Youtube, tiktok: Music2,
+};
 
-  const handleFormSubmit = async (vals: Record<string, any>) => {
-    if (!isConnected || !address) {
-      toast.error('Please connect your wallet first')
-      return
-    }
-
-    if (!authToken) {
-      toast.error('Please log in first')
-      return
-    }
-
-    setFunding(true)
-    setFundingError('')
-    setFundingStatus('')
-    setFundingProgress(0)
-
-    const result = await executeJobFundingFlow(
-      {
-        category: vals.category,
-        location: vals.location,
-        source: vals.source,
-        freshness: vals.freshness,
-        budget: parseFloat(vals.budget),
-        maxRows: parseInt(vals.maxRows) || undefined,
-        description: vals.description,
-      },
-      address as `0x${string}`,
-      authToken,
-      (step) => {
-        setFundingProgress(getFundingProgress(step.step))
-        setFundingStatus(`${getFundingStepLabel(step.step)}: ${step.message}`)
-      }
-    )
-
-    setFunding(false)
-
-    if (result.success && result.jobId) {
-      setFundedJobId(result.jobId)
-      toast.success('Job funded successfully!')
-      setTimeout(() => {
-        router.push(`/jobs/${result.jobId}`)
-      }, 2000)
-    } else {
-      setFundingError(result.error || 'Funding failed')
-      toast.error(result.error || 'Funding failed')
-    }
-  }
-
-  const { values, errors, touched, handleChange, handleBlur, resetForm } = useForm({
-    initialValues: {
-      category: '', location: '', source: '', freshness: 'once', budget: '', maxRows: '', compliance: false, description: '',
-    },
-    validate: (vals) => {
-      const errs: Record<string, string> = {}
-      if (step === 1) {
-        if (!vals.category) errs.category = 'Please select a category'
-        if (!vals.location) errs.location = 'Location is required'
-      }
-      if (step === 2) {
-        if (!vals.source) errs.source = 'Please select a source'
-        if (validators.description(vals.description)) errs.description = validators.description(vals.description)!.message
-      }
-      if (step === 3) {
-        if (validators.budget(vals.budget)) errs.budget = validators.budget(vals.budget)!.message
-        if (validators.maxRows(vals.maxRows)) errs.maxRows = validators.maxRows(vals.maxRows)!.message
-        if (!vals.compliance) errs.compliance = 'You must agree to the policy'
-      }
-      return errs
-    },
-    onSubmit: handleFormSubmit,
-  })
-
-  const estimatedCost = useMemo(() => {
-    const budget = parseFloat(values.budget) || 0
-    return budget ? calculations.jobCost(budget * 0.6, budget * 0.15, 20) : null
-  }, [values.budget])
-
-  const handleNext = () => step < 3 && setStep(step + 1)
-  const handlePrev = () => step > 1 && setStep(step - 1)
-
-  if (funding) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <div className="max-w-md w-full space-y-6 p-8 bg-white rounded-xl shadow-lg">
-          <h2 className="text-2xl font-bold text-center">Funding Job...</h2>
-          
-          {fundingStatus && (
-            <p className="text-center text-gray-600">{fundingStatus}</p>
-          )}
-          
-          <div className="w-full bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-3 bg-gradient-to-r from-emerald-500 to-green-600 rounded-full transition-all duration-500"
-              style={{ width: `${fundingProgress}%` }}
-            />
+// ─── Step indicator ───────────────────────────────────────────────────────────
+function StepBar({ current, total }: { current: number; total: number }) {
+  return (
+    <div className="flex items-center gap-2 mb-8">
+      {STEPS.map((s, i) => (
+        <div key={s} className="flex items-center gap-2 flex-1 last:flex-none">
+          <div className={`step-dot flex-shrink-0 ${i + 1 < current ? 'done' : i + 1 === current ? 'active' : 'inactive'}`}>
+            {i + 1 < current ? '✓' : i + 1}
           </div>
-          
-          <p className="text-center text-lg font-bold">{fundingProgress}%</p>
-          
-          {fundingError && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded text-red-700">
-              {fundingError}
-            </div>
-          )}
+          <div className="flex-1 h-px last:hidden" style={{ background: i + 1 < current ? '#059669' : 'rgba(71,85,105,0.3)' }} />
         </div>
-      </div>
-    )
-  }
+      ))}
+    </div>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+export default function PostJobPage() {
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Step 1 — Deal Info
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [platform, setPlatform] = useState('instagram');
+  const [postType, setPostType] = useState('image');
+  const [hashtags, setHashtags] = useState('');
+  const [mentions, setMentions] = useState('');
+  const [linkInBio, setLinkInBio] = useState(false);
+  const [brandTag, setBrandTag] = useState(false);
+  const [customReq, setCustomReq] = useState('');
+
+  // Step 2 — Payout
+  const [payoutType, setPayoutType] = useState<'milestone' | 'full'>('milestone');
+  const [milestones, setMilestones] = useState<Milestone[]>([{ ...EMPTY_MILESTONE }]);
+  const [fullAmount, setFullAmount] = useState('');
+
+  // Step 3 — Deadline
+  const [overallDeadline, setOverallDeadline] = useState('');
+  const [autoCancel, setAutoCancel] = useState(false);
+
+  // Step 4 — Eligibility
+  const [minReputation, setMinReputation] = useState('');
+  const [requiredPlatforms, setRequiredPlatforms] = useState<string[]>([]);
+  const [minFollowers, setMinFollowers] = useState('');
+  const [region, setRegion] = useState('');
+  const [inviteOnly, setInviteOnly] = useState(false);
+
+  const totalBudget = useMemo(() => {
+    if (payoutType === 'full') return parseFloat(fullAmount) || 0;
+    return milestones.reduce((s, m) => s + (parseFloat(m.amount) || 0), 0);
+  }, [payoutType, milestones, fullAmount]);
+
+  const addMilestone = () => setMilestones((p) => [...p, { ...EMPTY_MILESTONE }]);
+  const removeMilestone = (i: number) => setMilestones((p) => p.filter((_, j) => j !== i));
+  const updateMilestone = (i: number, k: keyof Milestone, v: string) =>
+    setMilestones((p) => p.map((m, j) => j === i ? { ...m, [k]: v } : m));
+  const togglePlatform = (p: string) =>
+    setRequiredPlatforms((prev) => prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]);
+
+  const validateStep = (): boolean => {
+    if (step === 1) {
+      if (!title.trim()) { toast.error('Enter a deal title'); return false; }
+      if (!description.trim()) { toast.error('Enter a description'); return false; }
+      return true;
+    }
+    if (step === 2) {
+      if (payoutType === 'full' && !fullAmount) { toast.error('Enter the full payout amount'); return false; }
+      if (payoutType === 'milestone') {
+        const bad = milestones.find((m) => !m.title || !m.amount);
+        if (bad) { toast.error('Fill title and amount for every milestone'); return false; }
+      }
+      return true;
+    }
+    if (step === 3) {
+      if (!overallDeadline) { toast.error('Set an overall deadline'); return false; }
+      return true;
+    }
+    return true;
+  };
+
+  const next = () => { if (validateStep()) setStep((s) => Math.min(s + 1, 5)); };
+  const prev = () => setStep((s) => Math.max(s - 1, 1));
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    try {
+      const payload = {
+        title,
+        description,
+        target_platform: platform,
+        post_type: postType,
+        required_elements: {
+          hashtags: hashtags.split(',').map((h) => h.trim()).filter(Boolean),
+          mentions: mentions.split(',').map((m) => m.trim()).filter(Boolean),
+          link_in_bio: linkInBio,
+          brand_tag: brandTag,
+          custom: customReq || null,
+        },
+        payout_type: payoutType,
+        total_budget: totalBudget,
+        milestones: payoutType === 'milestone' ? milestones.map((m) => ({
+          title: m.title, description: m.description,
+          amount: parseFloat(m.amount), deadline: m.deadline || null,
+        })) : [{ title: 'Full Delivery', description: description, amount: totalBudget, deadline: overallDeadline || null }],
+        deadline: overallDeadline,
+        auto_cancel_on_deadline: autoCancel,
+        eligibility: {
+          min_reputation: parseInt(minReputation) || 0,
+          required_platforms: requiredPlatforms,
+          min_followers: parseInt(minFollowers) || null,
+          region: region || null,
+          invite_only: inviteOnly,
+        },
+      };
+      const res = await jobAPI.create(payload);
+      toast.success('Deal posted! Escrow funding initiated...');
+      router.push(`/organization/jobs/${res.data.id}`);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.detail || 'Failed to post job');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <div className="relative min-h-screen bg-slate-50 overflow-hidden pb-16 font-sans">
-      
-      {/* Background Motion Graphics (Glowing Orbs) */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-300/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDuration: '4s' }}></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-teal-200/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }}></div>
-
-      <div className="fade-in max-w-3xl mx-auto p-6 relative z-10 mt-4">
-        <div className="mb-8 animate-fade-in-up">
-          <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Create Data Job</h1>
-          <p className="text-gray-600 mt-2 text-lg">Define your dataset requirements and fund the micro-bounty</p>
-          <p className="text-gray-500 font-medium mt-2">Step {step} of 3</p>
-          <div className="mt-4 h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-emerald-400 to-green-500 transition-all duration-500 ease-out" style={{ width: `${(step / 3) * 100}%` }} />
-          </div>
+    <div className="p-6 md:p-10 min-h-screen" style={{ background: '#0a0a0f' }}>
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="mb-8 fade-in">
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Step {step} of {STEPS.length}</p>
+          <h1 className="text-3xl font-black text-white">{STEPS[step - 1]}</h1>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-sm border border-emerald-50 hover:shadow-md hover:border-emerald-200 transition-all duration-300 animate-fade-in-up" style={{ animationDelay: '150ms' }}>
+        <StepBar current={step} total={STEPS.length} />
+
+        <div className="card">
+          {/* ── Step 1: Deal Info ── */}
           {step === 1 && (
-            <div className="space-y-6 animate-fade-in-up">
+            <div className="space-y-5 fade-in">
               <div>
-                <label className="block text-lg font-bold text-gray-900 mb-4">What data do you need?</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {categories.map((cat) => (
-                    <label key={cat.id} className={`card cursor-pointer transition-all duration-300 border-2 hover:shadow-md ${values.category === cat.id ? 'border-emerald-500 bg-emerald-50/50 shadow-sm' : 'border-gray-100 hover:border-emerald-200'}`}>
-                      <div className="flex items-start">
-                        <input type="radio" name="category" value={cat.id} checked={values.category === cat.id} onChange={handleChange} className="mt-1 mr-3 accent-emerald-500" />
-                        <div>
-                          <p className="font-bold text-gray-900">{cat.label}</p>
-                          <p className="text-sm text-gray-500 mt-1">{cat.description}</p>
-                        </div>
-                      </div>
-                    </label>
+                <label className="label">Deal Title *</label>
+                <input value={title} onChange={(e) => setTitle(e.target.value)}
+                       placeholder="e.g. Summer Collection Instagram Reel" className="input" />
+              </div>
+              <div>
+                <label className="label">Deal Description *</label>
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)}
+                          placeholder="Describe exactly what you want the creator to produce..." rows={4} className="input resize-none" />
+              </div>
+
+              {/* Platform */}
+              <div>
+                <label className="label">Target Platform</label>
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  {PLATFORMS.map((p) => {
+                    const Icon = PLATFORM_ICON[p];
+                    return (
+                      <button key={p} onClick={() => setPlatform(p)}
+                              className={`py-3 rounded-xl text-sm font-bold transition-all flex flex-col items-center gap-1.5 ${platform === p ? 'bg-brand-600 text-white shadow-glow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                              style={{ border: platform === p ? '1px solid transparent' : '1px solid rgba(71,85,105,0.4)' }}>
+                        {Icon && <Icon size={16} />}
+                        <span className="capitalize text-xs">{p}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Post type */}
+              <div>
+                <label className="label">Post Type</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {POST_TYPES.map((t) => (
+                    <button key={t} onClick={() => setPostType(t)}
+                            className={`py-2.5 rounded-xl text-sm font-bold transition-all capitalize ${postType === t ? 'bg-brand-600 text-white shadow-glow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                            style={{ border: postType === t ? '1px solid transparent' : '1px solid rgba(71,85,105,0.4)' }}>
+                      {t.replace('_',' ')}
+                    </button>
                   ))}
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-50">
-                <div className="space-y-2">
-                  <label className="block text-sm font-bold text-gray-700">Location *</label>
-                  <FormInput name="location" value={values.location} onChange={handleChange} onBlur={handleBlur} error={touched.location ? errors.location : undefined} placeholder="e.g., Manila, PH" className="focus:ring-emerald-500 focus:border-emerald-500" />
+
+              {/* Required elements */}
+              <div className="space-y-3 pt-2 border-t border-white/5">
+                <label className="label">Required Elements</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="label">Hashtags (comma-separated)</label>
+                    <input value={hashtags} onChange={(e) => setHashtags(e.target.value)}
+                           placeholder="ad, yourbrand, summer24" className="input" />
+                  </div>
+                  <div>
+                    <label className="label">Mentions (comma-separated)</label>
+                    <input value={mentions} onChange={(e) => setMentions(e.target.value)}
+                           placeholder="yourbrand, partnerhandle" className="input" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-bold text-gray-700">Freshness Requirement</label>
-                  <FormSelect name="freshness" value={values.freshness} onChange={handleChange} options={[{ value: 'once', label: 'Once' }, { value: 'daily', label: 'Daily' }, { value: 'weekly', label: 'Weekly' }]} className="focus:ring-emerald-500 focus:border-emerald-500" />
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {step === 2 && (
-            <div className="space-y-6 animate-fade-in-up">
-              <div>
-                <label className="block text-lg font-bold text-gray-900 mb-4">Where should we collect data from?</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {sources.map((src) => (
-                    <label key={src.id} className={`card cursor-pointer transition-all duration-300 border-2 hover:shadow-md ${values.source === src.id ? 'border-emerald-500 bg-emerald-50/50 shadow-sm' : 'border-gray-100 hover:border-emerald-200'}`}>
-                       <div className="flex items-start">
-                        <input type="radio" name="source" value={src.id} checked={values.source === src.id} onChange={handleChange} className="mt-1 mr-3 accent-emerald-500" />
-                        <div>
-                          <p className="font-bold text-gray-900">{src.label}</p>
-                          <p className="text-sm text-gray-500 mt-1">{src.description}</p>
-                        </div>
+                <div className="flex gap-4">
+                  {[
+                    { val: linkInBio, set: setLinkInBio, label: 'Link in Bio / Post' },
+                    { val: brandTag,  set: setBrandTag,  label: 'Brand Tag Required' },
+                  ].map(({ val, set, label }) => (
+                    <label key={label} className="flex items-center gap-2 cursor-pointer group">
+                      <div onClick={() => set(!val)}
+                           className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${val ? 'bg-brand-600' : 'bg-surface-700 border border-slate-600'}`}>
+                        {val && <CheckCircle size={12} className="text-white" />}
                       </div>
+                      <span className="text-sm text-slate-400 group-hover:text-slate-200">{label}</span>
                     </label>
                   ))}
                 </div>
-              </div>
-              <div className="space-y-2 pt-4 border-t border-gray-50">
-                <label className="block text-sm font-bold text-gray-700">Job Description *</label>
-                <FormTextarea name="description" value={values.description} onChange={handleChange} placeholder="Describe your data requirements..." rows={5} className="focus:ring-emerald-500 focus:border-emerald-500" />
+                <div>
+                  <label className="label">Custom Requirement</label>
+                  <input value={customReq} onChange={(e) => setCustomReq(e.target.value)}
+                         placeholder="e.g. Must show the product unboxing in first 5 seconds" className="input" />
+                </div>
               </div>
             </div>
           )}
 
-          {step === 3 && (
-            <div className="space-y-6 animate-fade-in-up">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-bold text-gray-700">Budget (USDC) *</label>
-                  <FormInput type="number" name="budget" value={values.budget} onChange={handleChange} placeholder="e.g., 100" className="focus:ring-emerald-500 focus:border-emerald-500" />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-bold text-gray-700">Max Rows to Collect *</label>
-                  <FormInput type="number" name="maxRows" value={values.maxRows} onChange={handleChange} placeholder="e.g., 500" className="focus:ring-emerald-500 focus:border-emerald-500" />
+          {/* ── Step 2: Payout ── */}
+          {step === 2 && (
+            <div className="space-y-6 fade-in">
+              {/* Payout type */}
+              <div>
+                <label className="label">Payout Structure</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { type: 'milestone' as const, title: 'Milestone-Based', desc: 'Release funds per milestone on AI approval' },
+                    { type: 'full' as const,      title: 'Full on Delivery', desc: 'Single lump sum on final deliverable approval' },
+                  ].map(({ type, title, desc }) => (
+                    <button key={type} onClick={() => setPayoutType(type)}
+                            className="p-4 rounded-xl text-left transition-all"
+                            style={{
+                              background: payoutType === type ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.03)',
+                              border: `1px solid ${payoutType === type ? 'rgba(124,58,237,0.5)' : 'rgba(71,85,105,0.4)'}`,
+                              boxShadow: payoutType === type ? '0 0 16px rgba(124,58,237,0.15)' : 'none',
+                            }}>
+                      <p className={`font-bold text-sm ${payoutType === type ? 'text-white' : 'text-slate-400'}`}>{title}</p>
+                      <p className="text-xs text-slate-500 mt-1">{desc}</p>
+                    </button>
+                  ))}
                 </div>
               </div>
-              
-              {estimatedCost && (
-                <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-100 shadow-inner">
-                  <h3 className="font-bold text-emerald-900 mb-3 flex items-center gap-2">
-                    <Zap size={18} className="text-emerald-500" /> Estimated Costs
-                  </h3>
-                  <PaymentBreakdown workerReward={estimatedCost.total * 0.6} verificationCost={estimatedCost.total * 0.15} platformFee={estimatedCost.platformFee} total={estimatedCost.total} />
+
+              {/* Milestone builder */}
+              {payoutType === 'milestone' && (
+                <div className="space-y-3">
+                  <label className="label">Milestones</label>
+                  {milestones.map((m, i) => (
+                    <div key={i} className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-brand-400 uppercase tracking-widest">Milestone {i + 1}</span>
+                        {milestones.length > 1 && (
+                          <button onClick={() => removeMilestone(i)} className="text-slate-600 hover:text-red-400 transition-colors">
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="label">Title</label>
+                          <input value={m.title} onChange={(e) => updateMilestone(i, 'title', e.target.value)}
+                                 placeholder="e.g. Draft Content" className="input text-sm" />
+                        </div>
+                        <div>
+                          <label className="label">Amount (USDC)</label>
+                          <input type="number" value={m.amount} onChange={(e) => updateMilestone(i, 'amount', e.target.value)}
+                                 placeholder="0.00" className="input text-sm" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="label">Description</label>
+                        <input value={m.description} onChange={(e) => updateMilestone(i, 'description', e.target.value)}
+                               placeholder="What should the creator deliver?" className="input text-sm" />
+                      </div>
+                      <div>
+                        <label className="label">Milestone Deadline</label>
+                        <input type="date" value={m.deadline} onChange={(e) => updateMilestone(i, 'deadline', e.target.value)}
+                               className="input text-sm" style={{ colorScheme: 'dark' }} />
+                      </div>
+                    </div>
+                  ))}
+                  <button onClick={addMilestone} className="btn-secondary text-sm py-2.5 w-full">
+                    <Plus size={14} /> Add Milestone
+                  </button>
                 </div>
               )}
-              
-              <div className="pt-4 border-t border-gray-50">
-                <label className="flex items-start cursor-pointer group">
-                  <FormCheckbox name="compliance" checked={values.compliance} onChange={handleChange} className="mt-1 accent-emerald-500" />
-                  <span className="ml-3 text-sm text-gray-600 group-hover:text-gray-900 transition-colors">I agree to the data collection policy and confirm that all sources comply with applicable regulations.</span>
-                </label>
+
+              {/* Full payout */}
+              {payoutType === 'full' && (
+                <div>
+                  <label className="label">Total Payout Amount (USDC)</label>
+                  <input type="number" value={fullAmount} onChange={(e) => setFullAmount(e.target.value)}
+                         placeholder="0.00" className="input" />
+                </div>
+              )}
+
+              {/* Budget summary */}
+              {totalBudget > 0 && (
+                <div className="rounded-xl p-4 flex items-center justify-between"
+                     style={{ background: 'rgba(5,150,105,0.1)', border: '1px solid rgba(5,150,105,0.2)' }}>
+                  <div>
+                    <p className="text-xs font-bold text-slate-500">Total Budget to Escrow</p>
+                    <p className="text-xs text-slate-600 mt-0.5">Funds lock into smart contract on posting</p>
+                  </div>
+                  <p className="text-2xl font-black text-emerald-400">${totalBudget.toFixed(2)} <span className="text-sm text-slate-500">USDC</span></p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Step 3: Deadline ── */}
+          {step === 3 && (
+            <div className="space-y-5 fade-in">
+              <div>
+                <label className="label">Overall Deal Deadline *</label>
+                <div className="relative">
+                  <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                  <input type="date" value={overallDeadline} onChange={(e) => setOverallDeadline(e.target.value)}
+                         className="input pl-10" style={{ colorScheme: 'dark' }} />
+                </div>
+              </div>
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <div onClick={() => setAutoCancel(!autoCancel)}
+                     className={`w-5 h-5 rounded-md flex items-center justify-center mt-0.5 transition-all ${autoCancel ? 'bg-brand-600' : 'bg-surface-700 border border-slate-600'}`}>
+                  {autoCancel && <CheckCircle size={12} className="text-white" />}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-300 group-hover:text-white">Auto-cancel on deadline miss</p>
+                  <p className="text-xs text-slate-500 mt-0.5">If the deadline passes with no deliverable, the deal cancels automatically and funds are returned.</p>
+                </div>
+              </label>
+            </div>
+          )}
+
+          {/* ── Step 4: Eligibility ── */}
+          {step === 4 && (
+            <div className="space-y-5 fade-in">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Min. Reputation Score</label>
+                  <input type="number" value={minReputation} onChange={(e) => setMinReputation(e.target.value)}
+                         placeholder="0 (any)" className="input" />
+                </div>
+                <div>
+                  <label className="label">Min. Followers (optional)</label>
+                  <input type="number" value={minFollowers} onChange={(e) => setMinFollowers(e.target.value)}
+                         placeholder="e.g. 10000" className="input" />
+                </div>
+              </div>
+
+              <div>
+                <label className="label">Required Platforms (creator must have linked)</label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {PLATFORMS.filter((p) => p !== 'other').map((p) => (
+                    <button key={p} onClick={() => togglePlatform(p)}
+                            className={`px-3 py-1.5 rounded-full text-sm font-bold capitalize transition-all ${requiredPlatforms.includes(p) ? 'bg-brand-600 text-white shadow-glow-sm' : 'text-slate-400'}`}
+                            style={{ border: requiredPlatforms.includes(p) ? '1px solid transparent' : '1px solid rgba(71,85,105,0.4)' }}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="label">Region / Location Preference (optional)</label>
+                <input value={region} onChange={(e) => setRegion(e.target.value)}
+                       placeholder="e.g. United States, UK, Global" className="input" />
+              </div>
+
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <div onClick={() => setInviteOnly(!inviteOnly)}
+                     className={`w-5 h-5 rounded-md flex items-center justify-center mt-0.5 transition-all ${inviteOnly ? 'bg-brand-600' : 'bg-surface-700 border border-slate-600'}`}>
+                  {inviteOnly && <CheckCircle size={12} className="text-white" />}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-300 group-hover:text-white">Invite-only deal</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Only creators you invite can apply for this deal.</p>
+                </div>
+              </label>
+            </div>
+          )}
+
+          {/* ── Step 5: Review ── */}
+          {step === 5 && (
+            <div className="space-y-5 fade-in">
+              <p className="text-sm text-slate-400">Review your deal before posting. Funds will be locked in escrow on submission.</p>
+
+              {[
+                { label: 'Deal Title', value: title },
+                { label: 'Platform', value: `${platform} · ${postType.replace('_',' ')}` },
+                { label: 'Payout Type', value: payoutType === 'milestone' ? `Milestone-based (${milestones.length} steps)` : 'Full on delivery' },
+                { label: 'Overall Deadline', value: overallDeadline ? new Date(overallDeadline).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '–' },
+                { label: 'Min. Reputation', value: minReputation ? `${minReputation} pts` : 'None required' },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex justify-between items-start py-3 border-b border-white/5 last:border-0">
+                  <p className="text-sm text-slate-400">{label}</p>
+                  <p className="text-sm font-bold text-white text-right capitalize">{value}</p>
+                </div>
+              ))}
+
+              {/* Milestones preview */}
+              {payoutType === 'milestone' && milestones.length > 0 && (
+                <div className="rounded-xl p-4 space-y-2" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}>
+                  {milestones.map((m, i) => (
+                    <div key={i} className="flex justify-between text-sm">
+                      <span className="text-slate-400">{i + 1}. {m.title}</span>
+                      <span className="font-bold text-emerald-400">${m.amount}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Escrow lock notice */}
+              <div className="rounded-xl p-5 flex gap-3"
+                   style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)' }}>
+                <Zap size={18} className="text-brand-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-white text-sm">Escrow Lock: ${totalBudget.toFixed(2)} USDC</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    This amount will be locked in a smart contract on the Morph L2 network.
+                    Funds release per milestone after AI approval. Unused funds are refundable.
+                  </p>
+                </div>
               </div>
             </div>
           )}
 
-          <div className="flex justify-between pt-6 mt-6 border-t border-gray-100">
-            <button type="button" onClick={handlePrev} disabled={step === 1} className="flex items-center gap-2 px-6 py-2.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-medium">
-              <ArrowLeft size={18} /> Previous
+          {/* Navigation */}
+          <div className="flex justify-between pt-6 mt-6 border-t border-white/5">
+            <button onClick={prev} disabled={step === 1}
+                    className="btn-secondary disabled:opacity-40">
+              <ArrowLeft size={16} /> Previous
             </button>
-            {step < 3 ? (
-              <button type="button" onClick={handleNext} className="flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium">
-                Next <ArrowRight size={18} />
+            {step < 5 ? (
+              <button onClick={next} className="btn-primary btn-shimmer">
+                Next <ArrowRight size={16} />
               </button>
             ) : (
-              <button type="submit" className="flex items-center gap-2 px-8 py-2.5 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold rounded-lg hover:from-emerald-600 hover:to-green-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0" disabled={funding || !isConnected}>
-                {funding ? 'Funding...' : 'Create Job & Fund'} <Zap size={18} />
+              <button onClick={handleSubmit} disabled={submitting}
+                      className="btn-primary btn-shimmer">
+                {submitting ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+                {submitting ? 'Posting...' : 'Post Deal & Lock Escrow'}
               </button>
             )}
           </div>
-        </form>
+        </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,101 +1,211 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Zap, Shield, TrendingUp } from 'lucide-react';
+import { ArrowRight, Shield, Zap, Star, CheckCircle, TrendingUp, Bot, Lock } from 'lucide-react';
+
+const features = [
+  {
+    icon: Bot,
+    title: 'AI Milestone Verification',
+    desc: 'Every deliverable is reviewed by AI against the original brief — no manual approvals needed.',
+    color: 'from-brand-600 to-brand-500',
+    glow: 'shadow-glow-sm',
+  },
+  {
+    icon: Lock,
+    title: 'On-Chain Escrow',
+    desc: 'USDC locked in smart contracts per milestone. Funds release automatically on approval.',
+    color: 'from-accent-600 to-accent-500',
+    glow: 'shadow-glow-cyan',
+  },
+  {
+    icon: Star,
+    title: 'Reputation System',
+    desc: 'Every deal updates on-chain scores for both creators and brands — building trust over time.',
+    color: 'from-yellow-600 to-amber-500',
+    glow: '',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Milestone Payouts',
+    desc: 'Split big deals into milestones. Get paid progressively as you deliver results.',
+    color: 'from-emerald-600 to-green-500',
+    glow: '',
+  },
+];
+
+const stats = [
+  { value: '$2.4M+', label: 'Escrowed to date' },
+  { value: '1,200+', label: 'Deals completed' },
+  { value: '98%',    label: 'AI approval rate' },
+  { value: '< 24h',  label: 'Avg. verification time' },
+];
 
 export default function Home() {
   return (
-    <main className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-slate-50 font-sans selection:bg-emerald-200 selection:text-emerald-900">
-      
-      {/* Background Motion Graphics (Glowing Orbs) */}
-      <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-emerald-300/40 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-glow" style={{ animationDuration: '4s' }}></div>
-      <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-green-300/40 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-glow" style={{ animationDuration: '5s', animationDelay: '1s' }}></div>
-      <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-teal-200/40 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-glow" style={{ animationDuration: '6s', animationDelay: '2s' }}></div>
+    <main className="relative min-h-screen overflow-hidden" style={{ background: '#0a0a0f' }}>
 
-      {/* Additional floating orbs for depth */}
-      <div className="absolute top-1/2 right-1/3 w-60 h-60 bg-emerald-200/30 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-float" style={{ animationDuration: '8s' }}></div>
-      <div className="absolute bottom-1/3 right-1/4 w-72 h-72 bg-green-200/30 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-float-delayed" style={{ animationDuration: '9s', animationDelay: '1.5s' }}></div>
+      {/* ── Orbs ── */}
+      <div className="orb orb-purple w-[600px] h-[600px] top-[-150px] left-[-100px] animate-glow" style={{ animationDuration: '5s' }} />
+      <div className="orb orb-cyan   w-[500px] h-[500px] top-[20%] right-[-120px] animate-glow" style={{ animationDuration: '7s', animationDelay: '2s' }} />
+      <div className="orb orb-indigo w-[400px] h-[400px] bottom-[10%] left-[30%] animate-glow" style={{ animationDuration: '6s', animationDelay: '1s' }} />
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-16 pb-20">
-        
-        {/* Hero Section (Scaled down text sizes) */}
-        <div className="space-y-5 animate-fade-in-up">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 drop-shadow-sm leading-tight">
-            FluxPay is an agentic micro-bounty <br className="hidden md:block" />
-            platform for <span className="bg-gradient-to-r from-emerald-600 to-green-500 bg-clip-text text-transparent">data collection.</span>
+      <div className="relative z-10">
+
+        {/* ── Hero ── */}
+        <section className="container-custom pt-32 pb-20 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8 text-xs font-bold uppercase tracking-widest"
+               style={{ background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', color: '#a78bfa' }}>
+            <Zap size={12} />
+            Powered by Morph L2 · USDC Escrow
+          </div>
+
+          <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white leading-none mb-6">
+            Creator-Brand Deals,<br />
+            <span className="gradient-text">Secured On-Chain.</span>
           </h1>
-          
-          <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Request datasets, fund with USDC, and let our network of workers and verifiers deliver verified results.
+
+          <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed mb-10">
+            FluxPay escrows every deal in a smart contract. Milestones are verified by AI.
+            Payments release automatically. No trust required.
           </p>
-        </div>
 
-        {/* CTA Buttons (Slightly more compact) */}
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up" style={{ animationDelay: '150ms' }}>
-          <Link href="/jobs/new">
-            <button className="group flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold rounded-xl hover:from-emerald-600 hover:to-green-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 w-full sm:w-auto text-sm hover:scale-105">
-              Create Job
-              <ArrowRight size={16} className="transform group-hover:translate-x-1 transition-transform" />
-            </button>
-          </Link>
-          <Link href="/dashboard">
-            <button className="flex items-center justify-center px-6 py-3 bg-white text-gray-700 font-bold rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-emerald-200 hover:text-emerald-700 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-300 w-full sm:w-auto text-sm hover:scale-105">
-              View Dashboard
-            </button>
-          </Link>
-        </div>
+          {/* CTA Cards */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mt-2">
 
-        {/* Feature Cards (Reduced padding, tighter gaps, smaller text) */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 text-left animate-fade-in-up" style={{ animationDelay: '300ms' }}>
-          
-          {/* Card 1 */}
-          <div className="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-emerald-200 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 group">
-            <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-emerald-100 transition-colors">
-              <Zap size={24} className="text-emerald-600" />
-            </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Fast Execution</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Micro-tasks distributed across worker agents for rapid completion.
+            {/* Creator CTA */}
+            <Link href="/auth/signup?type=creator" className="group">
+              <div className="relative w-64 rounded-2xl p-6 text-left transition-all duration-300 hover:-translate-y-1"
+                   style={{ background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.35)' }}>
+                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"
+                     style={{ background: 'rgba(124,58,237,0.08)', boxShadow: '0 0 40px rgba(124,58,237,0.25)' }} />
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-brand-500 flex items-center justify-center mb-4 shadow-glow-sm">
+                    <Star size={18} className="text-white" />
+                  </div>
+                  <h2 className="text-lg font-black text-white mb-1">I'm a Creator</h2>
+                  <p className="text-sm text-slate-400 mb-4">Browse brand deals, apply, and get paid per milestone.</p>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-400 group-hover:gap-2.5 transition-all">
+                    Get started <ArrowRight size={14} />
+                  </span>
+                </div>
+              </div>
+            </Link>
+
+            {/* Brand CTA */}
+            <Link href="/auth/signup?type=organization" className="group">
+              <div className="relative w-64 rounded-2xl p-6 text-left transition-all duration-300 hover:-translate-y-1"
+                   style={{ background: 'rgba(6,182,212,0.10)', border: '1px solid rgba(6,182,212,0.3)' }}>
+                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"
+                     style={{ background: 'rgba(6,182,212,0.06)', boxShadow: '0 0 40px rgba(6,182,212,0.2)' }} />
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-600 to-accent-500 flex items-center justify-center mb-4 shadow-glow-cyan">
+                    <Shield size={18} className="text-white" />
+                  </div>
+                  <h2 className="text-lg font-black text-white mb-1">I'm a Brand</h2>
+                  <p className="text-sm text-slate-400 mb-4">Post deals, find creators, and verify results automatically.</p>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-accent-400 group-hover:gap-2.5 transition-all">
+                    Post a deal <ArrowRight size={14} />
+                  </span>
+                </div>
+              </div>
+            </Link>
+          </div>
+
+          <p className="mt-6 text-xs text-slate-600">
+            Already have an account?{' '}
+            <Link href="/auth/login" className="text-brand-400 hover:text-brand-300 font-semibold transition-colors">Sign in</Link>
+          </p>
+        </section>
+
+        {/* ── Stats bar ── */}
+        <section className="border-y border-white/5 py-8" style={{ background: 'rgba(255,255,255,0.02)' }}>
+          <div className="container-custom grid grid-cols-2 md:grid-cols-4 gap-8">
+            {stats.map((s) => (
+              <div key={s.label} className="text-center">
+                <p className="text-3xl font-black gradient-text">{s.value}</p>
+                <p className="text-sm text-slate-500 mt-1 font-medium">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Features ── */}
+        <section className="container-custom py-24">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
+              How <span className="gradient-text">FluxPay</span> works
+            </h2>
+            <p className="text-slate-400 max-w-xl mx-auto">
+              A complete deal infrastructure — from posting to payment — without middlemen.
             </p>
           </div>
 
-          {/* Card 2 */}
-          <div className="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-emerald-200 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 group">
-            <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-green-100 transition-colors">
-              <Shield size={24} className="text-green-600" />
-            </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Verified Results</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Automated verification ensures quality and accuracy of data.
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {features.map(({ icon: Icon, title, desc, color, glow }) => (
+              <div key={title} className="card stagger-children fade-in group">
+                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center mb-5 ${glow} transition-transform duration-300 group-hover:scale-110`}>
+                  <Icon size={22} className="text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
+              </div>
+            ))}
           </div>
+        </section>
 
-          {/* Card 3 */}
-          <div className="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-emerald-200 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 group">
-            <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-teal-100 transition-colors">
-              <TrendingUp size={24} className="text-teal-600" />
+        {/* ── How it works steps ── */}
+        <section className="py-20" style={{ background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="container-custom">
+            <h2 className="text-3xl font-black text-white text-center mb-14">Deal flow in 5 steps</h2>
+            <div className="relative">
+              {/* Connector line */}
+              <div className="absolute left-5 top-8 bottom-8 w-px hidden md:block" style={{ background: 'linear-gradient(to bottom, #7c3aed, #06b6d4)' }} />
+              <div className="space-y-6 md:pl-16">
+                {[
+                  { n: '01', title: 'Brand posts a deal',           desc: 'Set milestones, budget, and requirements. Funds lock into escrow.' },
+                  { n: '02', title: 'Creators apply',               desc: 'Eligible creators browse and submit applications with their portfolio.' },
+                  { n: '03', title: 'Brand selects a creator',      desc: 'Review reputation, socials, and apply notes. Pick your partner.' },
+                  { n: '04', title: 'Creator submits deliverables', desc: 'Upload the content link per milestone. AI reviews it instantly.' },
+                  { n: '05', title: 'Funds release automatically',  desc: 'On AI approval, USDC flows to the creator. Reputation scores update.' },
+                ].map(({ n, title, desc }) => (
+                  <div key={n} className="relative flex gap-6 items-start fade-in">
+                    <div className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-black z-10"
+                         style={{ background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', boxShadow: '0 0 16px rgba(124,58,237,0.4)' }}>
+                      <span className="text-white">{n}</span>
+                    </div>
+                    <div className="card flex-1 py-4 px-5">
+                      <h4 className="font-bold text-white">{title}</h4>
+                      <p className="text-sm text-slate-400 mt-1">{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Pay What You Use</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Only pay for verified results. Escrow protects both parties.
-            </p>
           </div>
+        </section>
 
-        </div>
+        {/* ── Final CTA ── */}
+        <section className="container-custom py-24 text-center">
+          <div className="max-w-2xl mx-auto rounded-3xl p-12 relative overflow-hidden"
+               style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.2) 0%, rgba(6,182,212,0.15) 100%)', border: '1px solid rgba(124,58,237,0.3)' }}>
+            <div className="orb orb-purple w-72 h-72 -top-16 -right-16 opacity-50" />
+            <div className="relative z-10">
+              <CheckCircle size={40} className="text-brand-400 mx-auto mb-4" />
+              <h2 className="text-3xl font-black text-white mb-4">Start your first deal today</h2>
+              <p className="text-slate-400 mb-8">Join thousands of creators and brands already using FluxPay.</p>
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <Link href="/auth/signup?type=creator" className="btn-primary btn-shimmer">
+                  Join as Creator <ArrowRight size={16} />
+                </Link>
+                <Link href="/auth/signup?type=organization" className="btn-secondary">
+                  Join as Brand <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
-
-      {/* Powered By Morph Floating Badge */}
-      <div className="fixed bottom-6 left-6 z-50 animate-fade-in-up" style={{ animationDelay: '500ms' }}>
-        <div className="flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur-md rounded-full shadow-lg border border-emerald-100 hover:scale-105 transition-transform duration-300 cursor-default">
-          <div className="bg-gradient-to-tr from-emerald-500 to-green-400 p-1 rounded-full text-white shadow-inner">
-            <Zap size={14} className="animate-pulse" />
-          </div>
-          <span className="text-xs font-bold tracking-wide uppercase bg-gradient-to-r from-emerald-600 to-green-500 bg-clip-text text-transparent">
-            Powered By Morph
-          </span>
-        </div>
-      </div>
-
     </main>
   );
 }

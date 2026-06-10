@@ -1,65 +1,55 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-interface UserPreferences {
-  theme?: 'light' | 'dark'
-  notificationsEnabled?: boolean
-  emailNotifications?: boolean
-  itemsPerPage?: number
+export type ProfileType = 'creator' | 'organization' | null
+
+interface AuthUser {
+  id: string
+  email: string
+  profileType: ProfileType
+  walletAddress?: string
 }
 
 interface UserStore {
-  userId: string | null
-  preferences: UserPreferences
+  user: AuthUser | null
+  token: string | null
   isAuthenticated: boolean
-  setUser: (userId: string) => void
+
+  // Actions
+  setAuth: (user: AuthUser, token: string) => void
   logout: () => void
-  updatePreferences: (prefs: Partial<UserPreferences>) => void
-  setTheme: (theme: 'light' | 'dark') => void
-  setNotifications: (enabled: boolean) => void
+  updateWallet: (address: string) => void
 }
 
 export const useUserStore = create<UserStore>()(
   persist(
     (set) => ({
-      userId: null,
-      preferences: {
-        theme: 'light',
-        notificationsEnabled: true,
-        emailNotifications: true,
-        itemsPerPage: 10,
-      },
+      user: null,
+      token: null,
       isAuthenticated: false,
 
-      setUser: (userId) =>
-        set({
-          userId,
-          isAuthenticated: true,
-        }),
+      setAuth: (user, token) => {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auth_token', token)
+        }
+        set({ user, token, isAuthenticated: true })
+      },
 
-      logout: () =>
-        set({
-          userId: null,
-          isAuthenticated: false,
-        }),
+      logout: () => {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth_token')
+        }
+        set({ user: null, token: null, isAuthenticated: false })
+      },
 
-      updatePreferences: (prefs) =>
+      updateWallet: (address) =>
         set((state) => ({
-          preferences: { ...state.preferences, ...prefs },
-        })),
-
-      setTheme: (theme) =>
-        set((state) => ({
-          preferences: { ...state.preferences, theme },
-        })),
-
-      setNotifications: (enabled) =>
-        set((state) => ({
-          preferences: { ...state.preferences, notificationsEnabled: enabled },
+          user: state.user ? { ...state.user, walletAddress: address } : null,
         })),
     }),
     {
-      name: 'user-store',
+      name: 'fluxpay-user',
+      partialize: (s) => ({ user: s.user, token: s.token, isAuthenticated: s.isAuthenticated }),
     }
   )
 )
