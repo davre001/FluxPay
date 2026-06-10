@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star, X, Music2, ArrowRight, Loader2 } from 'lucide-react';
+import { Star, X, Music2, ArrowRight, Loader2, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { mockDB } from '@/lib/mock-data';
 import { useUserStore } from '@/stores/userStore';
@@ -112,15 +112,45 @@ export default function CreatorOnboarding() {
           {step === 1 && (
             <div className="space-y-5 fade-in">
               <div>
-                <label className="label">Profile Picture URL</label>
-                <input value={picUrl} onChange={(e) => setPicUrl(e.target.value)}
-                       placeholder="https://..." className="input" />
-                {picUrl && (
-                  <div className="mt-3 flex justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={picUrl} alt="Preview" className="w-20 h-20 rounded-full object-cover border-2 border-brand-600" />
-                  </div>
-                )}
+                <label className="label">Profile Picture</label>
+                <div className="mt-2 flex items-center justify-center">
+                  {picUrl ? (
+                    <div className="relative group">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={picUrl} alt="Preview" className="w-24 h-24 rounded-full object-cover border-4 border-brand-600 shadow-glow" />
+                      <button
+                        type="button"
+                        onClick={() => setPicUrl('')}
+                        className="absolute -top-1 -right-1 bg-rose-600 text-white p-1.5 rounded-full hover:bg-rose-500 transition-colors shadow-lg"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-700 border-dashed rounded-2xl cursor-pointer hover:border-brand-500 hover:bg-slate-900/50 transition-all">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Upload size={24} className="text-slate-400 mb-2" />
+                        <p className="text-sm text-slate-300 font-semibold">Click to upload photo</p>
+                        <p className="text-xs text-slate-500 mt-1">PNG, JPG, or WEBP</p>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setPicUrl(reader.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="label">Display Name *</label>
