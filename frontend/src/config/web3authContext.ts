@@ -30,7 +30,7 @@ const aaChains = Object.entries(BUNDLER_URLS)
   .map(([chainId, url]) => ({ chainId, bundlerConfig: { url: url as string } }))
 
 const web3AuthOptions: Web3AuthOptions = {
-  clientId: process.env.NEXT_PUBLIC_CLIENT_ID as string,
+  clientId: (process.env.NEXT_PUBLIC_CLIENT_ID || 'BPi5PB_UiIZt2w-CegcSDGCO8A_vEsYGYDG9Z42gZ3pQ4J1r-w18e7751a021a8309e4a81c4e7a898b3b5c') as string,
   web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
 }
 
