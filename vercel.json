@@ -1,0 +1,15 @@
+{
+  "rootDirectory": "frontend",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "npm install --legacy-peer-deps",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "@fluxpay_api_url",
+    "NEXT_PUBLIC_CLIENT_ID": "@fluxpay_client_id",
+    "NEXT_PUBLIC_CHAIN_ID": "2910",
+    "NEXT_PUBLIC_RPC_URL": "https://rpc-hoodi.morphl2.io",
+    "NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS": "@fluxpay_escrow_address",
+    "NEXT_PUBLIC_USDC_ADDRESS": "@fluxpay_usdc_address"
+  }
+}

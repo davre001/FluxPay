@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: fluxpay-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        generateValue: false
+      - key: FRONTEND_URL
+        sync: false          # set in Render dashboard → your Vercel URL
+      - key: JWKS_ENDPOINT
+        value: https://api-auth.web3auth.io/.well-known/jwks.json
+      - key: WEB3AUTH_CLIENT_ID
+        sync: false          # paste from .env
+      - key: CLIENT_SECRET
+        sync: false          # paste from .env
+      - key: GOLDRUSH_API_KEY
+        sync: false
+      - key: ALCHEMY_API
+        sync: false
+      - key: DATABASE_URL
+        sync: false          # postgres connection string if needed
