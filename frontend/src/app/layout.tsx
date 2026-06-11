@@ -1,37 +1,17 @@
-'use client';
-
 import './globals.css'
 import { ReactNode } from 'react'
-import { Toaster } from 'react-hot-toast'
-import Navbar from '@/components/shared/Navbar'
 import { WalletProvider } from '@/context/WalletContext'
-import { useUserStore } from '@/stores/userStore'
-import { usePathname } from 'next/navigation'
+import ClientLayout from './client-layout'
 
-function LayoutInner({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useUserStore()
-  const pathname = usePathname()
-  const isOnboarding = pathname?.startsWith('/onboarding')
-
-  // Use top-bar padding (pt-16) for unauthenticated pages and onboarding pages
-  const needsTopPad = !isAuthenticated || isOnboarding
-
-  return (
-    <div className="flex min-h-screen">
-      <Navbar />
-      <main className={`flex-1 min-h-screen ${needsTopPad ? 'pt-16' : 'md:pl-0'}`}>
-        {children}
-      </main>
-    </div>
-  )
+export const metadata = {
+  title: 'FluxPay — Creator-Brand Deal Escrow',
+  description: 'The escrow platform securing creator-brand deals with AI milestone verification and on-chain payments.',
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <title>FluxPay — Creator-Brand Deal Escrow</title>
-        <meta name="description" content="The escrow platform securing creator-brand deals with AI milestone verification and on-chain payments." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -39,23 +19,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <WalletProvider>
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#1e293b',
-                color: '#e2e8f0',
-                border: '1px solid rgba(124,58,237,0.3)',
-                borderRadius: '12px',
-                fontSize: '14px',
-                fontWeight: '500',
-              },
-              success: { iconTheme: { primary: '#6ee7b7', secondary: '#0f172a' } },
-              error: { iconTheme: { primary: '#fca5a5', secondary: '#0f172a' } },
-            }}
-          />
-          <LayoutInner>{children}</LayoutInner>
+          <ClientLayout>{children}</ClientLayout>
         </WalletProvider>
       </body>
     </html>
