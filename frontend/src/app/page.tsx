@@ -57,7 +57,7 @@ export default function Home() {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8 text-xs font-bold uppercase tracking-widest"
                style={{ background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', color: '#a78bfa' }}>
             <Zap size={12} />
-            Powered by Morph L2 · USDC Escrow
+            Multichain · USDC Escrow
           </div>
 
           <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white leading-none mb-6">

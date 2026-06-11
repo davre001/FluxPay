@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Wallet, ArrowDownToLine, ArrowUpFromLine, Loader2, Clock, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { mockDB } from '@/lib/mock-data';
+import { useWalletInfo } from '@/hooks';
 
 const TX_TYPE_BADGE: Record<string, string> = {
   deposit: 'badge-green', withdrawal: 'badge-red',
@@ -16,6 +17,7 @@ const TX_LABEL: Record<string, string> = {
 };
 
 export default function CreatorWalletPage() {
+  const { chainName, chainId, explorerUrl } = useWalletInfo();
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [depositAmt, setDepositAmt] = useState('');
@@ -83,7 +85,7 @@ export default function CreatorWalletPage() {
               ${balance.toFixed(2)}
               <span className="text-xl text-slate-400 ml-2">USDC</span>
             </p>
-            <p className="text-xs text-slate-500 mt-3">Morph Hoodi Testnet · Chain 2910</p>
+            <p className="text-xs text-slate-500 mt-3">{chainName}{chainId ? ` · Chain ${chainId}` : ''}</p>
           </div>
         </div>
 
@@ -154,8 +156,8 @@ export default function CreatorWalletPage() {
                     <span className={`badge ${TX_TYPE_BADGE[tx.type] ?? 'badge-slate'}`}>
                       {TX_LABEL[tx.type] ?? tx.type}
                     </span>
-                    {tx.tx_hash && (
-                      <a href={`https://explorer.morphl2.io/tx/${tx.tx_hash}`} target="_blank" rel="noopener noreferrer"
+                    {tx.tx_hash && explorerUrl && (
+                      <a href={`${explorerUrl}/tx/${tx.tx_hash}`} target="_blank" rel="noopener noreferrer"
                          className="text-xs text-slate-600 hover:text-accent-400 transition-colors flex items-center gap-1">
                         {tx.tx_hash.slice(0, 12)}… <ExternalLink size={10} />
                       </a>

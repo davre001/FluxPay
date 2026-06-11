@@ -20,9 +20,15 @@ export {
 
 export { useToast } from './useToast'
 
+export { useTokenBalances, useSolanaBalances } from './useTokenBalances'
+export type { WalletToken } from './useTokenBalances'
+
 export {
   useWalletInfo,
   useUSDCBalance,
+  useTokenBalance,
+  useChainTokens,
+  useChainConfig,
   useCreateEscrow,
   useUSDCApproval,
   useFundEscrow,

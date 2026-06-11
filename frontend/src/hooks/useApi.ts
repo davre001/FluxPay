@@ -34,7 +34,7 @@ export function useJobs(options?: UseApiOptions) {
     setError(null)
     try {
       const response = await jobAPI.list()
-      setJobs(response.data)
+      setJobs(response.data as any[])
       options?.onSuccess?.(response.data)
     } catch (err: any) {
       const message = err.response?.data?.detail || 'Failed to fetch jobs'

@@ -32,6 +32,13 @@ export class PaymentError extends ApiError {
   }
 }
 
+export class UnauthorizedError extends ApiError {
+  constructor(message) {
+    super(401, message, 'unauthorized');
+    this.name = 'UnauthorizedError';
+  }
+}
+
 export function handleError(error: unknown) {
   console.error(error);
 }

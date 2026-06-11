@@ -10,11 +10,13 @@ export const config = {
   },
 
   // Blockchain Configuration
+  // The active chain is multichain and resolved at runtime from the connected
+  // wallet (Web3Auth dashboard chains). These are only fallback defaults.
   blockchain: {
-    chainId: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '2910'),
-    rpcUrl: process.env.NEXT_PUBLIC_RPC_URL || 'https://rpc-hoodi.morphl2.io',
-    chainName: 'Morph Hoodi',
-    explorerUrl: 'https://explorer-hoodi.morphl2.io',
+    chainId: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '1'),
+    rpcUrl: process.env.NEXT_PUBLIC_RPC_URL || 'https://eth.merkle.io',
+    chainName: process.env.NEXT_PUBLIC_CHAIN_NAME || 'Ethereum',
+    explorerUrl: process.env.NEXT_PUBLIC_EXPLORER_URL || 'https://etherscan.io',
   },
 
   // Contract Addresses

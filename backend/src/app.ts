@@ -3,7 +3,10 @@ import { config } from './config/index.ts';
 import { toErrorResponse } from './middleware/index.ts';
 import { InMemoryPaymentRepository } from './models/payment.ts';
 import { createPaymentRoutes } from './routes/payment.ts';
+import { createAuthRoutes } from './routes/auth.ts';
 import { PaymentService } from './services/paymentService.ts';
+import { AuthService } from './services/authService.ts';
+import { InMemoryUserRepository } from './models/user.ts';
 import { buildJsonResponse } from './utils/helpers.ts';
 import { NotFoundError, ValidationError } from './utils/errors.ts';
 
@@ -52,6 +55,10 @@ export function createApp(options = {}) {
   const service = options.service || new PaymentService(repository);
   const routes = createPaymentRoutes(service);
 
+  const userRepository = options.userRepository || new InMemoryUserRepository();
+  const authService = options.authService || new AuthService(userRepository);
+  const authRoutes = createAuthRoutes(authService);
+
   const server = createServer(async (req, res) => {
     setCorsHeaders(res);
 
@@ -78,6 +85,8 @@ export function createApp(options = {}) {
         };
       } else if (parts[0] === 'payments') {
         response = await dispatchPaymentRoute(req, parts, url.searchParams, routes);
+      } else if (parts[0] === 'auth') {
+        response = await dispatchAuthRoute(req, parts, authRoutes);
       } else {
         throw new NotFoundError('Route not found');
       }
@@ -95,6 +104,23 @@ export function createApp(options = {}) {
   };
 
   return server;
+}
+
+function getBearerToken(req) {
+  const header = req.headers.authorization || '';
+  return header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+}
+
+async function dispatchAuthRoute(req, parts, authRoutes) {
+  if (req.method === 'POST' && parts[1] === 'session') {
+    return authRoutes.session(await readJsonBody(req));
+  }
+
+  if (req.method === 'GET' && parts[1] === 'me') {
+    return authRoutes.me(getBearerToken(req));
+  }
+
+  throw new NotFoundError('Route not found');
 }
 
 async function dispatchPaymentRoute(req, parts, query, routes) {

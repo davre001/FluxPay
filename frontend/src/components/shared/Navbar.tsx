@@ -7,7 +7,8 @@ import {
   LogOut, Menu, X, ChevronRight, Building2, Search, FileText,
 } from 'lucide-react';
 import { useState } from 'react';
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { useAccount } from 'wagmi';
+import { useWeb3AuthConnect, useWeb3AuthDisconnect } from '@web3auth/modal/react';
 import { useUserStore } from '@/stores/userStore';
 
 const creatorLinks = [
@@ -35,13 +36,20 @@ export default function Navbar() {
   const router = useRouter();
   const { user, isAuthenticated, logout } = useUserStore();
   const { address, isConnected } = useAccount();
-  const { connect, connectors } = useConnect();
-  const { disconnect } = useDisconnect();
+  const { connect } = useWeb3AuthConnect();
+  const { disconnect } = useWeb3AuthDisconnect();
 
   const links = user?.profileType === 'organization' ? orgLinks : creatorLinks;
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Disconnect Web3Auth too (with cleanup) so the embedded wallet widget is
+    // torn down — otherwise the floating wallet button lingers until a refresh.
+    try {
+      if (isConnected) await disconnect({ cleanup: true });
+    } catch {
+      // ignore — still clear the local session below
+    }
     logout();
     router.push('/');
   };
@@ -139,7 +147,7 @@ export default function Navbar() {
             </button>
           ) : (
             <button
-              onClick={() => connect({ connector: connectors[0] })}
+              onClick={() => connect()}
               className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white transition-all"
               style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}
             >

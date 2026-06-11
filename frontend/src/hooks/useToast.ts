@@ -36,7 +36,9 @@ export function useToast() {
     },
     
     update: (toastId: string, message: string, type: 'success' | 'error' | 'info' = 'info') => {
-      toast[type](message, { id: toastId })
+      if (type === 'success') toast.success(message, { id: toastId })
+      else if (type === 'error') toast.error(message, { id: toastId })
+      else toast(message, { id: toastId })
     },
     
     dismiss: (toastId?: string) => {

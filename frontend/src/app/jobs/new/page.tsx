@@ -139,7 +139,7 @@ export default function PostJobPage() {
       };
       const res = await jobAPI.create(payload);
       toast.success('Deal posted! Escrow funding initiated...');
-      router.push(`/organization/jobs/${res.data.id}`);
+      router.push(`/organization/jobs/${(res.data as { id: string }).id}`);
     } catch (e: any) {
       toast.error(e?.response?.data?.detail || 'Failed to post job');
     } finally {
@@ -444,7 +444,7 @@ export default function PostJobPage() {
                 <div>
                   <p className="font-bold text-white text-sm">Escrow Lock: ${totalBudget.toFixed(2)} USDC</p>
                   <p className="text-xs text-slate-400 mt-1">
-                    This amount will be locked in a smart contract on the Morph L2 network.
+                    This amount will be locked in a smart contract on-chain.
                     Funds release per milestone after AI approval. Unused funds are refundable.
                   </p>
                 </div>

@@ -3,10 +3,12 @@
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Zap, Star, Shield, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
+import { Zap, Star, Shield, Loader2, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useConnect } from 'wagmi';
+import { useWeb3AuthConnect } from '@web3auth/modal/react';
 import { useUserStore } from '@/stores/userStore';
+import { useOnWeb3AuthConnected } from '@/hooks/useOnWeb3AuthConnected';
+import { establishSession } from '@/lib/establishSession';
 
 type ProfileType = 'creator' | 'organization';
 
@@ -16,54 +18,39 @@ function SignupForm() {
   const defaultType = (params.get('type') as ProfileType) || 'creator';
 
   const [profileType, setProfileType] = useState<ProfileType>(defaultType);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const { setAuth } = useUserStore();
-  const { connectAsync, connectors } = useConnect();
+  const { connect } = useWeb3AuthConnect();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-    if (password.length < 8) {
-      toast.error('Password must be at least 8 characters');
-      return;
-    }
+  // Runs once the user is connected — works whether the modal used a popup or a
+  // redirect (which reloads the page). The chosen role is read from sessionStorage
+  // so it survives a redirect.
+  useOnWeb3AuthConnected(async ({ address, idToken, email }) => {
+    const role = (sessionStorage.getItem('fp_signup_role') as ProfileType) || profileType;
+    const resolved = await establishSession({ idToken, walletAddress: address, profileType: role, email });
+    setAuth(
+      {
+        id: resolved.id,
+        email: resolved.email,
+        profileType: resolved.profileType ?? role,
+        walletAddress: resolved.walletAddress,
+      },
+      idToken,
+    );
+    sessionStorage.removeItem('fp_signup_role');
+    toast.success('Smart wallet ready!');
+    router.push(role === 'creator' ? '/onboarding/creator' : '/onboarding/organization');
+  });
+
+  const handleConnect = async () => {
     setLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 600));
-
-      const existing = localStorage.getItem(`fp_user_${email}`);
-      if (existing) throw new Error('Email already registered');
-
-      const userId = `user_${Date.now()}`;
-      const mockToken = `mock_${userId}`;
-
-      // Create Porto smart account as part of signup
-      let walletAddress: string | undefined;
-      try {
-        const result = await connectAsync({ connector: connectors[0] });
-        walletAddress = result.accounts[0];
-      } catch {
-        toast.error('Smart account creation cancelled — please connect your wallet after signing in');
-      }
-
-      localStorage.setItem(
-        `fp_user_${email}`,
-        JSON.stringify({ id: userId, email, password, profileType, walletAddress })
-      );
-
-      setAuth({ id: userId, email, profileType, walletAddress }, mockToken);
-      toast.success('Account created!');
-      router.push(profileType === 'creator' ? '/onboarding/creator' : '/onboarding/organization');
+      // Remember the role across a possible OAuth redirect, then open the modal.
+      sessionStorage.setItem('fp_signup_role', profileType);
+      await connect();
+      // Navigation is handled reactively by useOnWeb3AuthConnected above.
     } catch (err: any) {
-      toast.error(err?.message || 'Registration failed');
-    } finally {
+      toast.error(err?.message || 'Connection failed');
       setLoading(false);
     }
   };
@@ -112,57 +99,15 @@ function SignupForm() {
           ))}
         </div>
 
-        {/* Form card */}
+        {/* Connect card */}
         <div className="glass rounded-2xl p-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="label">Email</label>
-              <input
-                type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="input"
-              />
-            </div>
-            <div>
-              <label className="label">Password</label>
-              <div className="relative">
-                <input
-                  type={showPw ? 'text' : 'password'} required value={password}
-                  onChange={(e) => setPassword(e.target.value)} placeholder="Min. 8 characters"
-                  className="input pr-11"
-                />
-                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
-                        onClick={() => setShowPw(!showPw)}>
-                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className="label">Confirm Password</label>
-              <input
-                type={showPw ? 'text' : 'password'} required value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repeat password"
-                className="input"
-              />
-            </div>
-
-            {/* Password strength */}
-            {password && (
-              <div className="space-y-1">
-                <div className="progress-bar">
-                  <div className="progress-fill" style={{ width: `${Math.min(100, (password.length / 12) * 100)}%` }} />
-                </div>
-                <p className="text-xs text-slate-500">
-                  {password.length < 8 ? 'Too short' : password.length < 12 ? 'Good' : 'Strong'}
-                </p>
-              </div>
-            )}
-
-            <button type="submit" disabled={loading} className="btn-primary w-full btn-shimmer mt-2">
-              {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
-              {loading ? 'Creating smart account...' : 'Create Account & Smart Wallet'}
-            </button>
-          </form>
+          <button onClick={handleConnect} disabled={loading} className="btn-primary w-full btn-shimmer">
+            {loading ? <Loader2 size={16} className="animate-spin" /> : <Wallet size={16} />}
+            {loading ? 'Opening wallet…' : 'Continue with Smart Wallet'}
+          </button>
+          <p className="text-center text-xs text-slate-500 mt-4">
+            Sign up with Google, X, email, or MetaMask. Your smart wallet is created automatically — no seed phrase, no password.
+          </p>
         </div>
 
         <p className="text-center text-sm text-slate-500 mt-6">

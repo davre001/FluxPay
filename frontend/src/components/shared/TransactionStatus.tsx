@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { CheckCircle, Clock, AlertCircle, Loader2, Copy, ExternalLink } from 'lucide-react'
+import { useAccount } from 'wagmi'
 import { formatters } from '@/utils/helpers'
 
 export type TransactionStatus = 'pending' | 'success' | 'error' | 'waiting'
@@ -23,6 +24,9 @@ export function TransactionStatus({
   from,
   to,
 }: TransactionStatusProps) {
+  const { chain } = useAccount()
+  const explorerUrl = chain?.blockExplorers?.default?.url
+
   const statusConfig = {
     pending: {
       icon: <Loader2 className="h-8 w-8 animate-spin text-blue-600" />,
@@ -95,15 +99,17 @@ export function TransactionStatus({
               <Copy className="h-4 w-4" />
               Copy Hash
             </button>
-            <a
-              href={`https://hoodi-sandbox.morphl2.io/tx/${txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-1 items-center justify-center gap-2 rounded bg-white/50 px-3 py-2 text-sm hover:bg-white/75"
-            >
-              <ExternalLink className="h-4 w-4" />
-              View on Explorer
-            </a>
+            {explorerUrl && (
+              <a
+                href={`${explorerUrl}/tx/${txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-1 items-center justify-center gap-2 rounded bg-white/50 px-3 py-2 text-sm hover:bg-white/75"
+              >
+                <ExternalLink className="h-4 w-4" />
+                View on Explorer
+              </a>
+            )}
           </div>
         </div>
       )}

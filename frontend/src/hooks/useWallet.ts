@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { useAccount, useBalance, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { useAccount, useBalance, useChainId, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { Address, parseUnits, formatUnits } from 'viem';
-import { morphHoodi } from '@/config/wagmi';
+import { getChainConfig, getToken, getTokens } from '@/config/chains';
 import {
   createEscrow,
   approveUSDC,
@@ -36,6 +36,14 @@ const USDC_ABI = [
     stateMutability: 'nonpayable',
     type: 'function',
   },
+  {
+    constant: true,
+    inputs: [{ name: '_owner', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ] as const;
 
 const ESCROW_ABI = [
@@ -63,14 +71,19 @@ const ESCROW_ABI = [
 // --- Hooks ---
 
 export function useWalletInfo() {
+  // No chainId passed → wagmi uses the wallet's active chain (multichain).
   const { address, isConnected, chain } = useAccount();
-  const { data: ethBalance } = useBalance({ address, chainId: morphHoodi.id });
+  const { data: ethBalance } = useBalance({ address });
 
   return {
     address,
     isConnected,
-    ethBalance: ethBalance?.formatted || '0',
-    chain: isConnected && chain?.id === morphHoodi.id ? 'connected' : 'disconnected',
+    ethBalance: ethBalance ? formatUnits(ethBalance.value, ethBalance.decimals) : '0',
+    nativeSymbol: ethBalance?.symbol ?? chain?.nativeCurrency.symbol ?? 'ETH',
+    chainId: chain?.id,
+    chainName: chain?.name ?? 'Not connected',
+    explorerUrl: chain?.blockExplorers?.default?.url,
+    chain: isConnected ? 'connected' : 'disconnected',
   };
 }
 
@@ -135,8 +148,46 @@ export function useFundEscrow({ escrowAddress, jobId, amount }: { escrowAddress:
   return { fund, isPending, isWaiting, isSuccess, status, txHash };
 }
 
+// Active chain's config: native currency, supported tokens, escrow factory.
+export function useChainConfig() {
+  const chainId = useChainId();
+  return getChainConfig(chainId);
+}
+
+// All tokens (native + ERC-20) available on the active chain — for token pickers.
+export function useChainTokens() {
+  const chainId = useChainId();
+  return getTokens(chainId);
+}
+
+// Reads the connected wallet's balance of any ERC-20 token by symbol on the
+// active chain. For the native gas token, use useWalletInfo().ethBalance.
+export function useTokenBalance(symbol: string) {
+  const { address } = useAccount();
+  const chainId = useChainId();
+  const token = getToken(chainId, symbol);
+  const isErc20 = !!token && token.address !== 'native';
+
+  const { data, isLoading, refetch } = useReadContract({
+    address: isErc20 ? (token.address as `0x${string}`) : undefined,
+    abi: USDC_ABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    query: { enabled: !!address && isErc20 },
+  });
+
+  return {
+    balance: data !== undefined ? formatUnits(data as bigint, token?.decimals ?? 6) : '0',
+    symbol,
+    decimals: token?.decimals ?? 6,
+    isLoading,
+    refetch,
+  };
+}
+
+// Backward-compatible wrapper — USDC is the default settlement token for escrow.
 export function useUSDCBalance() {
-  return { balance: '0', isLoading: false, refetch: () => {} };
+  return useTokenBalance('USDC');
 }
 
 export function useCreateEscrow() {

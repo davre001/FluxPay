@@ -1,4 +1,3 @@
-import { AxiosError } from 'axios'
 import toast from 'react-hot-toast'
 
 export interface ApiErrorResponse {
@@ -26,20 +25,13 @@ export class ApiError extends Error {
  * Parse API errors from Axios or other sources
  */
 export function parseApiError(error: unknown): ApiErrorResponse {
-  if (error instanceof AxiosError) {
-    const data = error.response?.data
-    return {
-      message: data?.message || error.message || 'An error occurred',
-      status: error.response?.status || 500,
-      code: data?.code,
-      details: data?.details,
-    }
-  }
-
   if (error instanceof Error) {
+    const e = error as Error & { status?: number; data?: { message?: string; code?: string; details?: Record<string, unknown> } }
     return {
-      message: error.message,
-      status: 500,
+      message: e.data?.message || e.message || 'An error occurred',
+      status: e.status || 500,
+      code: e.data?.code,
+      details: e.data?.details,
     }
   }
 

@@ -20,11 +20,11 @@ export default function JobDetail({ params }: { params: { jobId: string } }) {
   useEffect(() => {
     // Fetch initial job data
     jobAPI.detail(params.jobId)
-      .then(res => {
+      .then((res: { data: unknown }) => {
         setJob(res.data)
         setLoading(false)
       })
-      .catch(err => {
+      .catch((err: unknown) => {
         console.error('Failed to load job:', err)
         setError('Failed to load job details')
         setLoading(false)

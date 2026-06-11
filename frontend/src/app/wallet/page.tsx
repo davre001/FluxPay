@@ -2,17 +2,27 @@
 
 import { useState } from 'react'
 import { Wallet, Check, AlertCircle, TrendingUp, TrendingDown, Copy, ExternalLink } from 'lucide-react'
-import { useWalletInfo, useUSDCBalance } from '@/hooks'
-import { morphHoodi, CONTRACTS } from '@/config/wagmi'
+import { useWalletInfo, useUSDCBalance, useTokenBalances, useSolanaBalances } from '@/hooks'
+import { ChainSwitcher } from '@/components/shared/ChainSwitcher'
+import { HoldingsCard } from '@/components/shared/HoldingsCard'
 
 export default function WalletPage() {
-  const { address, ethBalance, isConnected } = useWalletInfo()
+  const { address, ethBalance, isConnected, nativeSymbol, chainName, chainId, explorerUrl } = useWalletInfo()
   const { balance: usdcBalance } = useUSDCBalance()
+  const { tokens, totalUsd, isLoading: tokensLoading, isError: tokensError, refetch: refetchTokens } = useTokenBalances()
+  const {
+    tokens: solTokens,
+    totalUsd: solTotalUsd,
+    isLoading: solLoading,
+    isError: solError,
+    refetch: refetchSol,
+    address: solAddress,
+  } = useSolanaBalances()
 
   const walletInfo = {
-    network: morphHoodi.name,
-    chainId: String(morphHoodi.id),
-    explorerUrl: morphHoodi.blockExplorers?.default?.url || 'https://explorer-hoodi.morphl2.io',
+    network: chainName,
+    chainId: chainId ? String(chainId) : '—',
+    explorerUrl: explorerUrl || '',
   }
 
   const escrowHistory = [
@@ -85,15 +95,17 @@ export default function WalletPage() {
               >
                 <Copy size={18} className="text-blue-600" />
               </button>
-              <a
-                href={`${walletInfo.explorerUrl}/address/${address}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 hover:bg-blue-200 rounded-lg transition-colors"
-                title="View on explorer"
-              >
-                <ExternalLink size={18} className="text-blue-600" />
-              </a>
+              {walletInfo.explorerUrl && (
+                <a
+                  href={`${walletInfo.explorerUrl}/address/${address}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 hover:bg-blue-200 rounded-lg transition-colors"
+                  title="View on explorer"
+                >
+                  <ExternalLink size={18} className="text-blue-600" />
+                </a>
+              )}
             </div>
           </div>
         </div>
@@ -101,14 +113,19 @@ export default function WalletPage() {
 
       {/* Network Info */}
       <div className="card">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Network Information</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-gray-900">Network Information</h2>
+          <ChainSwitcher />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-gray-50 p-4 rounded-lg">
             <p className="text-sm text-gray-600">Network</p>
             <p className="font-semibold text-gray-900 mt-1">{walletInfo.network}</p>
             <div className="flex items-center gap-2 mt-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full" />
-              <span className="text-xs text-green-600">Connected</span>
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`} />
+              <span className={`text-xs ${isConnected ? 'text-green-600' : 'text-gray-500'}`}>
+                {isConnected ? 'Connected' : 'Not connected'}
+              </span>
             </div>
           </div>
           <div className="bg-gray-50 p-4 rounded-lg">
@@ -123,8 +140,8 @@ export default function WalletPage() {
         <div className="card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">ETH Balance</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{walletInfo.balance} ETH</p>
+              <p className="text-sm text-gray-600">{nativeSymbol} Balance</p>
+              <p className="text-2xl font-bold text-gray-900 mt-2">{ethBalance} {nativeSymbol}</p>
             </div>
             <TrendingUp className="text-blue-600" size={32} />
           </div>
@@ -133,7 +150,7 @@ export default function WalletPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">USDC Balance</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">${walletInfo.usdcBalance}</p>
+              <p className="text-2xl font-bold text-gray-900 mt-2">${usdcBalance}</p>
             </div>
             <Wallet className="text-green-600" size={32} />
           </div>
@@ -142,12 +159,40 @@ export default function WalletPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">In Escrow</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">${walletInfo.inEscrow}</p>
+              <p className="text-2xl font-bold text-gray-900 mt-2">$0.00</p>
             </div>
             <TrendingDown className="text-orange-600" size={32} />
           </div>
         </div>
       </div>
+
+      {/* EVM Token Holdings (multichain, via GoldRush) */}
+      <HoldingsCard
+        title="Token Holdings"
+        subtitle={chainName}
+        tokens={tokens}
+        totalUsd={totalUsd}
+        isLoading={tokensLoading}
+        isError={tokensError}
+        show={isConnected}
+        notReadyHint="Connect your wallet to see your holdings."
+        onRefresh={() => refetchTokens()}
+      />
+
+      {/* Solana Holdings — only when the embedded wallet has a Solana account */}
+      {solAddress && (
+        <HoldingsCard
+          title="Solana Holdings"
+          subtitle="Solana"
+          tokens={solTokens}
+          totalUsd={solTotalUsd}
+          isLoading={solLoading}
+          isError={solError}
+          show={Boolean(solAddress)}
+          notReadyHint="No Solana account on this wallet."
+          onRefresh={() => refetchSol()}
+        />
+      )}
 
       {/* Actions */}
       <div className="card space-y-4">

@@ -3,7 +3,7 @@
 
 import { keccak256, toHex, parseUnits, Address } from 'viem'
 import { writeContract, readContract } from '@wagmi/core'
-import { morphHoodi, config } from '../config/wagmi'
+import { config } from '../config/wagmi'
 import appConfig from '../config/settings'
 
 // Inline ABIs to avoid import resolution issues in build
@@ -61,7 +61,6 @@ export async function createEscrow(
     abi: factoryAbi.abi,
     functionName: 'createEscrow',
     args: [jobIdBytes32, userAddress, BigInt(deadline)],
-    chain: morphHoodi,
   } as any)
 
   return { hash }
@@ -102,7 +101,6 @@ export async function approveUSDC(
     abi: usdcAbi.abi,
     functionName: 'approve',
     args: [escrowAddress, amountWei],
-    chain: morphHoodi,
   } as any)
 
   return { hash }
@@ -122,7 +120,6 @@ export async function fundEscrow(
     abi: escrowAbi.abi,
     functionName: 'fund',
     args: [amountWei],
-    chain: morphHoodi,
   } as any)
 
   return { hash }
