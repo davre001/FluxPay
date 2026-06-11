@@ -49,28 +49,36 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
-          style={{ background: '#0a0a0f' }}>
-      <div className="orb orb-purple w-[500px] h-[500px] -top-40 left-[-100px] animate-glow" />
-      <div className="orb orb-cyan w-[400px] h-[400px] bottom-[-100px] right-[-80px] animate-glow" style={{ animationDelay: '3s' }} />
+          style={{ background: '#0a0a0a', fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+      {/* Decorative Orbs (softened to match the premium theme) */}
+      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-violet-900/5 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-cyan-900/5 blur-[120px] pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-600 to-accent-500 flex items-center justify-center shadow-glow-sm">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-600 to-accent-500 flex items-center justify-center shadow-glow-sm">
               <Zap size={18} className="text-white" />
             </div>
-            <span className="font-extrabold text-xl text-white">Flux<span className="gradient-text">Pay</span></span>
+            <span className="font-extrabold text-xl text-[#fafafa]">Flux<span className="gradient-text">Pay</span></span>
           </Link>
-          <h1 className="text-3xl font-black text-white">Welcome back</h1>
+          <h1 className="text-3xl font-black text-[#fafafa]">Welcome back</h1>
           <p className="text-slate-400 mt-2 text-sm">Sign in with your smart wallet</p>
         </div>
 
-        <div className="glass rounded-2xl p-8">
-          <button onClick={handleSignIn} disabled={loading} className="btn-primary w-full btn-shimmer">
+        <div className="p-8" style={{ background: '#0a0a0a', border: '1px solid #262626', borderRadius: '0.5rem' }}>
+          <button 
+            onClick={handleSignIn} 
+            disabled={loading} 
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 font-bold transition-all"
+            style={{ background: '#fafafa', color: '#0a0a0a', borderRadius: '0.5rem' }}
+            onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#e5e5e5'; }}
+            onMouseLeave={e => { if (!loading) e.currentTarget.style.background = '#fafafa'; }}
+          >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <Wallet size={16} />}
             {loading ? 'Opening wallet…' : 'Sign in with Smart Wallet'}
           </button>
-          <p className="text-center text-xs text-slate-500 mt-4">
+          <p className="text-center text-xs text-slate-500 mt-4 leading-relaxed">
             Continue with Google, X, email, or MetaMask — no password needed.
           </p>
         </div>

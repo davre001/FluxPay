@@ -252,6 +252,7 @@ function HeroGeometric({
                         <h1 className="text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-bold mb-6 md:mb-8 tracking-tight leading-tight" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
                             <motion.span 
                                 className="inline-block bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/70 whitespace-nowrap"
+                                style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}
                                 animate={{
                                     textShadow: [
                                         "0 0 0px rgba(255,255,255,0)",
@@ -270,6 +271,7 @@ function HeroGeometric({
                             <br />
                             <motion.span
                                 className="inline-block bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-violet-400 to-rose-300 bg-[length:200%_auto] pb-1 whitespace-nowrap"
+                                style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}
                                 animate={{
                                     backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
                                     textShadow: [
