@@ -36,7 +36,6 @@ yarn-error.log*
 
 # Backend files
 backend/
-contracts/
 
 # IDE
 .vscode/
