@@ -50,7 +50,7 @@ function trimApiPrefix(pathname) {
   return pathname.replace(/^\/api/, '') || '/';
 }
 
-export function createApp(options = {}) {
+export function createApp(options: any = {}) {
   const repository = options.repository || new InMemoryPaymentRepository();
   const service = options.service || new PaymentService(repository);
   const routes = createPaymentRoutes(service);
@@ -98,7 +98,7 @@ export function createApp(options = {}) {
     }
   });
 
-  server.locals = {
+  (server as any).locals = {
     repository,
     service,
   };

@@ -4,7 +4,7 @@ import { InMemoryPaymentRepository } from '../src/models/payment.ts';
 import { PaymentService } from '../src/services/paymentService.ts';
 
 describe('API Service', () => {
-  let service;
+  let service: any;
 
   beforeEach(() => {
     service = new PaymentService(new InMemoryPaymentRepository());
@@ -38,7 +38,7 @@ describe('API Service', () => {
     const history = await service.getPaymentHistory('buyer-2');
 
     assert.equal(completed.status, 'completed');
-    assert.deepEqual(history.map((payment) => payment.id), [second.id, first.id]);
+    assert.deepEqual(history.map((payment: any) => payment.id), [second.id, first.id]);
   });
 
   it('rejects invalid amounts and transaction hashes', async () => {

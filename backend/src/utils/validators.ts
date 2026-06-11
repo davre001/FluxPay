@@ -4,30 +4,30 @@ import { normalizeAddress, sanitizeString } from './helpers.ts';
 export const PAYMENT_STATUSES = ['pending', 'completed', 'failed', 'cancelled'];
 export const SUPPORTED_CURRENCIES = ['FPT', 'ETH', 'USDC', 'USD'];
 
-export function validatePaymentAmount(amount) {
+export function validatePaymentAmount(amount: any) {
   return typeof amount === 'number' && Number.isFinite(amount) && amount > 0;
 }
 
-export function validateEmail(email) {
+export function validateEmail(email: any) {
   return typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-export function isValidEthereumAddress(address) {
+export function isValidEthereumAddress(address: any) {
   return typeof address === 'string' && /^0x[a-fA-F0-9]{40}$/.test(address);
 }
 
-export function isValidTransactionHash(hash) {
+export function isValidTransactionHash(hash: any) {
   return typeof hash === 'string' && /^0x[a-fA-F0-9]{64}$/.test(hash);
 }
 
-export function assertPaymentStatus(status) {
+export function assertPaymentStatus(status: any) {
   if (!PAYMENT_STATUSES.includes(status)) {
     throw new ValidationError(`Status must be one of: ${PAYMENT_STATUSES.join(', ')}`);
   }
   return status;
 }
 
-export function parsePaymentInput(data = {}) {
+export function parsePaymentInput(data: any = {}) {
   const amount = Number(data.amount);
   if (!validatePaymentAmount(amount)) {
     throw new ValidationError('Amount must be a positive number');

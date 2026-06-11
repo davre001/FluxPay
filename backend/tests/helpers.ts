@@ -5,7 +5,7 @@ export async function createTestServer() {
   const repository = new InMemoryPaymentRepository();
   const app = createApp({ repository });
 
-  await new Promise((resolve) => app.listen(0, resolve));
+  await new Promise<void>((resolve) => app.listen(0, () => resolve()));
   const address = app.address();
   const port = typeof address === 'object' && address ? address.port : 0;
 
@@ -14,13 +14,13 @@ export async function createTestServer() {
     repository,
     baseUrl: `http://127.0.0.1:${port}`,
     async close() {
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         app.close((error) => (error ? reject(error) : resolve()));
       });
     },
   };
 }
 
-export async function readJson(response) {
+export async function readJson(response: any) {
   return response.json();
 }

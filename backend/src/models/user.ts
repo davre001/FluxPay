@@ -5,12 +5,14 @@ import { nowIso } from '../utils/helpers.ts';
 // Role (profileType) lives here — server-side and trustworthy — not in the
 // browser. Swap this for a database without touching the service/routes.
 export class InMemoryUserRepository {
-  constructor(initialUsers = []) {
+  users: Map<string, any>;
+
+  constructor(initialUsers: any = []) {
     this.users = new Map();
-    initialUsers.forEach((user) => this.users.set(user.id, { ...user }));
+    initialUsers.forEach((user: any) => this.users.set(user.id, { ...user }));
   }
 
-  async upsert({ key, email, profileType, walletAddress }) {
+  async upsert({ key, email, profileType, walletAddress }: { key: string; email?: string; profileType?: string; walletAddress?: string }) {
     const existing = this.users.get(key);
 
     if (existing) {
@@ -38,7 +40,7 @@ export class InMemoryUserRepository {
     return { ...user };
   }
 
-  async findByKey(key) {
+  async findByKey(key: string) {
     const user = this.users.get(key);
     return user ? { ...user } : null;
   }

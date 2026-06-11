@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import type { ServerResponse } from 'node:http';
 
 export function generatePaymentId() {
   return `pay_${randomUUID().replaceAll('-', '')}`;
@@ -8,15 +9,15 @@ export function nowIso() {
   return new Date().toISOString();
 }
 
-export function normalizeAddress(value) {
+export function normalizeAddress(value: any) {
   return typeof value === 'string' ? value.trim().toLowerCase() : value;
 }
 
-export function sanitizeString(value) {
+export function sanitizeString(value: any) {
   return typeof value === 'string' ? value.trim() : value;
 }
 
-export function buildJsonResponse(res, statusCode, body) {
+export function buildJsonResponse(res: ServerResponse, statusCode: number, body: any) {
   const payload = JSON.stringify(body);
   res.writeHead(statusCode, {
     'Content-Type': 'application/json',

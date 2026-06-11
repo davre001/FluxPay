@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 import { createTestServer, readJson } from './helpers.ts';
 
 describe('Payment service', () => {
-  let server;
+  let server: any;
 
   beforeEach(async () => {
     server = await createTestServer();

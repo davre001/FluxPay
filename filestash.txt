@@ -1,0 +1,147 @@
+frontend/
+├── .env
+├── .env.example
+├── .gitignore
+├── .vercelignore
+├── Public
+│   └── background.mp4
+├── next-env.d.ts
+├── next.config.js
+├── package-lock.json
+├── package.json
+├── postcss.config.js
+├── src
+│   ├── app
+│   │   ├── admin
+│   │   │   └── page.tsx
+│   │   ├── api
+│   │   │   └── balances
+│   │   │       └── route.ts
+│   │   ├── auth
+│   │   │   ├── login
+│   │   │   │   └── page.tsx
+│   │   │   └── signup
+│   │   │       └── page.tsx
+│   │   ├── client-layout.tsx
+│   │   ├── creator
+│   │   │   ├── applications
+│   │   │   │   └── page.tsx
+│   │   │   ├── dashboard
+│   │   │   │   └── page.tsx
+│   │   │   ├── deals
+│   │   │   │   ├── [dealId]
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── jobs
+│   │   │   │   └── page.tsx
+│   │   │   ├── profile
+│   │   │   │   └── page.tsx
+│   │   │   ├── reputation
+│   │   │   │   └── page.tsx
+│   │   │   └── wallet
+│   │   │       └── page.tsx
+│   │   ├── dashboard
+│   │   │   └── page.tsx
+│   │   ├── datasets
+│   │   │   └── [datasetId]
+│   │   │       └── page.tsx
+│   │   ├── globals.css
+│   │   ├── jobs
+│   │   │   ├── [jobId]
+│   │   │   │   └── page.tsx
+│   │   │   └── new
+│   │   │       └── page.tsx
+│   │   ├── layout.tsx
+│   │   ├── onboarding
+│   │   │   ├── creator
+│   │   │   │   └── page.tsx
+│   │   │   └── organization
+│   │   │       └── page.tsx
+│   │   ├── organization
+│   │   │   ├── dashboard
+│   │   │   │   └── page.tsx
+│   │   │   ├── jobs
+│   │   │   │   ├── [jobId]
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── active
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── new
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── profile
+│   │   │   │   └── page.tsx
+│   │   │   ├── reputation
+│   │   │   │   └── page.tsx
+│   │   │   └── wallet
+│   │   │       └── page.tsx
+│   │   ├── page.tsx
+│   │   ├── wallet
+│   │   │   └── page.tsx
+│   │   └── workers
+│   │       └── page.tsx
+│   ├── components
+│   │   ├── shared
+│   │   │   ├── Alert.tsx
+│   │   │   ├── ChainSwitcher.tsx
+│   │   │   ├── DataExport.tsx
+│   │   │   ├── DataTable.tsx
+│   │   │   ├── ErrorBoundary.tsx
+│   │   │   ├── Form.tsx
+│   │   │   ├── HoldingsCard.tsx
+│   │   │   ├── Loading.tsx
+│   │   │   ├── Modal.tsx
+│   │   │   ├── Navbar.tsx
+│   │   │   ├── TransactionStatus.tsx
+│   │   │   └── index.ts
+│   │   └── ui
+│   │       └── shape-landing-hero.tsx
+│   ├── config
+│   │   ├── chains.ts
+│   │   ├── index.ts
+│   │   ├── settings.ts
+│   │   ├── wagmi.ts
+│   │   └── web3authContext.ts
+│   ├── constants
+│   │   └── index.ts
+│   ├── context
+│   │   └── WalletContext.tsx
+│   ├── contracts
+│   │   ├── abis
+│   │   │   ├── FluxPayEscrow.json
+│   │   │   ├── FluxPayEscrowFactory.json
+│   │   │   └── MockUSDC.json
+│   │   └── contracts.ts
+│   ├── hooks
+│   │   ├── index.ts
+│   │   ├── useApi.ts
+│   │   ├── useForm.ts
+│   │   ├── useOnWeb3AuthConnected.ts
+│   │   ├── useToast.ts
+│   │   ├── useTokenBalances.ts
+│   │   └── useWallet.ts
+│   ├── lib
+│   │   ├── api-client.ts
+│   │   ├── establishSession.ts
+│   │   ├── mock-data.ts
+│   │   ├── utils.ts
+│   │   └── websocket.ts
+│   ├── services
+│   │   └── api.ts
+│   ├── stores
+│   │   ├── index.ts
+│   │   ├── jobStore.ts
+│   │   └── userStore.ts
+│   ├── styles.css
+│   ├── types
+│   │   └── index.ts
+│   └── utils
+│       ├── apiErrors.ts
+│       ├── contracts.ts
+│       ├── errors.ts
+│       ├── helpers.ts
+│       ├── index.ts
+│       └── jobFunding.ts
+├── tailwind.config.ts
+├── tsconfig.json
+├── tsconfig.tsbuildinfo
+└── vercel.json

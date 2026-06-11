@@ -8,13 +8,13 @@ import { UnauthorizedError } from './errors.ts';
 // trust anchors. CLIENT_SECRET stays out of token verification entirely.
 
 const JWKS_TTL_MS = 10 * 60 * 1000;
-let jwksCache = { keys: [], fetchedAt: 0 };
+let jwksCache: { keys: any[]; fetchedAt: number } = { keys: [], fetchedAt: 0 };
 
-function b64urlToBuffer(value) {
+function b64urlToBuffer(value: string) {
   return Buffer.from(value, 'base64url');
 }
 
-function decodeSegment(segment) {
+function decodeSegment(segment: string) {
   return JSON.parse(b64urlToBuffer(segment).toString('utf8'));
 }
 
@@ -35,17 +35,17 @@ async function getSigningKeys() {
 
 // Returns the public KeyObjects to try when verifying a token. Prefers the
 // project's static verification key (no HTTP call); otherwise uses the JWKS.
-async function getVerificationKeys(header) {
+async function getVerificationKeys(header: any) {
   if (config.web3auth.verificationKey) {
     return [createPublicKey(config.web3auth.verificationKey)];
   }
   const keys = await getSigningKeys();
-  const matched = keys.find((key) => key.kid === header.kid);
-  const ordered = matched ? [matched, ...keys.filter((k) => k !== matched)] : keys;
-  return ordered.map((jwk) => createPublicKey({ key: jwk, format: 'jwk' }));
+  const matched = keys.find((key: any) => key.kid === header.kid);
+  const ordered = matched ? [matched, ...keys.filter((k: any) => k !== matched)] : keys;
+  return ordered.map((jwk: any) => createPublicKey({ key: jwk, format: 'jwk' }));
 }
 
-export async function verifyWeb3AuthToken(token) {
+export async function verifyWeb3AuthToken(token: string) {
   if (!token || typeof token !== 'string') {
     throw new UnauthorizedError('Missing token');
   }

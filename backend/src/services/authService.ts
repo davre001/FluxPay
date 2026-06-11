@@ -22,13 +22,15 @@ function deriveIdentity(payload) {
 }
 
 export class AuthService {
+  private repository: InMemoryUserRepository;
+
   constructor(repository = new InMemoryUserRepository()) {
     this.repository = repository;
   }
 
   // Verifies the idToken and upserts the user. `profileType` is accepted only
   // on signup; it sets the role server-side.
-  async createSession({ idToken, profileType }) {
+  async createSession({ idToken, profileType }: { idToken: string; profileType?: string }) {
     if (!idToken) {
       throw new ValidationError('idToken is required');
     }
@@ -40,7 +42,7 @@ export class AuthService {
     try {
       payload = await verifyWeb3AuthToken(idToken);
     } catch (e) {
-      console.warn('[auth] ✗ session token verification failed:', e.message);
+      console.warn('[auth] ✗ session token verification failed:', (e as Error).message);
       throw e;
     }
     const { key, email, walletAddress } = deriveIdentity(payload);
@@ -50,7 +52,7 @@ export class AuthService {
   }
 
   // Verifies the bearer idToken and returns the stored user (role included).
-  async getMe(idToken) {
+  async getMe(idToken: string) {
     if (!idToken) {
       throw new UnauthorizedError('Missing authorization token');
     }
@@ -58,7 +60,7 @@ export class AuthService {
     try {
       payload = await verifyWeb3AuthToken(idToken);
     } catch (e) {
-      console.warn('[auth] ✗ /me token verification failed:', e.message);
+      console.warn('[auth] ✗ /me token verification failed:', (e as Error).message);
       throw e;
     }
     const { key } = deriveIdentity(payload);

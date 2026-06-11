@@ -21,26 +21,29 @@ export function createPaymentRecord(input) {
 }
 
 export class InMemoryPaymentRepository {
-  constructor(initialPayments = []) {
+  payments: Map<string, any>;
+
+  constructor(initialPayments: any = []) {
     this.payments = new Map();
-    initialPayments.forEach((payment) => {
+    initialPayments.forEach((payment: any) => {
       this.payments.set(payment.id, { ...payment });
     });
   }
 
-  async create(input) {
-    const payment = createPaymentRecord(input);
+  async create(input: any) {
+    const payment: any = createPaymentRecord(input);
     this.payments.set(payment.id, payment);
     return { ...payment };
   }
 
-  async findById(id) {
+  async findById(id: any) {
     const payment = this.payments.get(id);
     return payment ? { ...payment } : null;
   }
 
-  async findMany(filters = {}) {
-    const matches = [...this.payments.values()].filter((payment) => {
+  async findMany(filters: any = {}) {
+    const entries = [...this.payments.values()];
+    const matches = entries.filter((payment: any) => {
       if (filters.userId && payment.userId !== filters.userId) return false;
       if (filters.status && payment.status !== filters.status) return false;
       if (filters.datasetId && payment.datasetId !== filters.datasetId) return false;
@@ -48,11 +51,15 @@ export class InMemoryPaymentRepository {
     });
 
     return matches
-      .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
-      .map((payment) => ({ ...payment }));
+      .sort((left: any, right: any) => {
+        const timeDiff = new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+        if (timeDiff !== 0) return timeDiff;
+        return entries.indexOf(right) - entries.indexOf(left);
+      })
+      .map((payment: any) => ({ ...payment }));
   }
 
-  async updateStatus(id, status) {
+  async updateStatus(id: any, status: any) {
     const payment = this.payments.get(id);
     if (!payment) {
       return null;
