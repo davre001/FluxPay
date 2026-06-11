@@ -56,9 +56,10 @@ export default function Navbar() {
 
   // Onboarding pages — no sidebar even when authenticated
   const isOnboarding = pathname.startsWith('/onboarding');
+  const isLandingPage = pathname === '/';
 
   // Public landing pages OR onboarding — minimal top navbar only
-  if (!isAuthenticated || isOnboarding) {
+  if (!isAuthenticated || isOnboarding || isLandingPage) {
     return (
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5"
            style={{ background: 'rgba(10,10,15,0.85)', backdropFilter: 'blur(20px)' }}>
@@ -70,12 +71,20 @@ export default function Navbar() {
             <span className="font-extrabold text-lg text-white tracking-tight">Flux<span className="gradient-text">Pay</span></span>
           </Link>
           {isAuthenticated && (
-            <button
-              onClick={handleLogout}
-              className="text-sm font-semibold text-slate-400 hover:text-white transition-colors flex items-center gap-1.5"
-            >
-              <LogOut size={14} /> Sign out
-            </button>
+            <div className="flex items-center gap-4">
+              <Link
+                href={user?.profileType === 'organization' ? '/organization/dashboard' : '/creator/dashboard'}
+                className="text-sm font-semibold text-brand-400 hover:text-brand-300 transition-colors"
+              >
+                Go to Dashboard
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="text-sm font-semibold text-slate-400 hover:text-white transition-colors flex items-center gap-1.5"
+              >
+                <LogOut size={14} /> Sign out
+              </button>
+            </div>
           )}
           {!isAuthenticated && (
             <div className="flex items-center gap-4">

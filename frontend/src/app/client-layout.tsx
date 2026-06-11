@@ -10,7 +10,8 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useUserStore()
   const pathname = usePathname()
   const isOnboarding = pathname?.startsWith('/onboarding')
-  const needsTopPad = !isAuthenticated || isOnboarding
+  const isLandingPage = pathname === '/'
+  const needsTopPad = !isAuthenticated || isOnboarding || isLandingPage
 
   return (
     <>
