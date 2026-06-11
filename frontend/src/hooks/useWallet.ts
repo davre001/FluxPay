@@ -4,13 +4,6 @@ import { useCallback, useState } from 'react';
 import { useAccount, useBalance, useChainId, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { Address, parseUnits, formatUnits } from 'viem';
 import { getChainConfig, getToken, getTokens } from '@/config/chains';
-import {
-  createEscrow,
-  approveUSDC,
-  fundEscrow,
-  getUSDCBalance,
-  getEscrowAddress,
-} from '@/utils/contracts';
 
 // --- Interfaces ---
 interface UseUSDCApprovalOptions {
