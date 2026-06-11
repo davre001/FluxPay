@@ -1,514 +1,400 @@
 # FluxPay
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D14.0.0-brightgreen)](https://nodejs.org/)
-[![Solidity Version](https://img.shields.io/badge/solidity-%5E0.8.0-blue)](https://soliditylang.org/)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
+[![Solidity](https://img.shields.io/badge/solidity-%5E0.8.0-blue)](https://soliditylang.org/)
 
-A decentralized AI data marketplace platform enabling secure, blockchain-based payment processing for data transactions.
+**FluxPay** is a creator-brand deal escrow platform. Brands post deals, creators apply, and USDC is locked in smart contracts per milestone. AI verifies deliverables automatically — payments release on approval, no trust required.
+
+---
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
+- [How it works](#how-it-works)
 - [Technology Stack](#technology-stack)
 - [Project Structure](#project-structure)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Running the Project](#running-the-project)
-- [API Documentation](#api-documentation)
+- [API Reference](#api-reference)
 - [Smart Contracts](#smart-contracts)
-- [Testing](#testing)
 - [Deployment](#deployment)
 - [Contributing](#contributing)
 - [License](#license)
-- [Support](#support)
 
-## Overview
+---
 
-FluxPay is a full-stack application that combines a modern web frontend with a robust backend and blockchain smart contracts to facilitate secure, transparent payment processing in an AI data marketplace. Users can browse data offerings, make payments securely using cryptocurrency, and track their transaction history.
+## How it works
 
-## Features
+1. **Brand posts a deal** — sets milestones, budget, and content requirements. Funds lock into escrow.
+2. **Creators apply** — browse open deals and submit an application with a cover note.
+3. **Brand selects a creator** — reviews reputation, portfolio, and application.
+4. **Creator submits deliverables** — uploads the content link per milestone. AI reviews it instantly against the brief.
+5. **Funds release automatically** — on AI approval, USDC flows to the creator and on-chain reputation scores update.
 
-- ✅ **Secure Payments** - Blockchain-based payment processing with cryptographic verification
-- ✅ **Token Support** - Native ERC20 token (FluxPay Token) for transactions
-- ✅ **User Dashboard** - Intuitive interface for managing payments and viewing analytics
-- ✅ **Transaction History** - Complete audit trail of all payment transactions
-- ✅ **Real-time Updates** - Live payment status updates
-- ✅ **Data Marketplace** - Browse and purchase AI datasets
-- ✅ **Smart Contract Automation** - Automated payment escrow and release
-- ✅ **Multi-User Support** - Support for multiple concurrent users and transactions
+Two user roles:
+- **Creator** — applies to brand jobs, delivers content, earns USDC per milestone.
+- **Organization (Brand)** — posts deals, selects creators, funds escrow, monitors delivery.
+
+---
 
 ## Technology Stack
 
-### Backend
-- **Runtime**: Node.js (v14+)
-- **Language**: TypeScript
-- **Framework**: Express.js
-- **Database**: MongoDB
-- **Validation**: Custom validators
-- **Error Handling**: Custom error classes
-
 ### Frontend
-- **Framework**: React 18+ with TypeScript
-- **State Management**: Context API
-- **Styling**: CSS
-- **HTTP Client**: Fetch API
-- **Build Tool**: Vite (recommended)
+| Layer | Choice |
+|---|---|
+| Framework | Next.js 14 (App Router, TypeScript) |
+| Styling | Tailwind CSS |
+| State | Zustand (persisted) |
+| Server state | TanStack Query v5 |
+| Auth / Wallet | Web3Auth (MetaMask Embedded Wallets) |
+| EVM chains | wagmi + viem |
+| Solana | Web3Auth SolanaProvider |
+| UI extras | framer-motion, lucide-react, react-hot-toast, recharts |
+
+### Backend
+| Layer | Choice |
+|---|---|
+| Runtime | Node.js ≥ 20 (`node:http` — no framework) |
+| Language | TypeScript (ESM, run via `tsx`) |
+| Auth | Web3Auth JWT verification (JWKS or static PEM) |
+| Storage | In-memory repositories (DB wire-up pending) |
+| Deploy | Render (`render.yaml`) |
 
 ### Blockchain
-- **Language**: Solidity ^0.8.0
-- **Network**: Ethereum (testnet/mainnet)
-- **Development**: Hardhat
-- **Standards**: ERC20 Token Standard
-- **Testing**: Hardhat Test Suite
+| Layer | Choice |
+|---|---|
+| Language | Solidity ^0.8.0 |
+| Contracts | `FluxPayEscrow`, `FluxPayEscrowFactory`, `MockUSDC` |
+| Payment token | USDC |
+| Networks | Ethereum, Base, Arbitrum + testnets (Sepolia, Base Sepolia) |
+| Smart accounts | EIP-7702 (MetaMask AA via Web3Auth) |
+| Bundler | Pimlico / ZeroDev (configured per chain via env vars) |
+
+---
 
 ## Project Structure
 
 ```
 FluxPay/
-├── contracts/                    # Smart Contracts (Solidity)
-│   ├── FluxPayToken.sol         # ERC20 Token Contract
-│   ├── PaymentProcessor.sol      # Payment Processing Contract
-│   ├── hardhat.config.js        # Hardhat Configuration
-│   ├── package.json             # Contract Dependencies
-│   ├── scripts/
-│   │   └── deploy.js            # Deployment Script
-│   └── test/
-│       └── FluxPayToken.test.js # Contract Tests
-│
-├── frontend/                     # React Frontend
+├── frontend/                        # Next.js 14 app (deployed to Vercel)
 │   ├── src/
-│   │   ├── App.tsx              # Main App Component
-│   │   ├── index.tsx            # Entry Point
-│   │   ├── styles.css           # Global Styles
-│   │   ├── components/          # Reusable Components
-│   │   │   ├── Button.tsx
-│   │   │   ├── Header.tsx
-│   │   │   ├── Input.tsx
-│   │   │   └── PaymentForm.tsx
-│   │   ├── pages/               # Page Components
-│   │   │   ├── Dashboard.tsx
-│   │   │   └── PaymentHistory.tsx
-│   │   ├── context/             # Context API
-│   │   │   └── PaymentContext.tsx
-│   │   ├── hooks/               # Custom Hooks
-│   │   │   └── usePayment.ts
-│   │   ├── services/            # API Services
-│   │   │   └── api.ts
-│   │   ├── types/               # TypeScript Definitions
-│   │   │   └── index.ts
-│   │   ├── utils/               # Utilities
-│   │   │   └── helpers.ts
-│   │   └── config/              # Configuration
-│   │       └── index.ts
-│   ├── index.html               # HTML Template
-│   ├── package.json             # Dependencies
-│   └── tsconfig.json            # TypeScript Config
+│   │   ├── app/
+│   │   │   ├── page.tsx             # Landing page
+│   │   │   ├── layout.tsx           # Root layout + providers
+│   │   │   ├── auth/
+│   │   │   │   ├── login/           # Sign in with smart wallet
+│   │   │   │   └── signup/          # Role selection + wallet connect
+│   │   │   ├── onboarding/
+│   │   │   │   ├── creator/         # Creator profile setup
+│   │   │   │   └── organization/    # Brand profile setup
+│   │   │   ├── creator/
+│   │   │   │   ├── dashboard/       # Browse deals, track applications
+│   │   │   │   ├── deals/[dealId]/  # Active deal + milestone delivery
+│   │   │   │   ├── wallet/          # USDC balance + transactions
+│   │   │   │   ├── reputation/      # On-chain score
+│   │   │   │   └── profile/
+│   │   │   ├── organization/
+│   │   │   │   ├── dashboard/       # Active campaigns overview
+│   │   │   │   ├── jobs/new/        # Post a new deal
+│   │   │   │   ├── jobs/[jobId]/    # Review applications, approve milestones
+│   │   │   │   ├── wallet/          # Escrow balance + top-up
+│   │   │   │   └── reputation/
+│   │   │   └── api/balances/        # Next.js route handler (token balances)
+│   │   ├── components/
+│   │   │   ├── shared/              # Navbar, Modal, DataTable, etc.
+│   │   │   └── ui/                  # Landing hero, decorative shapes
+│   │   ├── config/
+│   │   │   ├── web3authContext.ts   # Web3Auth + AA bundler config
+│   │   │   └── wagmi.ts             # Wagmi config (type-check only)
+│   │   ├── context/
+│   │   │   └── WalletContext.tsx    # Web3Auth + Wagmi + Solana providers
+│   │   ├── contracts/
+│   │   │   ├── abis/                # FluxPayEscrow, Factory, MockUSDC ABIs
+│   │   │   └── contracts.ts         # Deployed contract addresses
+│   │   ├── hooks/                   # useWallet, useTokenBalances, useApi, etc.
+│   │   ├── lib/
+│   │   │   ├── mock-data.ts         # localStorage-backed mock DB
+│   │   │   └── establishSession.ts  # POST /api/auth/session helper
+│   │   ├── stores/
+│   │   │   ├── userStore.ts         # Auth + role (Zustand, persisted)
+│   │   │   └── jobStore.ts
+│   │   └── types/index.ts           # Shared TypeScript types
+│   ├── .env.example
+│   ├── next.config.js
+│   └── package.json
 │
-├── src/                          # Backend (Node.js)
-│   ├── app.ts                   # Express App Setup
-│   ├── index.ts                 # Entry Point
-│   ├── config/
-│   │   └── index.ts             # Configuration
-│   ├── database/
-│   │   └── connection.ts        # MongoDB Connection
-│   ├── middleware/
-│   │   └── index.ts             # Express Middleware
-│   ├── models/
-│   │   └── payment.ts           # Payment Schema
-│   ├── routes/
-│   │   └── payment.ts           # Payment Routes
-│   ├── services/
-│   │   └── paymentService.ts    # Business Logic
-│   └── utils/
-│       ├── errors.ts            # Custom Errors
-│       ├── helpers.ts           # Helper Functions
-│       └── validators.ts        # Input Validators
+├── backend/                         # Node.js API (deployed to Render)
+│   ├── src/
+│   │   ├── index.ts                 # Entry point
+│   │   ├── app.ts                   # HTTP server + route dispatch
+│   │   ├── config/index.ts          # Env config
+│   │   ├── database/connection.ts   # DB connect stub (in-memory until wired)
+│   │   ├── middleware/index.ts      # Error → HTTP response
+│   │   ├── models/
+│   │   │   ├── user.ts              # InMemoryUserRepository
+│   │   │   └── payment.ts           # InMemoryPaymentRepository
+│   │   ├── routes/
+│   │   │   ├── auth.ts              # POST /auth/session, GET /auth/me
+│   │   │   └── payment.ts           # CRUD /payments
+│   │   ├── services/
+│   │   │   ├── authService.ts       # Web3Auth JWT verify + user upsert
+│   │   │   └── paymentService.ts    # Payment business logic
+│   │   └── utils/
+│   │       ├── web3auth.ts          # JWT verification (JWKS or static PEM)
+│   │       ├── validators.ts
+│   │       ├── errors.ts
+│   │       └── helpers.ts
+│   ├── tests/
+│   │   ├── payment.test.ts
+│   │   └── services.test.ts
+│   ├── .env.example
+│   └── package.json
 │
-├── tests/                        # Backend Tests
-│   ├── payment.test.ts
-│   ├── services.test.ts
-│   └── helpers.ts
+├── scripts/
+│   └── setup-remotes.sh             # One-time dual-push git setup (see below)
 │
-├── IMPLEMENTATION.md            # Implementation Guide
-├── LICENSE                      # MIT License
-├── README.md                    # This File
-├── package.json                 # Root Dependencies
-└── tsconfig.json               # Root TypeScript Config
+├── render.yaml                      # Render deploy config for backend
+├── .env.example
+└── LICENSE
 ```
+
+---
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed:
+- **Node.js** v20.0.0 or higher
+- **npm** v10+ (comes with Node 20)
+- **Git**
+- A **Web3Auth** project — get a free `clientId` at the [Web3Auth dashboard](https://dashboard.web3auth.io/)
 
-- **Node.js** v14.0.0 or higher ([Download](https://nodejs.org/))
-- **npm** v6.0.0 or higher (comes with Node.js)
-- **MongoDB** (local or MongoDB Atlas account)
-- **Git** for version control
-- **Hardhat** for smart contract development
-
-### Optional
-- **MetaMask** browser extension for blockchain interaction
-- **Etherscan** account for contract verification
+---
 
 ## Installation
 
-### 1. Clone the Repository
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/FluxPay.git
+git clone https://github.com/Dami904/FluxPay.git
 cd FluxPay
 ```
 
-### 2. Install Root Dependencies
+### 2. Set up remotes (run once — for the whole team)
+
+So that a single `git push` updates both the upstream repo and the team fork, each team member runs this once after cloning:
 
 ```bash
+bash scripts/setup-remotes.sh
+```
+
+From then on, `git push` sends commits to both repos simultaneously. It's safe to re-run.
+
+### 3. Install frontend dependencies
+
+```bash
+cd frontend
 npm install
 ```
 
-### 3. Install Backend Dependencies
+### 4. Install backend dependencies
 
 ```bash
-cd src
+cd ../backend
 npm install
 ```
 
-### 4. Install Frontend Dependencies
-
-```bash
-cd ../frontend
-npm install
-```
-
-### 5. Install Smart Contract Dependencies
-
-```bash
-cd ../contracts
-npm install
-```
+---
 
 ## Configuration
 
-### Backend Environment Variables
+### Frontend — `frontend/.env.local`
 
-Create a `.env` file in the root directory:
+Copy the example and fill in your values:
+
+```bash
+cp frontend/.env.example frontend/.env.local
+```
 
 ```env
-# Server Configuration
+# Backend API
+NEXT_PUBLIC_API_URL=http://localhost:3000
+
+# Web3Auth (MetaMask Embedded Wallets)
+NEXT_PUBLIC_CLIENT_ID=<your Web3Auth client ID from dashboard>
+
+# Deployed contract addresses (already set in contracts.ts for testnet)
+NEXT_PUBLIC_ESCROW_FACTORY_ADDRESS=0x58B92620Ce2Fa3dD61f0143Ea4f1bbF961130856
+NEXT_PUBLIC_USDC_ADDRESS=0x2CeF50c5C6059F43180b1d91EFA354A9A837AdE1
+
+# Optional: AA bundler URLs (one per chain you want smart accounts on)
+NEXT_PUBLIC_BUNDLER_SEPOLIA=https://...
+NEXT_PUBLIC_BUNDLER_BASE=https://...
+```
+
+### Backend — `backend/.env`
+
+```env
 PORT=3000
 NODE_ENV=development
 
-# Database
-DATABASE_URL=mongodb+srv://username:password@cluster.mongodb.net/fluxpay
+# Your Vercel/localhost frontend URL (for CORS)
+FRONTEND_URL=http://localhost:3001
 
-# Blockchain
-ETHEREUM_RPC_URL=http://localhost:8545
-CONTRACT_ADDRESS=0x...
-PRIVATE_KEY=0x...
+# Web3Auth — must match the client ID in the frontend
+WEB3AUTH_CLIENT_ID=<your Web3Auth client ID>
+JWKS_ENDPOINT=https://api-auth.web3auth.io/.well-known/jwks.json
 
-# Frontend URL (for CORS)
-FRONTEND_URL=http://localhost:5173
+# Optional: Postgres connection string (backend falls back to in-memory if unset)
+DATABASE_URL=postgres://...
 ```
 
-### Smart Contract Configuration
-
-Update `contracts/hardhat.config.js`:
-
-```javascript
-module.exports = {
-  solidity: "0.8.0",
-  networks: {
-    hardhat: {},
-    sepolia: {
-      url: process.env.SEPOLIA_RPC_URL,
-      accounts: [process.env.PRIVATE_KEY],
-    },
-  },
-};
-```
+---
 
 ## Running the Project
 
-### Development Mode
-
-#### Start MongoDB (if running locally)
-
-```bash
-mongod
-```
-
-#### Terminal 1: Backend Server
-
-```bash
-npm run start
-```
-
-The backend will be available at `http://localhost:3000`
-
-#### Terminal 2: Smart Contracts (Hardhat Node)
-
-```bash
-cd contracts
-npx hardhat node
-```
-
-#### Terminal 3: Frontend Development Server
+### Frontend (Next.js dev server)
 
 ```bash
 cd frontend
 npm run dev
 ```
 
-The frontend will be available at `http://localhost:5173`
+Available at `http://localhost:3000` (or 3001 if 3000 is taken).
 
-### Production Build
-
-```bash
-# Build frontend
-cd frontend
-npm run build
-
-# Build backend (if using TypeScript compilation)
-npm run build
-```
-
-## API Documentation
-
-### Base URL
-
-```
-http://localhost:3000/api
-```
-
-### Endpoints
-
-#### Process Payment
-
-```http
-POST /payments
-Content-Type: application/json
-
-{
-  "amount": 1000,
-  "userId": "user123",
-  "description": "Data purchase",
-  "transactionHash": "0x..."
-}
-```
-
-**Response:**
-```json
-{
-  "_id": "507f1f77bcf86cd799439011",
-  "amount": 1000,
-  "userId": "user123",
-  "description": "Data purchase",
-  "status": "pending",
-  "transactionHash": "0x...",
-  "createdAt": "2026-05-26T10:30:00Z",
-  "updatedAt": "2026-05-26T10:30:00Z"
-}
-```
-
-#### Get Payment History
-
-```http
-GET /payments/history/:userId
-```
-
-**Response:**
-```json
-[
-  {
-    "_id": "507f1f77bcf86cd799439011",
-    "amount": 1000,
-    "userId": "user123",
-    "description": "Data purchase",
-    "status": "completed",
-    "transactionHash": "0x...",
-    "createdAt": "2026-05-26T10:30:00Z"
-  }
-]
-```
-
-#### Update Payment Status
-
-```http
-PATCH /payments/:id/status
-Content-Type: application/json
-
-{
-  "status": "completed"
-}
-```
-
-**Status Values:** `pending`, `completed`, `failed`
-
-## Smart Contracts
-
-### FluxPayToken (ERC20)
-
-A standard ERC20 token implementation for the FluxPay ecosystem.
-
-**Key Functions:**
-- `transfer(address to, uint256 value)` - Transfer tokens
-- `approve(address spender, uint256 value)` - Approve spending
-- `transferFrom(address from, address to, uint256 value)` - Transfer on behalf
-
-**Deployment:**
+### Backend (Node.js API)
 
 ```bash
-cd contracts
-npx hardhat run scripts/deploy.js --network sepolia
+cd backend
+npm run dev
 ```
 
-### PaymentProcessor
+Available at `http://localhost:3000` by default. Set `PORT` in your `.env` to run on a different port.
 
-Handles payment processing and token transfers.
-
-**Key Functions:**
-- `processPayment(address recipient, uint256 amount)` - Process a payment
-- `refundPayment(address payer, uint256 amount)` - Refund a payment (owner only)
-
-**Contract Address:** (Set in `.env` after deployment)
-
-## Testing
-
-### Backend Tests
+### Type-checking
 
 ```bash
-npm test
+# Frontend
+cd frontend && npx tsc --noEmit
+
+# Backend
+cd backend && npm run typecheck
 ```
-
-### Smart Contract Tests
-
-```bash
-cd contracts
-npx hardhat test
-```
-
-### Test Coverage
-
-```bash
-cd contracts
-npx hardhat coverage
-```
-
-## Deployment
-
-### Frontend Deployment (Vercel)
-
-```bash
-cd frontend
-npm install -g vercel
-vercel
-```
-
-### Backend Deployment (Heroku)
-
-```bash
-heroku login
-heroku create fluxpay-backend
-git push heroku main
-heroku config:set DATABASE_URL=your_database_url
-```
-
-### Smart Contracts (Ethereum Testnet)
-
-```bash
-cd contracts
-npx hardhat run scripts/deploy.js --network sepolia
-```
-
-### Database (MongoDB Atlas)
-
-1. Create a MongoDB Atlas account
-2. Create a cluster
-3. Get the connection string
-4. Set `DATABASE_URL` in `.env`
-
-## Security Considerations
-
-- ⚠️ **Never commit `.env` files** - Always use `.env.example` as template
-- ⚠️ **Secure Private Keys** - Use environment variables, never hardcode
-- ⚠️ **Validate Inputs** - All user inputs are validated on backend
-- ⚠️ **HTTPS Only** - Use HTTPS in production
-- ⚠️ **Rate Limiting** - Consider implementing rate limiting on production
-- ⚠️ **Smart Contract Audit** - Have contracts audited before mainnet deployment
-
-## Contributing
-
-We welcome contributions! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Code Style
-
-- Use TypeScript for all new code
-- Follow ESLint rules (if configured)
-- Write meaningful commit messages
-- Add tests for new features
-
-## Troubleshooting
-
-### MongoDB Connection Issues
-
-```bash
-# Check MongoDB is running
-# Windows: Services tab or "mongod" command
-# macOS: brew services list
-# Linux: sudo systemctl status mongod
-```
-
-### Port Already in Use
-
-```bash
-# Find and kill process using port
-# Windows
-netstat -ano | findstr :3000
-taskkill /PID <PID> /F
-
-# macOS/Linux
-lsof -i :3000
-kill -9 <PID>
-```
-
-### Module Not Found
-
-```bash
-# Reinstall dependencies
-rm -rf node_modules
-npm install
-```
-
-## Related Documentation
-
-- [Implementation Guide](./IMPLEMENTATION.md) - Detailed implementation details
-- [API Documentation](#api-documentation) - Complete API reference
-- [Solidity Docs](https://docs.soliditylang.org/)
-- [Express.js Docs](https://expressjs.com/)
-- [React Docs](https://react.dev/)
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-For support, email support@fluxpay.com or open an issue on the GitHub repository.
-
-### Resources
-
-- 📖 [Documentation](./IMPLEMENTATION.md)
-- 🐛 [Report a Bug](https://github.com/yourusername/FluxPay/issues)
-- 💡 [Request a Feature](https://github.com/yourusername/FluxPay/issues)
-- 📧 [Contact Us](mailto:support@fluxpay.com)
 
 ---
 
-**Made with ❤️ by the FluxPay Team**
+## API Reference
+
+Base URL: `http://localhost:3000/api`
+
+### Auth
+
+#### `POST /api/auth/session`
+
+Verifies a Web3Auth `idToken`, upserts the user, and returns their profile. Called on every login/signup.
+
+```json
+// Request
+{ "idToken": "<Web3Auth ID token>", "profileType": "creator" }
+
+// Response
+{ "user": { "id": "...", "email": "...", "profileType": "creator", "walletAddress": "0x..." } }
+```
+
+`profileType` is optional after signup — omit it on subsequent logins.
+
+#### `GET /api/auth/me`
+
+Returns the stored user for a bearer token. Used to restore session on page load.
+
+```http
+Authorization: Bearer <idToken>
+```
+
+### Payments
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/payments` | Record a new payment |
+| `GET` | `/api/payments` | List payments (filter by `userId`, `status`, `datasetId`) |
+| `GET` | `/api/payments/:id` | Get a payment by ID |
+| `GET` | `/api/payments/:id/status` | Get payment status + tx hash |
+| `GET` | `/api/payments/history/:userId` | Get payment history for a user |
+| `PATCH` | `/api/payments/:id/status` | Update status (`pending` / `completed` / `failed`) |
+
+#### `GET /api/health`
+
+```json
+{ "status": "ok", "service": "fluxpay-backend", "storage": "memory" }
+```
+
+---
+
+## Smart Contracts
+
+Three contracts are deployed and their ABIs are committed under `frontend/src/contracts/abis/`.
+
+| Contract | Description |
+|---|---|
+| `FluxPayEscrowFactory` | Deploys a new `FluxPayEscrow` per deal |
+| `FluxPayEscrow` | Holds USDC for one deal; releases per milestone on approval |
+| `MockUSDC` | ERC20 test token (testnet only) |
+
+**Deployed addresses (Hoodi testnet):**
+
+```
+USDC:            0x2CeF50c5C6059F43180b1d91EFA354A9A837AdE1
+EscrowFactory:   0x58B92620Ce2Fa3dD61f0143Ea4f1bbF961130856
+```
+
+To interact with contracts, the frontend uses `wagmi` hooks and `viem`. The `WalletContext` wraps `Web3AuthProvider → WagmiProvider → SolanaProvider` so every hook has access to the connected wallet across EVM and Solana chains.
+
+---
+
+## Deployment
+
+### Frontend → Vercel
+
+Push to `main` — Vercel deploys automatically. Set all `NEXT_PUBLIC_*` env vars in the Vercel dashboard.
+
+```bash
+vercel --prod  # manual deploy
+```
+
+### Backend → Render
+
+`render.yaml` is committed. Connect the repo in Render and set these secrets in the dashboard:
+
+- `FRONTEND_URL` — your Vercel URL
+- `WEB3AUTH_CLIENT_ID`
+- `DATABASE_URL` (optional — uses in-memory if omitted)
+
+Render will pick up the `buildCommand` / `startCommand` from `render.yaml` automatically.
+
+---
+
+## Security
+
+- **Never commit `.env` files.** Use `.env.example` as the template.
+- All Web3Auth `idToken`s are verified server-side on every request (signature + expiry + issuer). The backend never trusts the client's claimed identity.
+- CORS is restricted to `FRONTEND_URL` in production.
+- Smart contract private keys should never appear in frontend code — only use them in deploy scripts with proper secret management.
+
+---
+
+## Contributing
+
+1. Fork the repository and run `bash scripts/setup-remotes.sh`
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes with a clear message
+4. Push: `git push` (goes to both upstream and team fork)
+5. Open a Pull Request against `main`
+
+Use TypeScript for all new code. Match the existing code style — no comments unless the *why* is non-obvious.
+
+---
+
+## License
+
+MIT — see the [LICENSE](LICENSE) file for details.
