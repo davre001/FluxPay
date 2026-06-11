@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Shield, Zap, Star, CheckCircle, TrendingUp, Bot, Lock } from 'lucide-react';
+import { ArrowRight, Shield, Star, CheckCircle, TrendingUp, Bot, Lock } from 'lucide-react';
+import { HeroGeometric } from '@/components/ui/shape-landing-hero';
 
 const features = [
   {
@@ -45,78 +46,60 @@ export default function Home() {
   return (
     <main className="relative min-h-screen overflow-hidden" style={{ background: '#0a0a0f' }}>
 
-      {/* ── Orbs ── */}
-      <div className="orb orb-purple w-[600px] h-[600px] top-[-150px] left-[-100px] animate-glow" style={{ animationDuration: '5s' }} />
-      <div className="orb orb-cyan   w-[500px] h-[500px] top-[20%] right-[-120px] animate-glow" style={{ animationDuration: '7s', animationDelay: '2s' }} />
-      <div className="orb orb-indigo w-[400px] h-[400px] bottom-[10%] left-[30%] animate-glow" style={{ animationDuration: '6s', animationDelay: '1s' }} />
+      <HeroGeometric
+        badge="Multichain · USDC Escrow"
+        title1="Creator-Brand Deals,"
+        title2="Secured On-Chain."
+        description="FluxPay escrows every deal in a smart contract. Milestones are verified by AI. Payments release automatically. No trust required."
+      >
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mt-4">
+
+          {/* Creator CTA */}
+          <Link href="/auth/signup?type=creator" className="group">
+            <div className="relative w-64 rounded-2xl p-6 text-left transition-all duration-300 hover:-translate-y-1"
+                 style={{ background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.35)' }}>
+              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"
+                   style={{ background: 'rgba(124,58,237,0.08)', boxShadow: '0 0 40px rgba(124,58,237,0.25)' }} />
+              <div className="relative">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-brand-500 flex items-center justify-center mb-4 shadow-glow-sm">
+                  <Star size={18} className="text-white" />
+                </div>
+                <h2 className="text-lg font-black text-white mb-1">I'm a Creator</h2>
+                <p className="text-sm text-slate-400 mb-4">Browse brand deals, apply, and get paid per milestone.</p>
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-400 group-hover:gap-2.5 transition-all">
+                  Get started <ArrowRight size={14} />
+                </span>
+              </div>
+            </div>
+          </Link>
+
+          {/* Brand CTA */}
+          <Link href="/auth/signup?type=organization" className="group">
+            <div className="relative w-64 rounded-2xl p-6 text-left transition-all duration-300 hover:-translate-y-1"
+                 style={{ background: 'rgba(6,182,212,0.10)', border: '1px solid rgba(6,182,212,0.3)' }}>
+              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"
+                   style={{ background: 'rgba(6,182,212,0.06)', boxShadow: '0 0 40px rgba(6,182,212,0.2)' }} />
+              <div className="relative">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-600 to-accent-500 flex items-center justify-center mb-4 shadow-glow-cyan">
+                  <Shield size={18} className="text-white" />
+                </div>
+                <h2 className="text-lg font-black text-white mb-1">I'm a Brand</h2>
+                <p className="text-sm text-slate-400 mb-4">Post deals, find creators, and verify results automatically.</p>
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-accent-400 group-hover:gap-2.5 transition-all">
+                  Post a deal <ArrowRight size={14} />
+                </span>
+              </div>
+            </div>
+          </Link>
+        </div>
+
+        <p className="mt-8 text-xs text-slate-500">
+          Already have an account?{' '}
+          <Link href="/auth/login" className="text-brand-400 hover:text-brand-300 font-semibold transition-colors">Sign in</Link>
+        </p>
+      </HeroGeometric>
 
       <div className="relative z-10">
-
-        {/* ── Hero ── */}
-        <section className="container-custom pt-32 pb-20 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8 text-xs font-bold uppercase tracking-widest"
-               style={{ background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', color: '#a78bfa' }}>
-            <Zap size={12} />
-            Multichain · USDC Escrow
-          </div>
-
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white leading-none mb-6">
-            Creator-Brand Deals,<br />
-            <span className="gradient-text">Secured On-Chain.</span>
-          </h1>
-
-          <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed mb-10">
-            FluxPay escrows every deal in a smart contract. Milestones are verified by AI.
-            Payments release automatically. No trust required.
-          </p>
-
-          {/* CTA Cards */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mt-2">
-
-            {/* Creator CTA */}
-            <Link href="/auth/signup?type=creator" className="group">
-              <div className="relative w-64 rounded-2xl p-6 text-left transition-all duration-300 hover:-translate-y-1"
-                   style={{ background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.35)' }}>
-                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"
-                     style={{ background: 'rgba(124,58,237,0.08)', boxShadow: '0 0 40px rgba(124,58,237,0.25)' }} />
-                <div className="relative">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-brand-500 flex items-center justify-center mb-4 shadow-glow-sm">
-                    <Star size={18} className="text-white" />
-                  </div>
-                  <h2 className="text-lg font-black text-white mb-1">I'm a Creator</h2>
-                  <p className="text-sm text-slate-400 mb-4">Browse brand deals, apply, and get paid per milestone.</p>
-                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-400 group-hover:gap-2.5 transition-all">
-                    Get started <ArrowRight size={14} />
-                  </span>
-                </div>
-              </div>
-            </Link>
-
-            {/* Brand CTA */}
-            <Link href="/auth/signup?type=organization" className="group">
-              <div className="relative w-64 rounded-2xl p-6 text-left transition-all duration-300 hover:-translate-y-1"
-                   style={{ background: 'rgba(6,182,212,0.10)', border: '1px solid rgba(6,182,212,0.3)' }}>
-                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"
-                     style={{ background: 'rgba(6,182,212,0.06)', boxShadow: '0 0 40px rgba(6,182,212,0.2)' }} />
-                <div className="relative">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-600 to-accent-500 flex items-center justify-center mb-4 shadow-glow-cyan">
-                    <Shield size={18} className="text-white" />
-                  </div>
-                  <h2 className="text-lg font-black text-white mb-1">I'm a Brand</h2>
-                  <p className="text-sm text-slate-400 mb-4">Post deals, find creators, and verify results automatically.</p>
-                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-accent-400 group-hover:gap-2.5 transition-all">
-                    Post a deal <ArrowRight size={14} />
-                  </span>
-                </div>
-              </div>
-            </Link>
-          </div>
-
-          <p className="mt-6 text-xs text-slate-600">
-            Already have an account?{' '}
-            <Link href="/auth/login" className="text-brand-400 hover:text-brand-300 font-semibold transition-colors">Sign in</Link>
-          </p>
-        </section>
 
         {/* ── Stats bar ── */}
         <section className="border-y border-white/5 py-8" style={{ background: 'rgba(255,255,255,0.02)' }}>

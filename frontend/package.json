@@ -15,6 +15,7 @@
     "@solana/react-hooks": "^1.4.1",
     "@tanstack/react-query": "^5.100.14",
     "@web3auth/modal": "^11.1.1",
+    "clsx": "^2.1.1",
     "framer-motion": "^12.40.0",
     "lucide-react": "^0.395.0",
     "next": "^14.2.3",
@@ -23,6 +24,7 @@
     "react-hot-toast": "^2.6.0",
     "react-is": "^18.3.1",
     "recharts": "^3.8.1",
+    "tailwind-merge": "^3.6.0",
     "viem": "latest",
     "wagmi": "latest"
   },
