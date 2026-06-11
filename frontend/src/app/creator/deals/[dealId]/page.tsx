@@ -8,7 +8,7 @@ import {
   ExternalLink, Loader2, ChevronDown, ChevronUp, Zap, X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { mockDB, MockJob, MockMilestone } from '@/lib/mock-data';
+import { jobAPI, milestoneAPI } from '@/lib/api-client';
 
 const MILESTONE_STATUS: Record<string, { label: string; badge: string; icon: any }> = {
   pending:   { label: 'Pending',   badge: 'badge-slate',  icon: Clock },
@@ -17,12 +17,11 @@ const MILESTONE_STATUS: Record<string, { label: string; badge: string; icon: any
   disputed:  { label: 'Disputed',  badge: 'badge-red',    icon: AlertCircle },
 };
 
-function MilestoneCard({ milestone, jobId, onRefresh }: {
-  milestone: MockMilestone;
-  jobId: string;
+function MilestoneCard({ milestone, onRefresh }: {
+  milestone: any;
   onRefresh: () => void;
 }) {
-  const [open, setOpen] = useState(milestone.status === 'pending');
+  const [open, setOpen] = useState(milestone.status === 'pending' || milestone.status === 'disputed');
   const [url, setUrl] = useState('');
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -32,14 +31,13 @@ function MilestoneCard({ milestone, jobId, onRefresh }: {
   const handleSubmit = async () => {
     if (!url) { toast.error('Enter a deliverable URL'); return; }
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 800));
-    mockDB.updateMilestone(jobId, milestone.id, {
-      status: 'submitted',
-      deliverable_url: url,
-      deliverable_note: note,
-    });
-    toast.success('Deliverable submitted! Waiting for brand review.');
-    onRefresh();
+    try {
+      await milestoneAPI.submit(milestone.id, { deliverable_url: url, deliverable_note: note });
+      toast.success('Deliverable submitted! Waiting for brand review.');
+      onRefresh();
+    } catch (e: any) {
+      toast.error(e?.message || 'Submission failed');
+    }
     setSubmitting(false);
   };
 
@@ -81,8 +79,16 @@ function MilestoneCard({ milestone, jobId, onRefresh }: {
             <p className="text-sm text-slate-500 italic">Note: "{milestone.deliverable_note}"</p>
           )}
 
-          {/* Submit form — only for pending milestones */}
-          {milestone.status === 'pending' && (
+          {/* Dispute reason */}
+          {milestone.status === 'disputed' && milestone.dispute_reason && (
+            <div className="p-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <p className="text-xs text-red-400 font-bold mb-1">Dispute reason:</p>
+              <p className="text-sm text-slate-300">{milestone.dispute_reason}</p>
+            </div>
+          )}
+
+          {/* Submit form — for pending or disputed milestones */}
+          {(milestone.status === 'pending' || milestone.status === 'disputed') && (
             <div className="space-y-3">
               <label className="label">Submit Deliverable URL</label>
               <input value={url} onChange={(e) => setUrl(e.target.value)}
@@ -107,12 +113,6 @@ function MilestoneCard({ milestone, jobId, onRefresh }: {
               <CheckCircle size={14} /> Approved! Payment released.
             </div>
           )}
-
-          {milestone.status === 'disputed' && (
-            <div className="flex items-center gap-2 text-sm text-red-400">
-              <AlertCircle size={14} /> Disputed — admin review in progress.
-            </div>
-          )}
         </div>
       )}
     </div>
@@ -121,11 +121,15 @@ function MilestoneCard({ milestone, jobId, onRefresh }: {
 
 export default function CreatorDealPage() {
   const { dealId } = useParams<{ dealId: string }>();
-  const [deal, setDeal] = useState<MockJob | null>(null);
+  const [deal, setDeal] = useState<any | null>(null);
 
-  const reload = () => {
-    const j = mockDB.getJobById(dealId);
-    setDeal(j ?? null);
+  const reload = async () => {
+    try {
+      const { data } = await jobAPI.detail(dealId);
+      setDeal(data as any);
+    } catch {
+      setDeal(null);
+    }
   };
 
   useEffect(() => { reload(); }, [dealId]);
@@ -141,9 +145,9 @@ export default function CreatorDealPage() {
   );
 
   const milestones = deal.milestones ?? [];
-  const approved = milestones.filter((m) => m.status === 'approved').length;
+  const approved = milestones.filter((m: any) => m.status === 'approved').length;
   const progress = milestones.length > 0 ? (approved / milestones.length) * 100 : 0;
-  const earned = milestones.filter((m) => m.status === 'approved').reduce((s, m) => s + m.amount, 0);
+  const earned = milestones.filter((m: any) => m.status === 'approved').reduce((s: number, m: any) => s + m.amount, 0);
 
   return (
     <div className="p-6 md:p-10 min-h-screen space-y-6" style={{ background: '#0a0a0f' }}>
@@ -174,10 +178,10 @@ export default function CreatorDealPage() {
         {/* Required hashtags/mentions */}
         {((deal.required_elements?.hashtags?.length ?? 0) > 0 || (deal.required_elements?.mentions?.length ?? 0) > 0) && (
           <div className="mt-4 flex flex-wrap gap-2">
-            {deal.required_elements!.hashtags?.map((h) => (
+            {deal.required_elements!.hashtags?.map((h: string) => (
               <span key={h} className="badge badge-purple">#{h}</span>
             ))}
-            {deal.required_elements!.mentions?.map((m) => (
+            {deal.required_elements!.mentions?.map((m: string) => (
               <span key={m} className="badge badge-cyan">{m}</span>
             ))}
           </div>
@@ -223,8 +227,8 @@ export default function CreatorDealPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {milestones.map((m) => (
-              <MilestoneCard key={m.id} milestone={m} jobId={dealId} onRefresh={reload} />
+            {milestones.map((m: any) => (
+              <MilestoneCard key={m.id} milestone={m} onRefresh={reload} />
             ))}
           </div>
         )}

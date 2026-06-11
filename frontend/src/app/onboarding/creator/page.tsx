@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Star, X, Music2, ArrowRight, Loader2, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { mockDB } from '@/lib/mock-data';
+import { profileAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
 
 // Inline SVG icons for social platforms removed from lucide-react
@@ -54,19 +54,23 @@ export default function CreatorOnboarding() {
 
   const handleSubmit = async () => {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    mockDB.saveProfile(user?.id ?? 'anon', {
-      name, bio,
-      niche_tags: selectedNiches,
-      instagram: instagram || null,
-      twitter: twitter || null,
-      youtube: youtube || null,
-      tiktok: tiktok || null,
-      profile_picture_url: picUrl || null,
-    });
-    toast.success('Profile created!');
-    router.push('/creator/dashboard');
-    setLoading(false);
+    try {
+      await profileAPI.updateMe({
+        name, bio,
+        niche_tags: selectedNiches,
+        instagram: instagram || null,
+        twitter: twitter || null,
+        youtube: youtube || null,
+        tiktok: tiktok || null,
+        profile_picture_url: picUrl || null,
+      });
+      toast.success('Profile created!');
+      router.push('/creator/dashboard');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to save profile');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const steps = ['About You', 'Content Niches', 'Social Accounts'];

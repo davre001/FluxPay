@@ -5,15 +5,13 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, X, Loader2, Briefcase } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { mockDB } from '@/lib/mock-data';
-import { useUserStore } from '@/stores/userStore';
+import { jobAPI } from '@/lib/api-client';
 
 const PLATFORMS = ['instagram', 'youtube', 'tiktok', 'twitter', 'other'];
 const POST_TYPES = ['video', 'image', 'content_writing', 'other'];
 
 export default function NewJobPage() {
   const router = useRouter();
-  const { user } = useUserStore();
   const [loading, setLoading] = useState(false);
 
   const [title, setTitle] = useState('');
@@ -49,33 +47,29 @@ export default function NewJobPage() {
       return;
     }
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-
-    const profile = mockDB.getProfile(user?.id ?? 'anon');
-    const brandName = profile.brand_name || user?.email?.split('@')[0] || 'My Brand';
-
-    mockDB.createJob({
-      title,
-      description,
-      target_platform: platform,
-      post_type: postType,
-      total_budget: Number(budget),
-      payout_type: payoutType,
-      deadline: deadline ? new Date(deadline).toISOString() : null,
-      organization: { brand_name: brandName },
-      milestones: milestones.map((m, i) => ({
-        id: `ms_new_${Date.now()}_${i}`,
-        title: m.title,
-        description: m.description,
-        amount: Number(m.amount),
-        status: 'pending' as const,
-      })),
-      required_elements: { hashtags, mentions: [] },
-    }, user?.id ?? 'anon');
-
-    toast.success('Deal posted!');
-    router.push('/organization/jobs');
-    setLoading(false);
+    try {
+      await jobAPI.create({
+        title,
+        description,
+        target_platform: platform,
+        post_type: postType,
+        total_budget: Number(budget),
+        payout_type: payoutType,
+        deadline: deadline ? new Date(deadline).toISOString() : null,
+        required_elements: { hashtags, mentions: [] },
+        milestones: milestones.map((m) => ({
+          title: m.title,
+          description: m.description,
+          amount: Number(m.amount),
+        })),
+      });
+      toast.success('Deal posted!');
+      router.push('/organization/jobs');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to post deal');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

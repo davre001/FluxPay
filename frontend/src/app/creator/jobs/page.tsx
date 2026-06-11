@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  Search, DollarSign, ArrowRight, Zap, X, Loader2,
+  Search, ArrowRight, Zap, X, Loader2,
   Instagram, Twitter, Youtube, Music2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { mockDB, MockJob } from '@/lib/mock-data';
+import { jobAPI, applicationAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
 
 const PLATFORMS = ['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'other'];
@@ -24,7 +24,7 @@ const PLATFORM_COLOR: Record<string, string> = {
 
 export default function CreatorJobsPage() {
   const { user } = useUserStore();
-  const [jobs, setJobs] = useState<MockJob[]>([]);
+  const [jobs, setJobs] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [platform, setPlatform] = useState('all');
   const [postType, setPostType] = useState('all');
@@ -36,11 +36,11 @@ export default function CreatorJobsPage() {
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const all = mockDB.getOpenJobs();
-    setJobs(all);
+    jobAPI.list({ status: 'open' }).then(({ data }) => setJobs(data as any[])).catch(() => {});
     if (user?.id) {
-      const myApps = mockDB.getMyApplications(user.id);
-      setAppliedIds(new Set(myApps.map((a) => a.job_id)));
+      applicationAPI.listMine().then(({ data }) => {
+        setAppliedIds(new Set((data as any[]).map((a) => a.job_id)));
+      }).catch(() => {});
     }
   }, [user?.id]);
 
@@ -57,19 +57,16 @@ export default function CreatorJobsPage() {
   const handleApply = async () => {
     if (!showModal || !user?.id) return;
     setApplying(true);
-    await new Promise((r) => setTimeout(r, 700));
     try {
-      mockDB.applyToJob(showModal, user.id, user.email, coverNote);
+      await jobAPI.apply(showModal, { cover_note: coverNote });
       setAppliedIds((prev) => new Set([...prev, showModal]));
       toast.success('Application submitted!');
       setShowModal(null);
       setCoverNote('');
-      setJobs(mockDB.getOpenJobs());
     } catch (e: any) {
       toast.error(e?.message || 'Failed to apply');
-    } finally {
-      setApplying(false);
     }
+    setApplying(false);
   };
 
   return (
@@ -179,7 +176,7 @@ export default function CreatorJobsPage() {
                 {/* Tags */}
                 <div className="flex flex-wrap gap-1.5 mb-4">
                   <span className="badge badge-slate capitalize">{job.post_type?.replace('_', ' ')}</span>
-                  {(job.required_elements?.hashtags ?? []).slice(0, 2).map((h) => (
+                  {(job.required_elements?.hashtags ?? []).slice(0, 2).map((h: string) => (
                     <span key={h} className="badge badge-slate">#{h}</span>
                   ))}
                 </div>

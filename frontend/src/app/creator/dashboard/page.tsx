@@ -3,18 +3,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  LayoutDashboard, Briefcase, DollarSign, Star, TrendingUp,
+  DollarSign, Star, TrendingUp,
   Clock, CheckCircle, ArrowRight, Zap, Search, X, Loader2,
   Instagram, Twitter, Youtube, Music2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { mockDB, MockJob } from '@/lib/mock-data';
+import { jobAPI, applicationAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
-
-const STATUS_BADGE: Record<string, string> = {
-  open: 'badge-green', in_progress: 'badge-cyan', completed: 'badge-purple',
-  expired: 'badge-slate', cancelled: 'badge-red',
-};
 
 const PLATFORMS = ['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'other'];
 const POST_TYPES = ['all', 'video', 'image', 'content_writing', 'other'];
@@ -48,11 +43,7 @@ function StatCard({ icon: Icon, label, value, sub, color }: any) {
 export default function CreatorDashboard() {
   const { user } = useUserStore();
   const [myApplications, setMyApplications] = useState<any[]>([]);
-  const [activeJobs, setActiveJobs] = useState<MockJob[]>([]);
-  const [earnings] = useState(350);
-
-  // Open jobs browsing state
-  const [openJobs, setOpenJobs] = useState<MockJob[]>([]);
+  const [openJobs, setOpenJobs] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [platform, setPlatform] = useState('all');
   const [postType, setPostType] = useState('all');
@@ -64,40 +55,29 @@ export default function CreatorDashboard() {
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    jobAPI.list({ status: 'open' }).then(({ data }) => setOpenJobs(data as any[])).catch(() => {});
     if (!user?.id) return;
-    const apps = mockDB.getMyApplications(user.id);
-    setMyApplications(apps);
-    const jobs = mockDB.getJobs();
-    
-    const acceptedApps = apps.filter((a) => a.status === 'accepted');
-    const activeDeals = acceptedApps.map((a) => jobs.find((j) => j.id === a.job_id)).filter(Boolean) as MockJob[];
-    setActiveJobs(activeDeals);
-
-    // Load open jobs for browsing
-    setOpenJobs(mockDB.getOpenJobs());
-    setAppliedIds(new Set(apps.map((a) => a.job_id)));
+    applicationAPI.listMine().then(({ data }) => {
+      const apps = data as any[];
+      setMyApplications(apps);
+      setAppliedIds(new Set(apps.map((a) => a.job_id)));
+    }).catch(() => {});
   }, [user?.id]);
 
   const handleApply = async () => {
     if (!showModal || !user?.id) return;
     setApplying(true);
-    await new Promise((r) => setTimeout(r, 700));
     try {
-      mockDB.applyToJob(showModal, user.id, user.email, coverNote);
+      await jobAPI.apply(showModal, { cover_note: coverNote });
       setAppliedIds((prev) => new Set([...prev, showModal]));
       toast.success('Application submitted!');
       setShowModal(null);
       setCoverNote('');
-      
-      // Refresh applications and open jobs
-      const apps = mockDB.getMyApplications(user.id);
-      setMyApplications(apps);
-      setOpenJobs(mockDB.getOpenJobs());
+      applicationAPI.listMine().then(({ data }) => setMyApplications(data as any[])).catch(() => {});
     } catch (e: any) {
       toast.error(e?.message || 'Failed to apply');
-    } finally {
-      setApplying(false);
     }
+    setApplying(false);
   };
 
   const active = myApplications.filter((a) => a.status === 'accepted').length;
@@ -132,10 +112,9 @@ export default function CreatorDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children fade-in">
         <StatCard icon={Clock}       label="Applications"  value={myApplications.length} color="bg-gradient-to-br from-brand-600 to-brand-500" />
         <StatCard icon={CheckCircle} label="Active Deals"  value={active}                color="bg-gradient-to-br from-emerald-600 to-green-500" />
-        <StatCard icon={DollarSign}  label="Total Earned"  value={`$${earnings}`}        color="bg-gradient-to-br from-accent-600 to-accent-500" sub="USDC" />
+        <StatCard icon={DollarSign}  label="Total Earned"  value="$0"                    color="bg-gradient-to-br from-accent-600 to-accent-500" sub="USDC" />
         <StatCard icon={Star}        label="Reputation"    value="4.8 ★"                 color="bg-gradient-to-br from-yellow-600 to-amber-500" sub="Score" />
       </div>
-
 
       {/* Browse available jobs section */}
       <div id="browse-section" className="pt-4 border-t border-white/5 space-y-6">
@@ -202,7 +181,6 @@ export default function CreatorDashboard() {
               return (
                 <div key={job.id} className="card flex flex-col justify-between">
                   <div>
-                    {/* Brand row */}
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-700 to-accent-700 flex items-center justify-center text-white font-black text-sm flex-shrink-0">
                         {(job.organization?.brand_name?.[0] ?? 'B').toUpperCase()}
@@ -224,7 +202,6 @@ export default function CreatorDashboard() {
                   </div>
 
                   <div>
-                    {/* Meta */}
                     <div className="grid grid-cols-3 gap-2 mb-4">
                       <div className="text-center p-2 rounded-xl" style={{ background: 'rgba(5,150,105,0.1)', border: '1px solid rgba(5,150,105,0.2)' }}>
                         <p className="text-xs text-slate-500">Budget</p>
@@ -242,7 +219,6 @@ export default function CreatorDashboard() {
                       </div>
                     </div>
 
-                    {/* Actions */}
                     <div className="flex gap-2">
                       <Link href={`/creator/deals/${job.id}`} className="btn-secondary flex-1 text-sm py-2">
                         Details

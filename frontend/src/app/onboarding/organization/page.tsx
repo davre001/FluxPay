@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, ArrowRight, Loader2, Globe } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { mockDB } from '@/lib/mock-data';
+import { profileAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
 
 export default function OrganizationOnboarding() {
@@ -20,16 +20,19 @@ export default function OrganizationOnboarding() {
     e.preventDefault();
     if (!brandName) { toast.error('Brand name is required'); return; }
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    mockDB.saveProfile(user?.id ?? 'anon', {
-      brand_name: brandName,
-      description,
-      website_url: websiteUrl || null,
-      profile_picture_url: picUrl || null,
-    });
-    toast.success('Brand profile created!');
-    router.push('/organization/dashboard');
-    setLoading(false);
+    try {
+      await profileAPI.updateMe({
+        name: brandName,
+        bio: description,
+        profile_picture_url: picUrl || null,
+      });
+      toast.success('Brand profile created!');
+      router.push('/organization/dashboard');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to save profile');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

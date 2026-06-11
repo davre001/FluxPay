@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Search, Star, TrendingUp, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useUserStore } from '@/stores/userStore';
-import { mockDB } from '@/lib/mock-data';
+import { reputationAPI } from '@/lib/api-client';
 
 const MOCK_SCORE = 240; // Silver-tier demo score
 
@@ -48,21 +48,15 @@ export default function CreatorReputationPage() {
   const [lookupResult, setLookupResult] = useState<any>(null);
   const [lookupLoading, setLookupLoading] = useState(false);
 
-  const applications = user?.id ? mockDB.getMyApplications(user.id) : [];
-  const accepted = applications.filter((a) => a.status === 'accepted').length;
-
   const handleLookup = async () => {
     if (!lookup) { toast.error('Enter a wallet address'); return; }
     setLookupLoading(true);
-    await new Promise((r) => setTimeout(r, 600));
-    // Simulate a result
-    const mockResult = {
-      wallet_address: lookup,
-      score: Math.floor(Math.random() * 400) + 50,
-      profile_type: Math.random() > 0.5 ? 'creator' : 'organization',
-      name: 'Anonymous User',
-    };
-    setLookupResult(mockResult);
+    try {
+      const { data } = await reputationAPI.lookup(lookup);
+      setLookupResult(data);
+    } catch (e: any) {
+      toast.error(e?.message || 'Lookup failed');
+    }
     setLookupLoading(false);
   };
 
@@ -83,8 +77,8 @@ export default function CreatorReputationPage() {
               <ScoreRing score={MOCK_SCORE} />
               <div className="grid grid-cols-3 gap-4 text-center mt-4">
                 {[
-                  { label: 'Deals Done',  val: applications.length },
-                  { label: 'Accepted',    val: accepted },
+                  { label: 'Deals Done',  val: '—' },
+                  { label: 'Accepted',    val: '—' },
                   { label: 'Avg. Rating', val: '4.8 ★' },
                 ].map(({ label, val }) => (
                   <div key={label} className="rounded-xl p-3" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)' }}>
@@ -160,13 +154,16 @@ export default function CreatorReputationPage() {
 
           {lookupResult && (
             <div className="rounded-xl p-5" style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)' }}>
-              <p className="text-xs text-slate-500 mb-1 font-mono truncate">{lookupResult.wallet_address}</p>
+              <p className="text-xs text-slate-500 mb-1 font-mono truncate">{(lookupResult as any).wallet_address}</p>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xl font-black text-white">{lookupResult.score} pts</p>
-                  <p className="text-sm text-slate-400 capitalize">{lookupResult.profile_type}</p>
+                  <p className="text-xl font-black text-white">{(lookupResult as any).score} pts</p>
+                  <p className="text-sm text-slate-400 capitalize">{(lookupResult as any).profile_type ?? 'unknown'}</p>
+                  {(lookupResult as any).name && (
+                    <p className="text-xs text-slate-500 mt-1">{(lookupResult as any).name}</p>
+                  )}
                 </div>
-                <ScoreRing score={lookupResult.score} />
+                <ScoreRing score={(lookupResult as any).score} />
               </div>
             </div>
           )}

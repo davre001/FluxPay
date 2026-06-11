@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Save, Loader2, X, Music2, User, Upload, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { mockDB } from '@/lib/mock-data';
+import { profileAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
 
 // Inline SVG icons for social platforms removed from lucide-react
@@ -49,15 +49,16 @@ export default function CreatorProfilePage() {
 
   useEffect(() => {
     if (!user?.id) return;
-    const p = mockDB.getProfile(user.id);
-    setName(p.name || '');
-    setBio(p.bio || '');
-    setPicUrl(p.profile_picture_url || '');
-    setNiches(p.niche_tags || []);
-    setInstagram(p.instagram || '');
-    setTwitter(p.twitter || '');
-    setYoutube(p.youtube || '');
-    setTiktok(p.tiktok || '');
+    profileAPI.getMe().then(({ data }: any) => {
+      setName(data?.name || '');
+      setBio(data?.bio || '');
+      setPicUrl(data?.profile_picture_url || '');
+      setNiches(data?.niche_tags || []);
+      setInstagram(data?.instagram || '');
+      setTwitter(data?.twitter || '');
+      setYoutube(data?.youtube || '');
+      setTiktok(data?.tiktok || '');
+    }).catch(() => {});
   }, [user?.id]);
 
   const toggleNiche = (n: string) =>
@@ -65,15 +66,19 @@ export default function CreatorProfilePage() {
 
   const handleSave = async () => {
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 700));
-    mockDB.saveProfile(user?.id ?? 'anon', {
-      name, bio, profile_picture_url: picUrl || null,
-      niche_tags: niches, instagram: instagram || null,
-      twitter: twitter || null, youtube: youtube || null, tiktok: tiktok || null,
-    });
-    toast.success('Profile updated!');
-    setSaving(false);
-    setIsEditing(false);
+    try {
+      await profileAPI.updateMe({
+        name, bio, profile_picture_url: picUrl || null,
+        niche_tags: niches, instagram: instagram || null,
+        twitter: twitter || null, youtube: youtube || null, tiktok: tiktok || null,
+      });
+      toast.success('Profile updated!');
+      setIsEditing(false);
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to save profile');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
