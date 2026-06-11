@@ -26,3 +26,5 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     </Web3AuthProvider>
   )
 }
+
+

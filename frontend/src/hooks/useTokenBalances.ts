@@ -72,3 +72,5 @@ export function useSolanaBalances() {
 
   return { ...summarize(query), address };
 }
+
+
