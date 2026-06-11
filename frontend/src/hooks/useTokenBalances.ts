@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useAccount, useChainId } from 'wagmi';
+import { useSolanaWallet } from '@web3auth/modal/react/solana';
 
 export interface WalletToken {
   symbol: string;
@@ -55,19 +56,21 @@ export function useTokenBalances() {
   return summarize(query);
 }
 
-// Solana token balances stub.
-// SolanaProvider and @solana/* packages have been removed (shimmed) so the
-// real useSolanaWallet hook is unavailable.  Return safe empty defaults so
-// consumers don't break.
+// Solana token balances for the embedded wallet's Solana account.
+// `accounts` is populated by Web3Auth's SolanaProvider after a social/email login;
+// an external EVM-only wallet (e.g. MetaMask) won't have a Solana account.
 export function useSolanaBalances() {
-  return {
-    tokens: [] as WalletToken[],
-    totalUsd: 0,
-    isLoading: false,
-    isError: false,
-    error: null as Error | null,
-    refetch: () => Promise.resolve(),
-    address: undefined as string | undefined,
-  };
+  const { accounts } = useSolanaWallet();
+  const address = accounts?.[0];
+
+  const query = useQuery({
+    queryKey: ['token-balances', 'solana-mainnet', address],
+    enabled: Boolean(address),
+    staleTime: 30_000,
+    queryFn: () => fetchBalances('solana-mainnet', address as string),
+  });
+
+  return { ...summarize(query), address };
 }
+
 
