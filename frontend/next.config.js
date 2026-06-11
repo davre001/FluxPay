@@ -10,6 +10,7 @@ const nextConfig = {
     // but are never actually used at runtime in this app.
     config.resolve.alias = {
       ...config.resolve.alias,
+      '@solana/react-hooks': false,
       '@solana/sysvars': false,
       '@solana/accounts': false,
       '@solana/addresses': false,
