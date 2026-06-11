@@ -8,7 +8,7 @@ import {
   Instagram, Twitter, Youtube, Music2, Loader2, ChevronDown, ChevronUp, X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { mockDB, MockJob, MockApplication, MockMilestone } from '@/lib/mock-data';
+import { jobAPI, milestoneAPI } from '@/lib/api-client';
 
 const MILESTONE_STATUS_STYLE: Record<string, { label: string; badge: string }> = {
   pending:   { label: 'Pending',   badge: 'badge-slate' },
@@ -17,13 +17,8 @@ const MILESTONE_STATUS_STYLE: Record<string, { label: string; badge: string }> =
   disputed:  { label: 'Disputed',  badge: 'badge-red' },
 };
 
-const SOCIAL_ICONS: Record<string, any> = {
-  instagram: Instagram, twitter: Twitter, youtube: Youtube, tiktok: Music2,
-};
-
-function MilestoneRow({ milestone, jobId, onAction }: {
-  milestone: MockMilestone;
-  jobId: string;
+function MilestoneRow({ milestone, onAction }: {
+  milestone: any;
   onAction: () => void;
 }) {
   const [open, setOpen] = useState(milestone.status === 'submitted');
@@ -32,19 +27,27 @@ function MilestoneRow({ milestone, jobId, onAction }: {
 
   const approve = async () => {
     setActing('approve');
-    await new Promise((r) => setTimeout(r, 700));
-    mockDB.updateMilestone(jobId, milestone.id, { status: 'approved' });
-    toast.success('Milestone approved! Funds released.');
-    onAction();
+    try {
+      await milestoneAPI.approve(milestone.id);
+      toast.success('Milestone approved! Funds released.');
+      onAction();
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to approve');
+    }
     setActing(null);
   };
 
   const dispute = async () => {
+    const reason = window.prompt('Dispute reason:');
+    if (!reason) return;
     setActing('dispute');
-    await new Promise((r) => setTimeout(r, 700));
-    mockDB.updateMilestone(jobId, milestone.id, { status: 'disputed' });
-    toast.success('Dispute raised. Admin will review.');
-    onAction();
+    try {
+      await milestoneAPI.dispute(milestone.id, { reason });
+      toast.success('Dispute raised. Admin will review.');
+      onAction();
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to dispute');
+    }
     setActing(null);
   };
 
@@ -93,32 +96,39 @@ function MilestoneRow({ milestone, jobId, onAction }: {
 
 export default function OrgJobDetailPage() {
   const { jobId } = useParams<{ jobId: string }>();
-  const [job, setJob] = useState<MockJob | null>(null);
-  const [applications, setApplications] = useState<MockApplication[]>([]);
+  const [job, setJob] = useState<any | null>(null);
+  const [applications, setApplications] = useState<any[]>([]);
   const [tab, setTab] = useState<'applicants' | 'milestones'>('applicants');
   const [selecting, setSelecting] = useState<string | null>(null);
 
-  const reload = () => {
-    const j = mockDB.getJobById(jobId);
-    setJob(j ?? null);
-    setApplications(mockDB.getApplicationsForJob(jobId));
+  const reload = async () => {
+    try {
+      const [{ data: j }, { data: apps }] = await Promise.all([
+        jobAPI.detail(jobId),
+        jobAPI.getApplications(jobId),
+      ]);
+      setJob(j as any);
+      setApplications(apps as any[]);
+    } catch {}
   };
 
   useEffect(() => { reload(); }, [jobId]);
 
-  const handleSelect = async (appId: string, creatorEmail: string) => {
-    setSelecting(appId);
-    await new Promise((r) => setTimeout(r, 700));
-    mockDB.updateApplicationStatus(appId, 'accepted');
-    mockDB.updateJobStatus(jobId, 'in_progress');
-    toast.success(`${creatorEmail} selected! Deal has started.`);
-    reload();
+  const handleSelect = async (creatorId: string) => {
+    setSelecting(creatorId);
+    try {
+      await jobAPI.selectCreator(jobId, creatorId);
+      toast.success('Creator selected! Deal has started.');
+      await reload();
+      setTab('milestones');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to select creator');
+    }
     setSelecting(null);
-    setTab('milestones');
   };
 
   const milestones = job?.milestones ?? [];
-  const approved = milestones.filter((m) => m.status === 'approved').length;
+  const approved = milestones.filter((m: any) => m.status === 'approved').length;
   const progress = milestones.length > 0 ? (approved / milestones.length) * 100 : 0;
 
   if (!job) return (
@@ -161,7 +171,7 @@ export default function OrgJobDetailPage() {
         {/* Hashtags */}
         {(job.required_elements?.hashtags ?? []).length > 0 && (
           <div className="flex flex-wrap gap-2 mt-4">
-            {job.required_elements!.hashtags.map((h) => (
+            {job.required_elements.hashtags.map((h: string) => (
               <span key={h} className="badge badge-purple">#{h}</span>
             ))}
           </div>
@@ -213,12 +223,12 @@ export default function OrgJobDetailPage() {
             applications.map((app) => (
               <div key={app.id} className="card flex flex-col sm:flex-row gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-700 to-accent-700 flex items-center justify-center text-white font-black text-lg flex-shrink-0">
-                  {app.creator_email[0].toUpperCase()}
+                  {(app.creator_id?.[0] ?? '?').toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-black text-white">{app.creator_email}</p>
+                      <p className="font-black text-white font-mono text-sm">{app.creator_id}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className={`badge ${app.status === 'accepted' ? 'badge-green' : app.status === 'rejected' ? 'badge-red' : 'badge-slate'}`}>
                           {app.status}
@@ -227,10 +237,10 @@ export default function OrgJobDetailPage() {
                       </div>
                     </div>
                     {job.status === 'open' && app.status === 'pending' && (
-                      <button onClick={() => handleSelect(app.id, app.creator_email)}
+                      <button onClick={() => handleSelect(app.creator_id)}
                               disabled={!!selecting}
                               className="btn-success text-sm py-2 flex-shrink-0">
-                        {selecting === app.id ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle size={13} />}
+                        {selecting === app.creator_id ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle size={13} />}
                         Select
                       </button>
                     )}
@@ -253,8 +263,8 @@ export default function OrgJobDetailPage() {
               <p className="text-slate-400 text-sm">No milestones defined for this job.</p>
             </div>
           ) : (
-            milestones.map((m) => (
-              <MilestoneRow key={m.id} milestone={m} jobId={jobId} onAction={reload} />
+            milestones.map((m: any) => (
+              <MilestoneRow key={m.id} milestone={m} onAction={reload} />
             ))
           )}
         </div>

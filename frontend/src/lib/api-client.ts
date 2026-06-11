@@ -78,7 +78,7 @@ export const milestoneAPI = {
   submit: (milestoneId: string, data: { deliverable_url: string; deliverable_note?: string }) =>
     request('POST', `/api/milestones/${milestoneId}/submit`, data),
   approve: (milestoneId: string) => request('POST', `/api/milestones/${milestoneId}/approve`),
-  dispute: (milestoneId: string, data: { reason: string }) => request('POST', `/api/milestones/${milestoneId}/dispute`),
+  dispute: (milestoneId: string, data: { reason: string }) => request('POST', `/api/milestones/${milestoneId}/dispute`, data),
 }
 
 // ─── Wallet / Transactions ────────────────────────────────────────────────────
@@ -95,4 +95,10 @@ export const reputationAPI = {
   lookup: (walletAddress: string) => request('GET', `/api/reputation/${walletAddress}`),
 }
 
-export default { authAPI, profileAPI, jobAPI, milestoneAPI, walletAPI, reputationAPI }
+// ─── Applications ─────────────────────────────────────────────────────────────
+export const applicationAPI = {
+  listMine: (params?: { status?: string }) =>
+    request('GET', '/api/applications/mine', undefined, params as Record<string, unknown>),
+}
+
+export default { authAPI, profileAPI, jobAPI, milestoneAPI, walletAPI, reputationAPI, applicationAPI }

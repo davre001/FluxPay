@@ -3,10 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  Search, Briefcase, ArrowRight, FileText, Clock,
-  CheckCircle, AlertCircle, X, ExternalLink,
+  Search, ArrowRight, FileText,
 } from 'lucide-react';
-import { mockDB, MockJob, MockApplication } from '@/lib/mock-data';
+import { applicationAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
 
 const STATUS_BADGE: Record<string, string> = {
@@ -17,30 +16,21 @@ const STATUS_BADGE: Record<string, string> = {
 
 export default function CreatorApplicationsPage() {
   const { user } = useUserStore();
-  const [applications, setApplications] = useState<MockApplication[]>([]);
-  const [jobs, setJobs] = useState<MockJob[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
     if (!user?.id) return;
-    setApplications(mockDB.getMyApplications(user.id));
-    setJobs(mockDB.getJobs());
+    applicationAPI.listMine().then(({ data }) => setApplications(data as any[])).catch(() => {});
   }, [user?.id]);
 
   const filtered = applications.filter((app) => {
-    const job = jobs.find((j) => j.id === app.job_id);
-    if (!job) return false;
-
-    // Search filter
     const matchesSearch =
-      job.title.toLowerCase().includes(search.toLowerCase()) ||
-      (job.organization?.brand_name ?? '').toLowerCase().includes(search.toLowerCase());
+      app.job_title.toLowerCase().includes(search.toLowerCase()) ||
+      (app.organization?.brand_name ?? '').toLowerCase().includes(search.toLowerCase());
     if (!matchesSearch) return false;
-
-    // Status filter
     if (statusFilter !== 'all' && app.status !== statusFilter) return false;
-
     return true;
   });
 
@@ -92,63 +82,58 @@ export default function CreatorApplicationsPage() {
         </div>
       ) : (
         <div className="space-y-4 stagger-children">
-          {filtered.map((app) => {
-            const job = jobs.find((j) => j.id === app.job_id);
-            if (!job) return null;
-
-            return (
-              <div
-                key={app.id}
-                className="card flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-brand-600/30 transition-all"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <span className={`badge ${STATUS_BADGE[app.status] ?? 'badge-slate'}`}>
-                      {app.status}
-                    </span>
-                    <span className="badge badge-slate capitalize">{job.target_platform}</span>
-                    <span className="text-xs text-slate-500">
-                      Applied {new Date(app.applied_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <h3 className="font-black text-white text-lg leading-snug">{job.title}</h3>
-                  <p className="text-xs font-bold text-slate-400 mt-0.5">
-                    {job.organization?.brand_name ?? 'Brand'}
-                  </p>
-                  
-                  {app.cover_note && (
-                    <div className="mt-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 max-w-2xl">
-                      <p className="text-xs text-slate-500 font-semibold mb-1">Your pitch note:</p>
-                      <p className="text-sm text-slate-400 italic font-medium">"{app.cover_note}"</p>
-                    </div>
-                  )}
+          {filtered.map((app) => (
+            <div
+              key={app.id}
+              className="card flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-brand-600/30 transition-all"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <span className={`badge ${STATUS_BADGE[app.status] ?? 'badge-slate'}`}>
+                    {app.status}
+                  </span>
+                  <span className="badge badge-slate capitalize">{app.job_target_platform}</span>
+                  <span className="text-xs text-slate-500">
+                    Applied {new Date(app.applied_at).toLocaleDateString()}
+                  </span>
                 </div>
+                <h3 className="font-black text-white text-lg leading-snug">{app.job_title}</h3>
+                <p className="text-xs font-bold text-slate-400 mt-0.5">
+                  {app.organization?.brand_name ?? 'Brand'}
+                </p>
 
-                <div className="flex flex-col sm:flex-row md:flex-col lg:flex-row items-stretch sm:items-center md:items-stretch lg:items-center gap-3 flex-shrink-0 min-w-[150px]">
-                  <div className="text-left sm:text-right md:text-left lg:text-right px-2">
-                    <p className="text-lg font-black text-emerald-400">${job.total_budget}</p>
-                    <p className="text-xs text-slate-500 font-semibold">Budget · USDC</p>
+                {app.cover_note && (
+                  <div className="mt-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 max-w-2xl">
+                    <p className="text-xs text-slate-500 font-semibold mb-1">Your pitch note:</p>
+                    <p className="text-sm text-slate-400 italic font-medium">"{app.cover_note}"</p>
                   </div>
-
-                  {app.status === 'accepted' ? (
-                    <Link
-                      href={`/creator/deals/${job.id}`}
-                      className="btn-primary text-xs py-2.5 px-4 flex-1 text-center"
-                    >
-                      Go to Deal <ArrowRight size={13} />
-                    </Link>
-                  ) : (
-                    <Link
-                      href={`/creator/deals/${job.id}`}
-                      className="btn-secondary text-xs py-2.5 px-4 flex-1 text-center"
-                    >
-                      View Details
-                    </Link>
-                  )}
-                </div>
+                )}
               </div>
-            );
-          })}
+
+              <div className="flex flex-col sm:flex-row md:flex-col lg:flex-row items-stretch sm:items-center md:items-stretch lg:items-center gap-3 flex-shrink-0 min-w-[150px]">
+                <div className="text-left sm:text-right md:text-left lg:text-right px-2">
+                  <p className="text-lg font-black text-emerald-400">${app.job_total_budget}</p>
+                  <p className="text-xs text-slate-500 font-semibold">Budget · USDC</p>
+                </div>
+
+                {app.status === 'accepted' ? (
+                  <Link
+                    href={`/creator/deals/${app.job_id}`}
+                    className="btn-primary text-xs py-2.5 px-4 flex-1 text-center"
+                  >
+                    Go to Deal <ArrowRight size={13} />
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/creator/deals/${app.job_id}`}
+                    className="btn-secondary text-xs py-2.5 px-4 flex-1 text-center"
+                  >
+                    View Details
+                  </Link>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

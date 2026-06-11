@@ -5,6 +5,23 @@ export function generatePaymentId() {
   return `pay_${randomUUID().replaceAll('-', '')}`;
 }
 
+export function generateJobId() {
+  return `job_${randomUUID().replaceAll('-', '')}`;
+}
+
+export function generateApplicationId() {
+  return `app_${randomUUID().replaceAll('-', '')}`;
+}
+
+export function generateMilestoneId() {
+  return `ms_${randomUUID().replaceAll('-', '')}`;
+}
+
+/** @deprecated use generateJobId */
+export function generateDealId() {
+  return generateJobId();
+}
+
 export function nowIso() {
   return new Date().toISOString();
 }

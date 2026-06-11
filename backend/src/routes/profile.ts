@@ -1,0 +1,17 @@
+import { ProfileService } from '../services/profileService.ts';
+
+export function createProfileRoutes(service = new ProfileService()) {
+  return {
+    async getMe(user: any) {
+      return { statusCode: 200, body: await service.getMyProfile(user.id) };
+    },
+
+    async updateMe(user: any, body: any) {
+      return { statusCode: 200, body: await service.updateMyProfile(user.id, body) };
+    },
+
+    async getReputation(walletAddress: string) {
+      return { statusCode: 200, body: await service.getReputation(walletAddress) };
+    },
+  };
+}

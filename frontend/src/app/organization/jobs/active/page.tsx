@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Plus, Search, ArrowRight, Briefcase, Users, Zap } from 'lucide-react';
-import { mockDB, MockJob } from '@/lib/mock-data';
+import { jobAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
 
 const STATUS_BADGE: Record<string, string> = {
@@ -13,16 +13,15 @@ const STATUS_BADGE: Record<string, string> = {
 
 export default function OrgActiveJobsPage() {
   const { user } = useUserStore();
-  const [jobs, setJobs] = useState<MockJob[]>([]);
+  const [jobs, setJobs] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
     if (!user?.id) return;
-    // Filter active jobs initially
-    const myJobs = mockDB.getMyJobs(user.id);
-    const active = myJobs.filter((j) => ['open', 'in_progress'].includes(j.status));
-    setJobs(active);
+    jobAPI.listMine().then(({ data }) => {
+      setJobs((data as any[]).filter((j) => ['open', 'in_progress'].includes(j.status)));
+    }).catch(() => {});
   }, [user?.id]);
 
   const filtered = jobs.filter((j) => {
@@ -87,7 +86,6 @@ export default function OrgActiveJobsPage() {
       ) : (
         <div className="space-y-4">
           {filtered.map((job) => {
-            const applications = mockDB.getApplicationsForJob(job.id);
             return (
               <div
                 key={job.id}
@@ -105,7 +103,7 @@ export default function OrgActiveJobsPage() {
                   <div className="text-xs text-slate-500 mt-1 flex items-center gap-3 flex-wrap font-medium">
                     <span className="text-emerald-400 font-bold">${job.total_budget} USDC</span>
                     <span className="flex items-center gap-1">
-                      <Users size={12} className="text-slate-400" /> {applications.length} applicant{applications.length !== 1 ? 's' : ''}
+                      <Users size={12} className="text-slate-400" /> {job.application_count ?? 0} applicant{(job.application_count ?? 0) !== 1 ? 's' : ''}
                     </span>
                     {job.deadline && (
                       <span>Due {new Date(job.deadline).toLocaleDateString()}</span>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Save, Loader2, Globe, Building2, Upload, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { mockDB } from '@/lib/mock-data';
+import { profileAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
 
 const INDUSTRY_OPTIONS = [
@@ -24,12 +24,21 @@ export default function OrgProfilePage() {
 
   useEffect(() => {
     if (!user?.id) return;
+<<<<<<< HEAD
     const p = mockDB.getProfile(user.id);
     setBrandName(p.brand_name || '');
     setDescription(p.description || '');
     setWebsiteUrl(p.website_url || '');
     setPicUrl(p.profile_picture_url || '');
     setIndustries((p as any).industries || []);
+=======
+    profileAPI.getMe().then(({ data }: any) => {
+      setBrandName(data?.name || '');
+      setDescription(data?.bio || '');
+      setWebsiteUrl(data?.website_url || '');
+      setPicUrl(data?.profile_picture_url || '');
+    }).catch(() => {});
+>>>>>>> 8fe697230e16e3514302f02ad37f32d20d47a178
   }, [user?.id]);
 
   const toggleIndustry = (i: string) =>
@@ -37,15 +46,18 @@ export default function OrgProfilePage() {
 
   const handleSave = async () => {
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 700));
-    mockDB.saveProfile(user?.id ?? 'anon', {
-      brand_name: brandName,
-      description,
-      website_url: websiteUrl || null,
-      profile_picture_url: picUrl || null,
-    });
-    toast.success('Brand profile updated!');
-    setSaving(false);
+    try {
+      await profileAPI.updateMe({
+        name: brandName,
+        bio: description,
+        profile_picture_url: picUrl || null,
+      });
+      toast.success('Brand profile updated!');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to save profile');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

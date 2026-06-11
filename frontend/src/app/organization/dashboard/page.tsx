@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Briefcase, Users, DollarSign, Star, Plus, ArrowRight, CheckCircle, Zap } from 'lucide-react';
-import { mockDB, MockJob } from '@/lib/mock-data';
+import { jobAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
 
 const STATUS_BADGE: Record<string, string> = {
@@ -29,11 +29,11 @@ function StatCard({ icon: Icon, label, value, color }: any) {
 
 export default function OrgDashboard() {
   const { user } = useUserStore();
-  const [jobs, setJobs] = useState<MockJob[]>([]);
+  const [jobs, setJobs] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user?.id) return;
-    setJobs(mockDB.getMyJobs(user.id));
+    jobAPI.listMine().then(({ data }) => setJobs(data as any[])).catch(() => {});
   }, [user?.id]);
 
   const activeJobs = jobs.filter((j) => ['open', 'in_progress'].includes(j.status)).length;
@@ -73,7 +73,7 @@ export default function OrgDashboard() {
           <h2 className="text-lg font-black text-white flex items-center gap-2">
             <Briefcase size={18} className="text-brand-400" /> My Active Jobs
           </h2>
-          <Link href="/organization/jobs/active" className="text-xs font-bold text-brand-400 hover:text-brand-300 flex items-center gap-1 transition-colors">
+          <Link href="/organization/jobs" className="text-xs font-bold text-brand-400 hover:text-brand-300 flex items-center gap-1 transition-colors">
             View all <ArrowRight size={12} />
           </Link>
         </div>

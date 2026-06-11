@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Wallet, ArrowDownToLine, ArrowUpFromLine, Loader2, Clock, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { mockDB } from '@/lib/mock-data';
+import { walletAPI } from '@/lib/api-client';
 import { useWalletInfo } from '@/hooks';
 
 const TX_TYPE_BADGE: Record<string, string> = {
@@ -17,8 +17,10 @@ const TX_LABEL: Record<string, string> = {
 };
 
 export default function CreatorWalletPage() {
-  const { chainName, chainId, explorerUrl } = useWalletInfo();
+  const { explorerUrl } = useWalletInfo();
   const [balance, setBalance] = useState(0);
+  const [chainName, setChainName] = useState('');
+  const [chainId, setChainId] = useState<number | null>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [depositAmt, setDepositAmt] = useState('');
   const [withdrawAmt, setWithdrawAmt] = useState('');
@@ -28,39 +30,47 @@ export default function CreatorWalletPage() {
   const [withdrawing, setWithdrawing] = useState(false);
   const [tab, setTab] = useState<'deposit' | 'withdraw'>('deposit');
 
-  useEffect(() => {
-    setBalance(mockDB.getBalance());
-    setTransactions(mockDB.getTransactions());
-  }, []);
+  const loadData = async () => {
+    try {
+      const [{ data: bal }, { data: txs }] = await Promise.all([
+        walletAPI.getBalance(),
+        walletAPI.getTransactions(),
+      ]);
+      setBalance((bal as any).balance);
+      setChainName((bal as any).chain_name || '');
+      setChainId((bal as any).chain_id || null);
+      setTransactions(txs as any[]);
+    } catch {}
+  };
+
+  useEffect(() => { loadData(); }, []);
 
   const handleDeposit = async () => {
     if (!depositAmt) { toast.error('Enter an amount'); return; }
     setDepositing(true);
-    await new Promise((r) => setTimeout(r, 800));
-    const amt = Number(depositAmt);
-    const newBal = balance + amt;
-    mockDB.setBalance(newBal);
-    mockDB.addTransaction({ type: 'deposit', amount: amt, tx_hash: txHash || undefined });
-    setBalance(newBal);
-    setTransactions(mockDB.getTransactions());
-    setDepositAmt(''); setTxHash('');
-    toast.success('Deposit recorded!');
+    try {
+      await walletAPI.deposit({ amount: Number(depositAmt), tx_hash: txHash || '0x0' });
+      setDepositAmt(''); setTxHash('');
+      toast.success('Deposit recorded!');
+      await loadData();
+    } catch (e: any) {
+      toast.error(e?.message || 'Deposit failed');
+    }
     setDepositing(false);
   };
 
   const handleWithdraw = async () => {
     if (!withdrawAmt) { toast.error('Enter an amount'); return; }
-    if (Number(withdrawAmt) > balance) { toast.error('Insufficient balance'); return; }
+    if (!withdrawAddr) { toast.error('Enter a destination address'); return; }
     setWithdrawing(true);
-    await new Promise((r) => setTimeout(r, 800));
-    const amt = Number(withdrawAmt);
-    const newBal = balance - amt;
-    mockDB.setBalance(newBal);
-    mockDB.addTransaction({ type: 'withdrawal', amount: amt });
-    setBalance(newBal);
-    setTransactions(mockDB.getTransactions());
-    setWithdrawAmt(''); setWithdrawAddr('');
-    toast.success('Withdrawal initiated!');
+    try {
+      await walletAPI.withdraw({ amount: Number(withdrawAmt), to_address: withdrawAddr });
+      setWithdrawAmt(''); setWithdrawAddr('');
+      toast.success('Withdrawal initiated!');
+      await loadData();
+    } catch (e: any) {
+      toast.error(e?.message || 'Withdrawal failed');
+    }
     setWithdrawing(false);
   };
 

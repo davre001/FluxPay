@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Plus, Search, ArrowRight, Briefcase, Users } from 'lucide-react';
-import { mockDB, MockJob } from '@/lib/mock-data';
+import { jobAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
 
 const STATUS_BADGE: Record<string, string> = {
@@ -13,13 +13,13 @@ const STATUS_BADGE: Record<string, string> = {
 
 export default function OrgJobsListPage() {
   const { user } = useUserStore();
-  const [jobs, setJobs] = useState<MockJob[]>([]);
+  const [jobs, setJobs] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
     if (!user?.id) return;
-    setJobs(mockDB.getMyJobs(user.id));
+    jobAPI.listMine().then(({ data }) => setJobs(data as any[])).catch(() => {});
   }, [user?.id]);
 
   const filtered = jobs.filter((j) => {
@@ -60,31 +60,28 @@ export default function OrgJobsListPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {filtered.map((job) => {
-            const applications = mockDB.getApplicationsForJob(job.id);
-            return (
-              <div key={job.id} className="card flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-brand-600/30 transition-all">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className={`badge ${STATUS_BADGE[job.status] ?? 'badge-slate'}`}>{job.status}</span>
-                    <span className="badge badge-slate capitalize">{job.target_platform}</span>
-                    <span className="badge badge-slate capitalize">{job.post_type?.replace('_', ' ')}</span>
-                  </div>
-                  <h3 className="font-black text-white truncate">{job.title}</h3>
-                  <p className="text-xs text-slate-500 mt-1 flex items-center gap-3">
-                    <span className="text-emerald-400 font-bold">${job.total_budget} USDC</span>
-                    <span className="flex items-center gap-1"><Users size={11} /> {applications.length} applicants</span>
-                    {job.deadline && <span>Due {new Date(job.deadline).toLocaleDateString()}</span>}
-                  </p>
+          {filtered.map((job) => (
+            <div key={job.id} className="card flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-brand-600/30 transition-all">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <span className={`badge ${STATUS_BADGE[job.status] ?? 'badge-slate'}`}>{job.status}</span>
+                  <span className="badge badge-slate capitalize">{job.target_platform}</span>
+                  <span className="badge badge-slate capitalize">{job.post_type?.replace('_', ' ')}</span>
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  <Link href={`/organization/jobs/${job.id}`} className="btn-secondary text-sm py-2 px-4">
-                    Manage <ArrowRight size={14} />
-                  </Link>
-                </div>
+                <h3 className="font-black text-white truncate">{job.title}</h3>
+                <p className="text-xs text-slate-500 mt-1 flex items-center gap-3">
+                  <span className="text-emerald-400 font-bold">${job.total_budget} USDC</span>
+                  <span className="flex items-center gap-1"><Users size={11} /> {job.application_count ?? 0} applicants</span>
+                  {job.deadline && <span>Due {new Date(job.deadline).toLocaleDateString()}</span>}
+                </p>
               </div>
-            );
-          })}
+              <div className="flex gap-2 flex-shrink-0">
+                <Link href={`/organization/jobs/${job.id}`} className="btn-secondary text-sm py-2 px-4">
+                  Manage <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
