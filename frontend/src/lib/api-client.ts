@@ -22,7 +22,8 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    const error = Object.assign(new Error(err.message || res.statusText), { status: res.status, data: err })
+    const message = err?.error?.message || err?.message || res.statusText || `HTTP ${res.status}`
+    const error = Object.assign(new Error(message), { status: res.status, data: err })
     throw error
   }
   const data = await res.json().catch(() => ({}) as T)

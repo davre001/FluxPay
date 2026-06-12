@@ -6,10 +6,11 @@ import {
   Zap, LayoutDashboard, Briefcase, User, Wallet, Star,
   LogOut, Menu, X, ChevronRight, Building2, FileText,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { useWeb3AuthConnect, useWeb3AuthDisconnect } from '@web3auth/modal/react';
 import { useUserStore } from '@/stores/userStore';
+import { profileAPI } from '@/lib/api-client';
 
 const creatorLinks = [
   { href: '/creator/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
@@ -32,12 +33,18 @@ const orgLinks = [
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileName, setProfileName] = useState('');
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, logout } = useUserStore();
   const { address, isConnected } = useAccount();
   const { connect } = useWeb3AuthConnect();
   const { disconnect } = useWeb3AuthDisconnect();
+
+  useEffect(() => {
+    if (!user?.id) return;
+    profileAPI.getMe().then(({ data }: any) => setProfileName(data?.name || '')).catch(() => {});
+  }, [user?.id]);
 
   const links = user?.profileType === 'organization' ? orgLinks : creatorLinks;
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
@@ -111,10 +118,10 @@ export default function Navbar() {
           <div className="flex items-center gap-3 px-3 py-3 rounded-xl transition-colors hover:bg-[#111111]"
                style={{ border: '1px solid #1a1a1a' }}>
             <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-black text-xs font-black">
-              {user?.email?.[0]?.toUpperCase() ?? '?'}
+              {(profileName || user?.email)?.[0]?.toUpperCase() ?? '?'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-white truncate">{user?.email}</p>
+              <p className="text-xs font-bold text-white truncate">{profileName || user?.email}</p>
               <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest text-[#9ca3af]" style={{ background: '#1a1a1a', border: '1px solid #252525' }}>
                 {user?.profileType === 'organization' ? 'Brand' : 'Creator'}
               </span>

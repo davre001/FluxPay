@@ -88,7 +88,7 @@ export default function OrgProfilePage() {
       setDescription(data?.bio || '');
       setWebsiteUrl(data?.website_url || '');
       setPicUrl(data?.profile_picture_url || '');
-      setIndustries(data?.industries || []);
+      setIndustries(Array.isArray(data?.niche_tags) ? data.niche_tags : []);
     }).catch(() => {});
   }, [user?.id]);
 
@@ -101,7 +101,9 @@ export default function OrgProfilePage() {
       await profileAPI.updateMe({
         name: brandName,
         bio: description,
+        website_url: websiteUrl || null,
         profile_picture_url: picUrl || null,
+        niche_tags: industries,
       });
       toast.success('Brand profile updated!');
     } catch (e: any) {

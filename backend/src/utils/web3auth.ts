@@ -69,25 +69,27 @@ export async function verifyWeb3AuthToken(token: string) {
     throw new UnauthorizedError(`Unsupported token algorithm: ${header.alg}`);
   }
 
-  const verificationKeys = await getVerificationKeys(header);
-  if (!verificationKeys.length) {
-    throw new UnauthorizedError('No verification keys available');
-  }
-
   const signingInput = Buffer.from(`${headerB64}.${payloadB64}`);
   const signature = b64urlToBuffer(signatureB64);
 
   // Accept the token if ANY candidate key verifies it. JWS ES256 signatures are
-  // raw r||s (IEEE P1363), not DER.
+  // raw r||s (IEEE P1363), not DER. When signature verification is allowed to be
+  // skipped (devnet), don't even fetch the JWKS — go straight to claim checks.
   let valid = false;
-  for (const publicKey of verificationKeys) {
-    try {
-      if (cryptoVerify('sha256', signingInput, { key: publicKey, dsaEncoding: 'ieee-p1363' }, signature)) {
-        valid = true;
-        break;
+  if (!config.web3auth.allowUnverifiedSignature) {
+    const verificationKeys = await getVerificationKeys(header);
+    if (!verificationKeys.length) {
+      throw new UnauthorizedError('No verification keys available');
+    }
+    for (const publicKey of verificationKeys) {
+      try {
+        if (cryptoVerify('sha256', signingInput, { key: publicKey, dsaEncoding: 'ieee-p1363' }, signature)) {
+          valid = true;
+          break;
+        }
+      } catch {
+        // try the next key
       }
-    } catch {
-      // try the next key
     }
   }
 

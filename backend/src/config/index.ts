@@ -2,7 +2,8 @@ export const config = {
   port: Number(process.env.PORT || 8000),
   nodeEnv: process.env.NODE_ENV || 'development',
   frontendUrl: process.env.FRONTEND_URL || '*',
-  databaseUrl: process.env.DATABASE_URL || '',
+  // Accept either name — the Neon connection string has shown up as both in env.
+  databaseUrl: process.env.DATABASE_URL || process.env.POSTGREL_URL || '',
   ethereumRpcUrl: process.env.ETHEREUM_RPC_URL || '',
   contractAddress: process.env.CONTRACT_ADDRESS || '',
 
@@ -22,6 +23,11 @@ export const config = {
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean),
+    // DEVNET ONLY: Sapphire Devnet signs idTokens with rotating keys that are not
+    // published on any reachable JWKS, so the signature can't be verified server-side.
+    // When true, we still enforce audience + issuer + expiry, but skip the signature
+    // check. MUST be false on mainnet (where api-auth.web3auth.io JWKS works).
+    allowUnverifiedSignature: process.env.WEB3AUTH_ALLOW_UNVERIFIED === 'true',
   },
 };
 

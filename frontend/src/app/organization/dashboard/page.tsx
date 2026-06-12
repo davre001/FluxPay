@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Briefcase, Users, DollarSign, Star, Plus, ArrowRight, CheckCircle, Zap } from 'lucide-react';
-import { jobAPI } from '@/lib/api-client';
+import { jobAPI, profileAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
 
 const STATUS_BADGE: Record<string, string> = {
@@ -30,10 +30,12 @@ function StatCard({ icon: Icon, label, value, color }: any) {
 export default function OrgDashboard() {
   const { user } = useUserStore();
   const [jobs, setJobs] = useState<any[]>([]);
+  const [profileName, setProfileName] = useState('');
 
   useEffect(() => {
     if (!user?.id) return;
     jobAPI.listMine().then(({ data }) => setJobs(data as any[])).catch(() => {});
+    profileAPI.getMe().then(({ data }: any) => setProfileName(data?.name || '')).catch(() => {});
   }, [user?.id]);
 
   const activeJobs = jobs.filter((j) => ['open', 'in_progress'].includes(j.status)).length;
@@ -50,7 +52,7 @@ export default function OrgDashboard() {
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Brand Dashboard</p>
           <h1 className="text-3xl font-black text-white">
-            Hey, <span className="gradient-text">{user?.email?.split('@')[0]}</span> 👋
+            Hey, <span className="gradient-text">{profileName || user?.email?.split('@')[0]}</span> 👋
           </h1>
           <p className="text-slate-400 text-sm mt-1">Manage your creator deals and campaigns.</p>
         </div>

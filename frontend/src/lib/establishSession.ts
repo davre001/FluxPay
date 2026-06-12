@@ -32,7 +32,7 @@ export async function establishSession(opts: {
       id: data.user.id,
       email: data.user.email || email || '',
       profileType: data.user.profileType ?? profileType ?? null,
-      walletAddress: data.user.walletAddress || walletAddress,
+      walletAddress: walletAddress || data.user.walletAddress,
     }
   } catch (err) {
     console.warn('Backend session unavailable, using local session:', err)

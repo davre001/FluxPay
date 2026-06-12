@@ -63,10 +63,13 @@ export class AuthService {
       console.warn('[auth] ✗ /me token verification failed:', (e as Error).message);
       throw e;
     }
-    const { key } = deriveIdentity(payload);
-    const user = await this.repository.findByKey(key);
+    const { key, email, walletAddress } = deriveIdentity(payload);
+    let user = await this.repository.findByKey(key);
     if (!user) {
-      throw new NotFoundError('User not found — complete signup first');
+      // Server restarted and lost in-memory state — auto-recreate the user so
+      // the session stays valid. The frontend Zustand store retains the role.
+      console.warn(`[auth] user ${key} not in memory — recreating (server restart?)`);
+      user = await this.repository.upsert({ key, email, walletAddress });
     }
     console.log(`[auth] ✓ /me verified — user=${key}`);
     return { user };
