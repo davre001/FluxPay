@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowRight, CheckCircle, TrendingUp, Bot, Lock, Star, Briefcase, Users, UserCheck, Upload, Zap, UserRound, Building2 } from 'lucide-react';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
 import { TestimonialsSection } from '@/components/ui/testimonials-section';
+import Footer4Col from '@/components/ui/footer-column';
 import { motion, animate } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 
@@ -661,6 +662,7 @@ export default function Home() {
         </section>
 
       </div>
+      <Footer4Col />
     </main>
   );
 }
