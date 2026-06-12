@@ -24,21 +24,12 @@ export default function OrgProfilePage() {
 
   useEffect(() => {
     if (!user?.id) return;
-<<<<<<< HEAD
-    const p = mockDB.getProfile(user.id);
-    setBrandName(p.brand_name || '');
-    setDescription(p.description || '');
-    setWebsiteUrl(p.website_url || '');
-    setPicUrl(p.profile_picture_url || '');
-    setIndustries((p as any).industries || []);
-=======
     profileAPI.getMe().then(({ data }: any) => {
       setBrandName(data?.name || '');
       setDescription(data?.bio || '');
       setWebsiteUrl(data?.website_url || '');
       setPicUrl(data?.profile_picture_url || '');
     }).catch(() => {});
->>>>>>> 8fe697230e16e3514302f02ad37f32d20d47a178
   }, [user?.id]);
 
   const toggleIndustry = (i: string) =>
