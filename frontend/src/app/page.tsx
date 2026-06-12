@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight, CheckCircle, TrendingUp, Bot, Lock, Star, Briefcase, Users, UserCheck, Upload, Zap, UserRound, Building2 } from 'lucide-react';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
+import { TestimonialsSection } from '@/components/ui/testimonials-section';
 import { motion, animate } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 
@@ -597,6 +598,9 @@ export default function Home() {
 
         {/* Deal Flow */}
         <DealFlowSection />
+
+        {/* Testimonials */}
+        <TestimonialsSection />
 
         {/* Final CTA */}
         <section className="py-28" style={{ background: '#0a0a0a' }}>
