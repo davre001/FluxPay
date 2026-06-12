@@ -8,7 +8,7 @@ import {
   Instagram, Twitter, Youtube, Music2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { jobAPI, applicationAPI } from '@/lib/api-client';
+import { jobAPI, applicationAPI, profileAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
 
 const PLATFORMS = ['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'other'];
@@ -42,6 +42,7 @@ function StatCard({ icon: Icon, label, value, sub, color }: any) {
 
 export default function CreatorDashboard() {
   const { user } = useUserStore();
+  const [profileName, setProfileName] = useState('');
   const [myApplications, setMyApplications] = useState<any[]>([]);
   const [openJobs, setOpenJobs] = useState<any[]>([]);
   const [search, setSearch] = useState('');
@@ -57,6 +58,7 @@ export default function CreatorDashboard() {
   useEffect(() => {
     jobAPI.list({ status: 'open' }).then(({ data }) => setOpenJobs(data as any[])).catch(() => {});
     if (!user?.id) return;
+    profileAPI.getMe().then(({ data }: any) => setProfileName(data?.name || '')).catch(() => {});
     applicationAPI.listMine().then(({ data }) => {
       const apps = data as any[];
       setMyApplications(apps);
@@ -99,7 +101,7 @@ export default function CreatorDashboard() {
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Creator Dashboard</p>
           <h1 className="text-3xl font-black text-white">
-            Hey, <span className="gradient-text">{user?.email?.split('@')[0]}</span> 👋
+            Hey, <span className="gradient-text">{profileName || user?.email?.split('@')[0]}</span> 👋
           </h1>
           <p className="text-slate-400 text-sm mt-1">Here's what's happening with your deals today.</p>
         </div>
