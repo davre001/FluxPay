@@ -1,3 +1,5 @@
+import { activeChain, isTestnetMode } from './chains.ts';
+
 export const config = {
   port: Number(process.env.PORT || 8000),
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -7,16 +9,58 @@ export const config = {
   ethereumRpcUrl: process.env.ETHEREUM_RPC_URL || '',
   contractAddress: process.env.CONTRACT_ADDRESS || '',
 
-  // Testnet USDC faucet — sends a one-time $2 USDC welcome drip to a user's
-  // wallet on first signup, used as their gas budget via the USDC paymaster.
-  // Safe no-op when FAUCET_PRIVATE_KEY is unset. TESTNET ONLY — never put a
-  // mainnet key here (it would hand out real money).
+  // The active chain everything runs on (see config/chains.ts). Mainnet by
+  // default; flip with NETWORK_MODE=testnet (Base Sepolia) or ACTIVE_CHAIN_ID.
+  chain: activeChain,
+
+  // USDC faucet — one-time $2 welcome drip on first signup. TESTNET ONLY: it
+  // hands out free USDC, which makes no sense on mainnet, so it's force-disabled
+  // unless the active chain is a testnet. Safe no-op when FAUCET_PRIVATE_KEY unset.
   faucet: {
     privateKey: process.env.FAUCET_PRIVATE_KEY || '',
-    rpcUrl: process.env.BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org',
-    // Circle's official testnet USDC on Base Sepolia (6 decimals).
-    usdcAddress: process.env.FAUCET_USDC_ADDRESS || '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    rpcUrl: activeChain.rpcUrl,
+    usdcAddress: activeChain.usdc,
     dripUsdc: process.env.FAUCET_DRIP_USDC || '2',
+    enabledForChain: isTestnetMode(), // never drip free USDC on mainnet
+  },
+
+  // The on-chain "agent" that redeems brand-granted ERC-7715 permissions to pay
+  // creators (ERC-7710). Same wallet as the faucet by default — set a separate
+  // AGENT_PRIVATE_KEY only if you split the roles. Chain-driven. No-op when unset.
+  agent: {
+    privateKey: process.env.AGENT_PRIVATE_KEY || process.env.FAUCET_PRIVATE_KEY || '',
+    rpcUrl: activeChain.rpcUrl,
+    chainId: activeChain.id,
+    usdcAddress: activeChain.usdc,
+  },
+
+  // A2A: the "settlement" agent that the platform agent redelegates a narrowed,
+  // per-job permission to. It does the actual USDC release, so a leak of its key
+  // is capped at the redelegated amount — not the brand's full grant.
+  settlement: {
+    privateKey: process.env.SETTLEMENT_AGENT_PRIVATE_KEY || '',
+  },
+
+  // Venice AI — verifies creator deliverables against the job brief. Venice's
+  // API is OpenAI-compatible (chat/completions). Safe no-op when unset. Use a
+  // vision-capable model so image deliverables can be judged.
+  venice: {
+    apiKey: process.env.VENICE_API_KEY || '',
+    baseUrl: process.env.VENICE_BASE_URL || 'https://api.venice.ai/api/v1',
+    // Confirmed, vision-capable model. Override via VENICE_MODEL; list options
+    // with GET {baseUrl}/models.
+    model: process.env.VENICE_MODEL || 'claude-opus-4-7',
+  },
+
+  // 1Shot permissionless relayer — relays ERC-7710 redemptions and pays gas in
+  // a stablecoin (USDC). Permissionless: no API key. MAINNET ONLY (testnets
+  // return empty capabilities), so this is the mainnet payout rail. The fee
+  // token is NOT hardcoded — RelayerService picks USDC from getCapabilities.
+  oneshot: {
+    endpoint: process.env.ONESHOT_RELAYER_URL || 'https://relayer.1shotapi.com/relayers',
+    // Defaults to the active chain when it's a mainnet; falls back to Base
+    // mainnet on testnet (1Shot can't relay on testnets anyway).
+    chainId: Number(process.env.ONESHOT_CHAIN_ID || (isTestnetMode() ? 8453 : activeChain.id)),
   },
 
   // Web3Auth (MetaMask Embedded Wallets) — used to verify the idToken the

@@ -1,3 +1,4 @@
+import './config/loadEnv.ts'; // MUST be first — populates process.env before config is read
 import { pathToFileURL } from 'node:url';
 import { createApp } from './app.ts';
 import { config } from './config/index.ts';

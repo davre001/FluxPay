@@ -23,8 +23,12 @@ import { createFaucetRoutes } from './routes/faucet.ts';
 import { FaucetService } from './services/faucetService.ts';
 import { createPermissionRoutes } from './routes/permission.ts';
 import { PermissionService } from './services/permissionService.ts';
+import { PayoutService } from './services/payoutService.ts';
 import { InMemoryPermissionRepository } from './models/permission.ts';
 import { PgPermissionRepository } from './models/postgres.ts';
+import { createVerificationRoutes } from './routes/verification.ts';
+import { VerificationService } from './services/verificationService.ts';
+import { SettlementService } from './services/settlementService.ts';
 import { PaymentService } from './services/paymentService.ts';
 import { JobService } from './services/jobService.ts';
 import { ProfileService } from './services/profileService.ts';
@@ -146,10 +150,21 @@ export function createApp(options: any = {}) {
   const faucetService = options.faucetService || new FaucetService();
   const faucetRoutes = createFaucetRoutes(faucetService);
 
-  // Permission slice — ERC-7715 spending permissions granted per job
+  // Permission slice — ERC-7715 spending permissions granted per job, plus the
+  // ERC-7710 payout that redeems them to pay creators.
   const permissionRepository = options.permissionRepository || repos.permission;
   const permissionService = options.permissionService || new PermissionService(permissionRepository);
-  const permissionRoutes = createPermissionRoutes(permissionService);
+  const payoutService = options.payoutService
+    || new PayoutService(permissionRepository, jobRepository, milestoneRepository, userRepository);
+  const permissionRoutes = createPermissionRoutes(permissionService, payoutService);
+
+  // Verification slice — Venice AI judges a milestone deliverable against the brief
+  const verificationService = options.verificationService
+    || new VerificationService(milestoneRepository, jobRepository);
+  // Autonomous settlement — verify → score → release the scored USDC (no human)
+  const settlementService = options.settlementService
+    || new SettlementService(verificationService, payoutService, milestoneRepository);
+  const verificationRoutes = createVerificationRoutes(verificationService, settlementService);
 
   const skipAuth: boolean = options.skipAuth ?? false;
   const mockUser: any = options.mockUser;
@@ -199,6 +214,12 @@ export function createApp(options: any = {}) {
       } else if (parts[0] === 'permissions') {
         const user = await requireAuth(req, authService, skipAuth, mockUser);
         response = await dispatchPermissionRoute(req, parts, permissionRoutes, user);
+      } else if (parts[0] === 'verify') {
+        const user = await requireAuth(req, authService, skipAuth, mockUser);
+        response = await dispatchVerificationRoute(req, parts, verificationRoutes, user);
+      } else if (parts[0] === 'settle') {
+        const user = await requireAuth(req, authService, skipAuth, mockUser);
+        response = await dispatchSettleRoute(req, parts, verificationRoutes, user);
       } else {
         throw new NotFoundError('Route not found');
       }
@@ -217,7 +238,8 @@ export function createApp(options: any = {}) {
     walletRepository, walletService,
     userRepository, authService,
     faucetService,
-    permissionRepository, permissionService,
+    permissionRepository, permissionService, payoutService,
+    verificationService, settlementService,
   };
 
   return server;
@@ -395,9 +417,32 @@ async function dispatchPermissionRoute(req, parts, routes, user) {
   if (req.method === 'POST' && parts.length === 1) {
     return routes.store(user, await readJsonBody(req));
   }
+  // POST /api/permissions/redeem  (must come before /:jobId)
+  if (req.method === 'POST' && parts[1] === 'redeem') {
+    return routes.redeem(user, await readJsonBody(req));
+  }
   // GET /api/permissions/:jobId
   if (req.method === 'GET' && parts[1]) {
     return routes.getForJob(decodeURIComponent(parts[1]));
+  }
+  throw new NotFoundError('Route not found');
+}
+
+// ─── Verification dispatch ────────────────────────────────────────────────────
+
+async function dispatchVerificationRoute(req, parts, routes, user) {
+  // POST /api/verify
+  if (req.method === 'POST' && parts.length === 1) {
+    return routes.verify(user, await readJsonBody(req));
+  }
+  throw new NotFoundError('Route not found');
+}
+
+// ─── Settlement dispatch (autonomous verify→score→pay) ────────────────────────
+
+async function dispatchSettleRoute(req, parts, routes, user) {
+  if (req.method === 'POST' && parts.length === 1) {
+    return routes.settle(user, await readJsonBody(req));
   }
   throw new NotFoundError('Route not found');
 }

@@ -40,6 +40,39 @@ Two user roles:
 
 ---
 
+## ⚙️ The settlement engine (backend)
+
+The backend is where the three sponsor stacks fuse into one autonomous loop:
+
+| Sponsor tech | Role in FluxPay |
+|---|---|
+| **MetaMask Smart Accounts** (ERC-7715 / ERC-7710) | Brands grant a spending permission; the agent redeems it to pay creators |
+| **Venice AI** | Scores each deliverable against the brief and *decides the payout amount* |
+| **1Shot API** | Relays payouts so gas is paid in **USDC** (mainnet) |
+
+> A creator submits work → **Venice scores it** → the agent **releases the
+> AI-determined amount of USDC** from the brand's pre-signed permission — with no
+> human clicking "approve." Quality-weighted, autonomous, on-chain.
+
+```mermaid
+flowchart LR
+    Submit["Creator submits<br/>deliverable"] --> Venice["Venice AI<br/>scores the work"]
+    Venice --> Score{"score ≥ min?"}
+    Score -->|"no"| Reject["Rejected<br/>no payment"]
+    Score -->|"yes"| Pay["Release score × amount<br/>in USDC"]
+    Pay --> Perm["Brand's MetaMask<br/>permission (7715/7710)"]
+    Perm --> OneShot["1Shot relays<br/>(gas paid in USDC)"]
+    OneShot --> Paid["Creator paid 💸"]
+
+    classDef tech fill:#312e81,stroke:#6366f1,color:#e0e7ff;
+    class Venice,Perm,OneShot tech;
+```
+
+📖 **Full backend documentation — every feature, endpoint, env var, and scenario —
+lives in [`backend/BackendReadme.md`](backend/BackendReadme.md).**
+
+---
+
 ## Technology Stack
 
 ### Frontend
@@ -60,7 +93,10 @@ Two user roles:
 | Runtime | Node.js ≥ 20 (`node:http` — no framework) |
 | Language | TypeScript (ESM, run via `tsx`) |
 | Auth | Web3Auth JWT verification (JWKS or static PEM) |
-| Storage | In-memory repositories (DB wire-up pending) |
+| Storage | Neon Postgres (JSONB repos) — falls back to in-memory when unset |
+| On-chain | viem + `@metamask/delegation-toolkit` (ERC-7715/7710) |
+| AI | Venice AI (deliverable verification) |
+| Relayer | 1Shot (USDC-gas payouts) |
 | Deploy | Render (`render.yaml`) |
 
 ### Blockchain

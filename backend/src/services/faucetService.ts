@@ -1,7 +1,7 @@
 import { createWalletClient, createPublicClient, http, parseUnits, getAddress, isAddress } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { baseSepolia } from 'viem/chains';
 import { config } from '../config/index.ts';
+import { activeChain } from '../config/chains.ts';
 import { isDbEnabled, query } from '../database/client.ts';
 
 // Minimal ERC-20 ABI — just the calls the faucet needs.
@@ -22,7 +22,8 @@ export class FaucetService {
   private enabled: boolean;
 
   constructor() {
-    this.enabled = Boolean(config.faucet.privateKey);
+    // Only active on a testnet chain — never hand out free USDC on mainnet.
+    this.enabled = Boolean(config.faucet.privateKey) && config.faucet.enabledForChain;
   }
 
   private async alreadyFunded(address: string): Promise<boolean> {
@@ -65,15 +66,15 @@ export class FaucetService {
         (config.faucet.privateKey.startsWith('0x') ? config.faucet.privateKey : `0x${config.faucet.privateKey}`) as `0x${string}`,
       );
       const transport = http(config.faucet.rpcUrl);
-      const wallet = createWalletClient({ account, chain: baseSepolia, transport });
-      const publicClient = createPublicClient({ chain: baseSepolia, transport });
+      const wallet = createWalletClient({ account, chain: activeChain.viemChain, transport });
+      const publicClient = createPublicClient({ chain: activeChain.viemChain, transport });
 
       const amount = parseUnits(config.faucet.dripUsdc, 6); // testnet USDC has 6 decimals
       const usdc = config.faucet.usdcAddress as `0x${string}`;
 
       const txHash = await wallet.writeContract({
         account,
-        chain: baseSepolia,
+        chain: activeChain.viemChain,
         address: usdc,
         abi: ERC20_ABI,
         functionName: 'transfer',
