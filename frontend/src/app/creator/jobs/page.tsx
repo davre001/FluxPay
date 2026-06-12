@@ -90,7 +90,7 @@ export default function CreatorJobsPage() {
             <label className="label">Platform</label>
             <select value={platform} onChange={(e) => setPlatform(e.target.value)} className="input">
               {PLATFORMS.map((p) => (
-                <option key={p} value={p} style={{ background: '#0f172a' }}>
+                <option key={p} value={p} style={{ background: '#0a0a0f' }}>
                   {p === 'all' ? 'All Platforms' : p.charAt(0).toUpperCase() + p.slice(1)}
                 </option>
               ))}
@@ -100,7 +100,7 @@ export default function CreatorJobsPage() {
             <label className="label">Post Type</label>
             <select value={postType} onChange={(e) => setPostType(e.target.value)} className="input">
               {POST_TYPES.map((t) => (
-                <option key={t} value={t} style={{ background: '#0f172a' }}>
+                <option key={t} value={t} style={{ background: '#0a0a0f' }}>
                   {t === 'all' ? 'All Types' : t.replace('_', ' ')}
                 </option>
               ))}

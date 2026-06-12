@@ -1,11 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Save, Loader2, X, User, Upload, Pencil, Check } from 'lucide-react';
+import {
+  Save, Loader2, X, User, Upload, Pencil, Check,
+  MapPin, Clock, Star, Shield, TrendingUp,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { profileAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
+import { cn } from '@/lib/utils';
 
+/* ── Social icons ── */
 const InstagramIcon = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
@@ -32,12 +37,76 @@ const NICHE_OPTIONS = [
   'Travel', 'Lifestyle', 'Finance', 'Music', 'Education', 'Comedy', 'Sports', 'Art',
 ];
 
+const XLogo = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
 const SOCIALS = [
-  { key: 'instagram', icon: InstagramIcon, label: 'Instagram', color: '#e1306c', placeholder: 'handle (without @)' },
-  { key: 'twitter',   icon: X,             label: 'Twitter / X', color: '#000000', placeholder: 'handle (without @)' },
-  { key: 'youtube',   icon: YoutubeIcon,   label: 'YouTube',   color: '#ff0000', placeholder: 'channel handle' },
-  { key: 'tiktok',    icon: TikTokIcon,    label: 'TikTok',    color: '#010101', placeholder: 'handle (without @)' },
+  { key: 'instagram', icon: InstagramIcon, label: 'Instagram', color: '#e1306c', placeholder: 'username (without @)' },
+  { key: 'twitter',   icon: XLogo,         label: 'Twitter',   color: '#1da1f2', placeholder: 'handle (without @)' },
+  { key: 'youtube',   icon: YoutubeIcon,   label: 'YouTube',   color: '#ff0000', placeholder: 'channel ID or URL' },
+  { key: 'tiktok',    icon: TikTokIcon,    label: 'TikTok',    color: '#e2e8f0', placeholder: 'handle (without @)' },
 ] as const;
+
+/* ── Reusable section header ── */
+function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="mb-5">
+      <h2 className="text-base font-bold text-white tracking-tight">{title}</h2>
+      {subtitle && <p className="text-xs text-[#6b7280] mt-0.5">{subtitle}</p>}
+    </div>
+  );
+}
+
+/* ── Premium input ── */
+function PremiumInput({
+  label, value, onChange, placeholder, type = 'text', prefix, textarea, rows = 4, hint,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
+  prefix?: React.ReactNode;
+  textarea?: boolean;
+  rows?: number;
+  hint?: string;
+}) {
+  const base =
+    'w-full bg-[#111111] border border-[#1f1f1f] rounded-lg text-sm text-white placeholder-[#3d3d3d] focus:outline-none focus:border-[#404040] transition-colors duration-200';
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">
+        {label}
+      </label>
+      <div className="relative">
+        {prefix && (
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center">{prefix}</span>
+        )}
+        {textarea ? (
+          <textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            rows={rows}
+            className={cn(base, 'px-4 py-3 resize-none leading-relaxed', prefix && 'pl-9')}
+          />
+        ) : (
+          <input
+            type={type}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className={cn(base, 'px-4 py-3 h-11', prefix && 'pl-9')}
+          />
+        )}
+      </div>
+      {hint && <p className="text-[11px] text-[#4b5563] mt-1">{hint}</p>}
+    </div>
+  );
+}
 
 export default function CreatorProfilePage() {
   const { user } = useUserStore();
@@ -53,8 +122,8 @@ export default function CreatorProfilePage() {
   const [youtube, setYoutube] = useState('');
   const [tiktok, setTiktok] = useState('');
 
-  const socials = { instagram, twitter, youtube, tiktok };
-  const socialSetters = { instagram: setInstagram, twitter: setTwitter, youtube: setYoutube, tiktok: setTiktok };
+  const socials: Record<string, string> = { instagram, twitter, youtube, tiktok };
+  const socialSetters: Record<string, (v: string) => void> = { instagram: setInstagram, twitter: setTwitter, youtube: setYoutube, tiktok: setTiktok };
 
   useEffect(() => {
     if (!user?.id) return;
@@ -64,7 +133,7 @@ export default function CreatorProfilePage() {
       setPicUrl(data?.profile_picture_url || '');
       setNiches(data?.niche_tags || []);
       setInstagram(data?.instagram || '');
-      setTwitter(data?.twitter || '');
+      setTwitter(data?.twitter || data?.x || '');
       setYoutube(data?.youtube || '');
       setTiktok(data?.tiktok || '');
     }).catch(() => {});
@@ -91,257 +160,377 @@ export default function CreatorProfilePage() {
   };
 
   return (
-    <div className="profile-theme min-h-screen" style={{ background: 'var(--muted)', fontFamily: 'var(--font-sans, ui-sans-serif, system-ui, sans-serif)' }}>
-      <div className="max-w-2xl mx-auto px-4 py-8 space-y-5">
+    <div className="min-h-screen" style={{ background: '#0a0a0a', fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
 
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between">
+      {/* ── Top Header Bar ── */}
+      <div style={{ borderBottom: '1px solid #161616', background: 'rgba(10,10,10,0.92)' }} className="sticky top-0 z-10 backdrop-blur-sm">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: 'var(--muted-foreground)' }}>Profile</p>
-            <h1 className="text-2xl font-black" style={{ color: 'var(--foreground)' }}>
-              Creator <span style={{ color: 'var(--chart-2)' }}>Profile</span>
-            </h1>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#4b5563]">Creator</p>
+            <h1 className="text-lg font-bold text-white leading-none mt-0.5">My Profile</h1>
           </div>
-          <button
-            onClick={() => { setIsEditing(!isEditing); }}
-            className="p-btn-secondary flex items-center gap-2"
-            style={isEditing ? { borderColor: '#fca5a5', color: '#ef4444', background: '#fef2f2' } : {}}
-          >
-            {isEditing ? <><X size={14} /> Cancel</> : <><Pencil size={14} /> Edit Profile</>}
-          </button>
-        </div>
-
-        {/* ── Avatar + identity card ── */}
-        <div className="p-card flex items-center gap-5">
-          <div className="relative flex-shrink-0">
-            {picUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={picUrl} alt="Avatar" className="w-20 h-20 rounded-2xl object-cover" style={{ border: '2px solid var(--chart-2)' }} />
-            ) : (
-              <div className="w-20 h-20 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--chart-2), var(--chart-4))' }}>
-                <User size={28} className="text-white" />
-              </div>
+          <div className="flex items-center gap-3">
+            {isEditing && (
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-black bg-white hover:bg-[#f0f0f0] rounded-lg transition-all duration-150 disabled:opacity-50"
+              >
+                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                {saving ? 'Saving…' : 'Save Changes'}
+              </button>
             )}
-            {/* online dot */}
-            <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white" style={{ background: '#22c55e' }} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-black text-xl" style={{ color: 'var(--foreground)' }}>{name || 'Your Name'}</p>
-            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>{user?.email}</p>
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <span className="p-badge-blue">Creator</span>
-              <span className="p-badge-gold">⭐ 4.8 Rep</span>
-              {niches.slice(0, 2).map((n) => <span key={n} className="p-badge-neutral">{n}</span>)}
-            </div>
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border transition-all duration-150',
+                isEditing
+                  ? 'border-[#2a2a2a] text-[#9ca3af] hover:text-white hover:border-[#404040] bg-transparent'
+                  : 'border-[#222222] text-[#d1d5db] hover:text-white hover:border-[#404040] bg-[#111111]'
+              )}
+            >
+              {isEditing ? <><X size={14} /> Cancel</> : <><Pencil size={14} /> Edit Profile</>}
+            </button>
           </div>
         </div>
+      </div>
 
-        {isEditing ? (
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+
+          {/* ── Left Sidebar ── */}
           <div className="space-y-4">
 
-            {/* ── Basic info ── */}
-            <div className="p-card space-y-5">
-              <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                <div className="w-1 h-5 rounded-full" style={{ background: 'var(--chart-2)' }} />
-                <h2 className="font-black text-base" style={{ color: 'var(--foreground)' }}>Basic Info</h2>
+            {/* Identity Card */}
+            <div className="rounded-xl p-6 text-center space-y-4" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+              <div className="relative inline-block">
+                {picUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={picUrl}
+                    alt="Avatar"
+                    className="w-20 h-20 rounded-full object-cover"
+                    style={{ border: '2px solid #2a2a2a' }}
+                  />
+                ) : (
+                  <div
+                    className="w-20 h-20 rounded-full flex items-center justify-center"
+                    style={{ background: '#1a1a1a', border: '2px solid #222222' }}
+                  >
+                    <User size={30} className="text-[#4b5563]" />
+                  </div>
+                )}
+                <span
+                  className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full"
+                  style={{ background: '#22c55e', border: '2px solid #111111' }}
+                />
               </div>
 
-              {/* Profile picture */}
               <div>
-                <label className="p-label">Profile Picture</label>
-                <div className="mt-1 flex items-center gap-4">
-                  {picUrl ? (
-                    <div className="relative group">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={picUrl} alt="Preview" className="w-20 h-20 rounded-2xl object-cover" style={{ border: '2px solid var(--chart-2)' }} />
-                      <button
-                        type="button"
-                        onClick={() => setPicUrl('')}
-                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-white"
-                        style={{ background: '#ef4444' }}
-                      >
-                        <X size={11} />
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="flex flex-col items-center justify-center w-full h-28 cursor-pointer rounded-xl transition-colors"
-                      style={{ border: '2px dashed var(--border)', background: 'var(--muted)' }}
-                      onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--chart-2)')}
-                      onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-                    >
-                      <Upload size={20} style={{ color: 'var(--muted-foreground)' }} className="mb-1.5" />
-                      <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>Click to upload photo</p>
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>PNG, JPG, or WEBP</p>
-                      <input type="file" accept="image/*" className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onloadend = () => setPicUrl(reader.result as string);
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                      />
-                    </label>
-                  )}
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <p className="font-bold text-lg text-white leading-tight">{name || 'Your Name'}</p>
+                  <img src="https://img.icons8.com/fluency/48/verified-badge.png" className="w-4 h-4 flex-shrink-0" alt="Verified" />
+                </div>
+                <p className="text-xs text-[#4b5563] truncate">{user?.email}</p>
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-2">
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-md text-[11px] font-semibold bg-white text-black">
+                  Pro Creator
+                </span>
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-md text-[11px] font-semibold text-[#d1d5db]" style={{ background: '#1a1a1a', border: '1px solid #252525' }}>
+                  <Star size={10} className="fill-[#f59e0b] text-[#f59e0b]" /> 4.8
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-4" style={{ borderTop: '1px solid #1a1a1a' }}>
+                <div className="text-left">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <MapPin size={11} className="text-[#4b5563]" />
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-[#4b5563]">Location</p>
+                  </div>
+                  <p className="text-xs font-semibold text-[#d1d5db]">Remote / Global</p>
+                </div>
+                <div className="text-left">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <Clock size={11} className="text-[#4b5563]" />
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-[#4b5563]">Response</p>
+                  </div>
+                  <p className="text-xs font-semibold text-[#d1d5db]">{'< 2 hours'}</p>
                 </div>
               </div>
+            </div>
 
-              <div>
-                <label className="p-label">Display Name</label>
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your creator name" className="p-input" />
-              </div>
-
-              <div>
-                <label className="p-label">Bio</label>
-                <textarea value={bio} onChange={(e) => setBio(e.target.value)}
-                  placeholder="Tell brands what you do..." rows={4} className="p-input resize-none" />
-                <p className="text-xs text-right mt-1" style={{ color: 'var(--muted-foreground)' }}>{bio.length}/500</p>
+            {/* Stats */}
+            <div className="rounded-xl p-5 space-y-4" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#4b5563]">Performance</p>
+              <div className="space-y-3">
+                {[
+                  { icon: TrendingUp, label: 'Escrow Success', value: '100%', color: '#22c55e' },
+                  { icon: Star, label: 'Reputation Score', value: '4.8 / 5', color: '#f59e0b' },
+                  { icon: Shield, label: 'Verified Status', value: 'Verified', color: '#60a5fa' },
+                ].map(({ icon: Icon, label, value, color }) => (
+                  <div key={label} className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid #161616' }}>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#1a1a1a' }}>
+                        <Icon size={13} style={{ color }} />
+                      </div>
+                      <span className="text-xs text-[#9ca3af]">{label}</span>
+                    </div>
+                    <span className="text-xs font-bold text-white">{value}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* ── Content niches ── */}
-            <div className="p-card space-y-4">
-              <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                <div className="w-1 h-5 rounded-full" style={{ background: 'var(--chart-2)' }} />
-                <h2 className="font-black text-base" style={{ color: 'var(--foreground)' }}>Content Niches</h2>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {NICHE_OPTIONS.map((n) => {
-                  const active = niches.includes(n);
-                  return (
-                    <button
-                      key={n}
-                      onClick={() => toggleNiche(n)}
-                      className="px-3 py-1.5 rounded-full text-sm font-semibold transition-all duration-150 flex items-center gap-1.5"
-                      style={active
-                        ? { background: 'rgba(37,99,239,0.18)', color: '#91c5ff', border: '1px solid rgba(37,99,239,0.35)' }
-                        : { background: 'var(--muted)', color: 'var(--muted-foreground)', border: '1px solid var(--border)' }
-                      }
-                    >
-                      {active && <Check size={11} />}
-                      {n}
-                    </button>
-                  );
-                })}
-              </div>
+            {/* Social Channels */}
+            <div className="rounded-xl p-5 space-y-3" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#4b5563]">Social Channels</p>
+              {SOCIALS.map(({ key, icon: Icon, label, color }) => {
+                const val = socials[key];
+                const connected = Boolean(val);
+                return (
+                  <div key={key} className="flex items-center gap-3 py-2.5 rounded-lg px-3" style={{ background: '#0f0f0f', border: '1px solid #1a1a1a' }}>
+                    <Icon size={14} color={connected ? color : '#374151'} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-[#4b5563]">{label}</p>
+                      <p className="text-xs font-semibold text-[#d1d5db] truncate">
+                        {connected ? `@${val}` : <span className="text-[#374151]">Not connected</span>}
+                      </p>
+                    </div>
+                    {connected && <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] flex-shrink-0" />}
+                  </div>
+                );
+              })}
             </div>
 
-            {/* ── Social accounts ── */}
-            <div className="p-card space-y-4">
-              <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                <div className="w-1 h-5 rounded-full" style={{ background: 'var(--chart-2)' }} />
-                <h2 className="font-black text-base" style={{ color: 'var(--foreground)' }}>Social Accounts</h2>
+            {/* Wallet */}
+            <div className="rounded-xl p-5 space-y-3" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[#4b5563]">Smart Wallet</p>
+                <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
               </div>
-              {SOCIALS.map(({ key, icon: Icon, label, color, placeholder }) => (
-                <div key={key}>
-                  <label className="p-label">{label}</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                      <Icon size={15} color={color} />
-                    </span>
-                    <input
-                      value={socials[key]}
-                      onChange={(e) => socialSetters[key](e.target.value)}
-                      placeholder={placeholder}
-                      className="p-input pl-9"
+              <p className="text-xs text-[#4b5563] leading-relaxed">USDC escrow payments — automated via smart contracts.</p>
+              <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg" style={{ background: '#0f0f0f', border: '1px solid #1a1a1a' }}>
+                <div className="w-1.5 h-1.5 rounded-full bg-[#d1d5db] flex-shrink-0" />
+                <span className="text-[11px] font-mono text-[#9ca3af] truncate select-all">
+                  {user?.walletAddress ?? 'No wallet connected'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Right Main Content ── */}
+          <div className="space-y-5">
+            {isEditing ? (
+              <>
+                {/* Edit: Profile Details */}
+                <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+                  <SectionHeader title="Profile Details" subtitle="Your public-facing profile information" />
+                  <div className="space-y-5">
+
+                    {/* Avatar upload */}
+                    <div>
+                      <label className="block text-xs font-semibold text-[#6b7280] uppercase tracking-widest mb-2">
+                        Profile Photo
+                      </label>
+                      {picUrl ? (
+                        <div className="flex items-center gap-4">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <div className="relative group">
+                            <img src={picUrl} alt="Preview" className="w-16 h-16 rounded-xl object-cover" style={{ border: '1px solid #222222' }} />
+                            <button
+                              type="button"
+                              onClick={() => setPicUrl('')}
+                              className="absolute -top-2 -right-2 w-5 h-5 rounded-full flex items-center justify-center bg-[#ef4444] text-white hover:bg-[#dc2626] transition-colors"
+                            >
+                              <X size={10} />
+                            </button>
+                          </div>
+                          <p className="text-xs text-[#6b7280]">Click × to remove and upload a new photo.</p>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center h-28 cursor-pointer rounded-xl transition-colors hover:border-[#404040]" style={{ border: '1.5px dashed #222222', background: '#0f0f0f' }}>
+                          <Upload size={18} className="text-[#4b5563] mb-2" />
+                          <p className="text-sm font-semibold text-[#9ca3af]">Upload Photo</p>
+                          <p className="text-[11px] text-[#4b5563] mt-0.5">PNG, JPG or WEBP</p>
+                          <input type="file" accept="image/*" className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => setPicUrl(reader.result as string);
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+
+                    <PremiumInput
+                      label="Display Name"
+                      value={name}
+                      onChange={setName}
+                      placeholder="Your professional name"
+                    />
+
+                    <PremiumInput
+                      label="Professional Bio"
+                      value={bio}
+                      onChange={setBio}
+                      placeholder="Describe your expertise, audience size, and what content you specialise in…"
+                      textarea
+                      rows={5}
+                      hint={`${bio.length} / 500 characters`}
                     />
                   </div>
                 </div>
-              ))}
-            </div>
 
-            {/* ── Save ── */}
-            <button onClick={handleSave} disabled={saving} className="p-btn-primary w-full">
-              {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-              {saving ? 'Saving...' : 'Save Profile'}
-            </button>
-          </div>
-
-        ) : (
-          <div className="space-y-4">
-
-            {/* ── Read-only bio ── */}
-            <div className="p-card space-y-3">
-              <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                <div className="w-1 h-5 rounded-full" style={{ background: 'var(--chart-2)' }} />
-                <h2 className="font-black text-base" style={{ color: 'var(--foreground)' }}>About Me</h2>
-              </div>
-              {bio
-                ? <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--foreground)' }}>{bio}</p>
-                : <p className="text-sm italic" style={{ color: 'var(--muted-foreground)' }}>No bio added yet. Click Edit Profile to add one.</p>
-              }
-            </div>
-
-            {/* ── Read-only niches ── */}
-            <div className="p-card space-y-3">
-              <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                <div className="w-1 h-5 rounded-full" style={{ background: 'var(--chart-2)' }} />
-                <h2 className="font-black text-base" style={{ color: 'var(--foreground)' }}>Content Niches</h2>
-              </div>
-              {niches.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {niches.map((n) => (
-                    <span key={n} className="px-3 py-1.5 rounded-full text-xs font-semibold"
-                      style={{ background: 'rgba(37,99,239,0.18)', color: '#91c5ff', border: '1px solid rgba(37,99,239,0.3)' }}>
-                      {n}
-                    </span>
-                  ))}
+                {/* Edit: Niches */}
+                <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+                  <SectionHeader title="Content Niches" subtitle="Select the categories that best describe your content" />
+                  <div className="flex flex-wrap gap-2">
+                    {NICHE_OPTIONS.map((n) => {
+                      const active = niches.includes(n);
+                      return (
+                        <button
+                          key={n}
+                          onClick={() => toggleNiche(n)}
+                          className={cn(
+                            'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150',
+                            active
+                              ? 'bg-white text-black border-white'
+                              : 'text-[#9ca3af] border-[#1f1f1f] bg-[#0f0f0f] hover:border-[#333333] hover:text-white'
+                          )}
+                        >
+                          {active && <Check size={11} />}
+                          {n}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              ) : (
-                <p className="text-sm italic" style={{ color: 'var(--muted-foreground)' }}>No niches selected yet.</p>
-              )}
-            </div>
 
-            {/* ── Read-only socials ── */}
-            <div className="p-card space-y-3">
-              <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                <div className="w-1 h-5 rounded-full" style={{ background: 'var(--chart-2)' }} />
-                <h2 className="font-black text-base" style={{ color: 'var(--foreground)' }}>Connected Channels</h2>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {SOCIALS.map(({ key, icon: Icon, label, color }) => {
-                  const val = socials[key];
-                  const connected = Boolean(val);
-                  return (
-                    <div key={key} className="flex items-center gap-3 p-3 rounded-xl transition-colors"
-                      style={{ background: 'var(--muted)', border: '1px solid var(--border)' }}>
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ background: connected ? `${color}15` : 'var(--border)', border: `1px solid ${connected ? color + '30' : 'var(--border)'}` }}>
-                        <Icon size={16} color={connected ? color : 'var(--muted-foreground)'} />
+                {/* Edit: Socials */}
+                <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+                  <SectionHeader title="Social Channels" subtitle="Connect your social media accounts" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {SOCIALS.map(({ key, icon: Icon, label, color, placeholder }) => (
+                      <PremiumInput
+                        key={key}
+                        label={label}
+                        value={socials[key]}
+                        onChange={(v) => socialSetters[key](v)}
+                        placeholder={placeholder}
+                        prefix={<Icon size={14} color={color} />}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Save */}
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold bg-white text-black hover:bg-[#f0f0f0] transition-all duration-150 disabled:opacity-50"
+                >
+                  {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+                  {saving ? 'Saving…' : 'Save Profile'}
+                </button>
+              </>
+            ) : (
+              <>
+                {/* View: Bio */}
+                <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+                  <SectionHeader title="Professional Summary" />
+                  {bio ? (
+                    <p className="text-sm leading-relaxed text-[#9ca3af] whitespace-pre-wrap">{bio}</p>
+                  ) : (
+                    <div className="flex flex-col items-center py-10 text-center">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3" style={{ background: '#161616' }}>
+                        <User size={18} className="text-[#374151]" />
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--muted-foreground)' }}>{label}</p>
-                        <p className="text-sm font-bold truncate" style={{ color: connected ? 'var(--foreground)' : 'var(--muted-foreground)' }}>
-                          {connected ? `@${val}` : 'Not connected'}
-                        </p>
-                      </div>
-                      {connected && (
-                        <span className="ml-auto flex-shrink-0 w-2 h-2 rounded-full" style={{ background: '#22c55e' }} />
-                      )}
+                      <p className="text-sm text-[#4b5563] font-medium">No bio added yet</p>
+                      <p className="text-xs text-[#374151] mt-1">Click <strong className="text-[#6b7280]">Edit Profile</strong> to add your professional summary.</p>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
+                  )}
+                </div>
 
-        {/* ── Wallet ── */}
-        <div className="p-card space-y-3">
-          <div className="flex items-center gap-2 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
-            <div className="w-1 h-5 rounded-full" style={{ background: 'var(--chart-2)' }} />
-            <h2 className="font-black text-base" style={{ color: 'var(--foreground)' }}>Connected Wallet</h2>
-          </div>
-          <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>Your wallet address is used for on-chain payouts and reputation scores.</p>
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'rgba(37,99,239,0.12)', border: '1px solid rgba(37,99,239,0.25)' }}>
-            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: 'var(--chart-2)' }} />
-            <span className="text-sm font-mono select-all truncate" style={{ color: '#91c5ff' }}>
-              {user?.walletAddress ?? 'No wallet connected'}
-            </span>
+                {/* View: Niches */}
+                <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+                  <SectionHeader title="Content Niches" />
+                  {niches.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {niches.map((n) => (
+                        <span
+                          key={n}
+                          className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[#d1d5db]"
+                          style={{ background: '#1a1a1a', border: '1px solid #222222' }}
+                        >
+                          {n}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[#374151] italic">No niches selected yet.</p>
+                  )}
+                </div>
+
+                {/* View: Stats Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#161616' }}>
+                        <TrendingUp size={13} className="text-[#22c55e]" />
+                      </div>
+                      <p className="text-xs font-semibold text-[#9ca3af]">Completed Escrows</p>
+                    </div>
+                    <p className="text-3xl font-black text-white">100%</p>
+                    <p className="text-xs text-[#4b5563] mt-1.5 leading-relaxed">All milestones delivered on-time via smart contracts.</p>
+                  </div>
+                  <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#161616' }}>
+                        <Star size={13} className="text-[#f59e0b] fill-[#f59e0b]" />
+                      </div>
+                      <p className="text-xs font-semibold text-[#9ca3af]">On-Chain Reputation</p>
+                    </div>
+                    <p className="text-3xl font-black text-white">4.8 <span className="text-[#f59e0b] text-2xl">★</span></p>
+                    <p className="text-xs text-[#4b5563] mt-1.5 leading-relaxed">Silver tier rating backed by verified on-chain deal history.</p>
+                  </div>
+                </div>
+
+                {/* View: Quick links */}
+                <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+                  <SectionHeader title="Linked Accounts" subtitle="Your connected social handles" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {SOCIALS.map(({ key, icon: Icon, label, color }) => {
+                      const val = socials[key];
+                      const connected = Boolean(val);
+                      return (
+                        <div
+                          key={key}
+                          className="flex items-center gap-3 px-4 py-3 rounded-lg"
+                          style={{ background: '#0f0f0f', border: '1px solid #1a1a1a' }}
+                        >
+                          <Icon size={14} color={connected ? color : '#374151'} />
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-[#4b5563]">{label}</p>
+                            <p className="text-xs font-semibold text-[#d1d5db] truncate">
+                              {connected ? `@${val}` : <span className="text-[#374151] font-normal">Not linked</span>}
+                            </p>
+                          </div>
+                          {connected && <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] ml-auto flex-shrink-0" />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
-
       </div>
     </div>
   );

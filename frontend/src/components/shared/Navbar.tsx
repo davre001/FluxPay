@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Zap, LayoutDashboard, Briefcase, User, Wallet, Star,
-  LogOut, Menu, X, ChevronRight, Building2, Search, FileText,
+  LogOut, Menu, X, ChevronRight, Building2, FileText,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAccount } from 'wagmi';
@@ -43,44 +43,38 @@ export default function Navbar() {
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
   const handleLogout = async () => {
-    // Disconnect Web3Auth too (with cleanup) so the embedded wallet widget is
-    // torn down — otherwise the floating wallet button lingers until a refresh.
     try {
       if (isConnected) await disconnect({ cleanup: true });
-    } catch {
-      // ignore — still clear the local session below
-    }
+    } catch {}
     logout();
     router.push('/');
   };
 
-  // Onboarding pages — no sidebar even when authenticated
   const isOnboarding = pathname.startsWith('/onboarding');
   const isLandingPage = pathname === '/';
 
-  // Public landing pages OR onboarding — minimal top navbar only
   if (!isAuthenticated || isOnboarding || isLandingPage) {
     return (
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5"
-           style={{ background: 'rgba(10,10,15,0.85)', backdropFilter: 'blur(20px)' }}>
+           style={{ background: 'rgba(10,10,10,0.85)', backdropFilter: 'blur(20px)' }}>
         <div className="container-custom flex items-center justify-between py-4">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-600 to-accent-500 flex items-center justify-center shadow-glow-sm">
-              <Zap size={16} className="text-white" />
+            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
+              <Zap size={16} className="text-black" />
             </div>
-            <span className="font-extrabold text-lg text-white tracking-tight">Flux<span className="gradient-text">Pay</span></span>
+            <span className="font-extrabold text-lg text-white tracking-tight">Flux<span className="text-[#6b7280]">Pay</span></span>
           </Link>
           {isAuthenticated && (
             <div className="flex items-center gap-4">
               <Link
                 href={user?.profileType === 'organization' ? '/organization/dashboard' : '/creator/dashboard'}
-                className="text-sm font-semibold text-brand-400 hover:text-brand-300 transition-colors"
+                className="text-sm font-semibold text-[#d1d5db] hover:text-white transition-colors"
               >
                 Go to Dashboard
               </Link>
               <button
                 onClick={handleLogout}
-                className="text-sm font-semibold text-slate-400 hover:text-white transition-colors flex items-center gap-1.5"
+                className="text-sm font-semibold text-[#6b7280] hover:text-white transition-colors flex items-center gap-1.5"
               >
                 <LogOut size={14} /> Sign out
               </button>
@@ -88,7 +82,7 @@ export default function Navbar() {
           )}
           {!isAuthenticated && (
             <div className="flex items-center gap-4">
-              <Link href="/auth/signup" className="bg-white text-black hover:bg-gray-100 text-xs py-1.5 px-4 font-bold transition-all rounded">Get Started</Link>
+              <Link href="/auth/signup" className="bg-white text-black hover:bg-[#f0f0f0] text-xs py-2 px-5 font-bold transition-all rounded-lg">Get Started</Link>
             </div>
           )}
         </div>
@@ -99,28 +93,29 @@ export default function Navbar() {
   return (
     <>
       {/* ── Sidebar (desktop) ── */}
-      <aside className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-64 z-40 border-r border-white/5"
-             style={{ background: 'rgba(10,10,15,0.95)', backdropFilter: 'blur(24px)' }}>
+      <aside className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-64 z-40"
+             style={{ background: '#050505', borderRight: '1px solid #161616', fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
+        
         {/* Logo */}
-        <div className="px-6 py-6 border-b border-white/5">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-600 to-accent-500 flex items-center justify-center shadow-glow-sm">
-              <Zap size={18} className="text-white" />
+        <div className="px-6 py-6" style={{ borderBottom: '1px solid #161616' }}>
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center transition-transform group-hover:scale-105">
+              <Zap size={16} className="text-black" />
             </div>
-            <span className="font-extrabold text-lg text-white tracking-tight">Flux<span className="gradient-text">Pay</span></span>
+            <span className="font-extrabold text-lg text-white tracking-tight">Flux<span className="text-[#6b7280]">Pay</span></span>
           </Link>
         </div>
 
         {/* Profile badge */}
-        <div className="px-4 py-4 border-b border-white/5">
-          <div className="flex items-center gap-3 px-3 py-3 rounded-xl"
-               style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)' }}>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-600 to-accent-500 flex items-center justify-center text-white text-xs font-bold">
+        <div className="px-5 py-5" style={{ borderBottom: '1px solid #161616' }}>
+          <div className="flex items-center gap-3 px-3 py-3 rounded-xl transition-colors hover:bg-[#111111]"
+               style={{ border: '1px solid #1a1a1a' }}>
+            <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-black text-xs font-black">
               {user?.email?.[0]?.toUpperCase() ?? '?'}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-white truncate">{user?.email}</p>
-              <span className={`badge text-xs mt-0.5 ${user?.profileType === 'organization' ? 'badge-cyan' : 'badge-purple'}`}>
+              <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest text-[#9ca3af]" style={{ background: '#1a1a1a', border: '1px solid #252525' }}>
                 {user?.profileType === 'organization' ? 'Brand' : 'Creator'}
               </span>
             </div>
@@ -128,61 +123,67 @@ export default function Navbar() {
         </div>
 
         {/* Nav links */}
-        <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-          {links.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`sidebar-link ${isActive(href) ? 'active' : ''}`}
-            >
-              <Icon size={17} />
-              <span>{label}</span>
-              {isActive(href) && <ChevronRight size={14} className="ml-auto opacity-60" />}
-            </Link>
-          ))}
+        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+          {links.map(({ href, label, icon: Icon }) => {
+            const active = isActive(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                  active 
+                    ? 'bg-white text-black shadow-sm' 
+                    : 'text-[#6b7280] hover:text-white hover:bg-[#111111]'
+                }`}
+              >
+                <Icon size={16} />
+                <span>{label}</span>
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Wallet + Logout */}
-        <div className="px-4 py-4 border-t border-white/5 space-y-3">
+        <div className="px-5 py-5 space-y-3" style={{ borderTop: '1px solid #161616' }}>
           {isConnected ? (
             <button
               onClick={() => disconnect()}
-              className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white transition-all"
-              style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}
+              className="flex items-center gap-2.5 w-full px-4 py-3 rounded-xl text-xs font-bold text-[#d1d5db] hover:text-white hover:bg-[#111111] transition-all"
+              style={{ border: '1px solid #1a1a1a' }}
             >
-              <Wallet size={14} className="text-brand-400" />
+              <Wallet size={14} className="text-[#22c55e]" />
               <span className="truncate">{address?.slice(0, 6)}…{address?.slice(-4)}</span>
             </button>
           ) : (
             <button
               onClick={() => connect()}
-              className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white transition-all"
-              style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}
+              className="flex items-center gap-2.5 w-full px-4 py-3 rounded-xl text-xs font-bold text-[#d1d5db] hover:text-white hover:bg-[#111111] transition-all"
+              style={{ border: '1px solid #1a1a1a' }}
             >
-              <Wallet size={14} className="text-brand-400" />
+              <Wallet size={14} className="text-[#6b7280]" />
               <span>Connect Wallet</span>
             </button>
           )}
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-all"
+            className="flex items-center gap-2.5 w-full px-4 py-3 rounded-xl text-xs font-bold text-[#6b7280] hover:text-[#ef4444] hover:bg-[#1a0f0f] transition-all"
           >
-            <LogOut size={15} />
+            <LogOut size={14} />
             Sign out
           </button>
         </div>
       </aside>
 
       {/* ── Mobile top bar ── */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-4 border-b border-white/5"
-              style={{ background: 'rgba(10,10,15,0.95)', backdropFilter: 'blur(20px)' }}>
+      <header className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-4 border-b border-white/5"
+              style={{ background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(20px)' }}>
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-600 to-accent-500 flex items-center justify-center">
-            <Zap size={14} className="text-white" />
+          <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center">
+            <Zap size={14} className="text-black" />
           </div>
-          <span className="font-extrabold text-base text-white">Flux<span className="gradient-text">Pay</span></span>
+          <span className="font-extrabold text-base text-white">Flux<span className="text-[#6b7280]">Pay</span></span>
         </Link>
-        <button className="text-slate-400 hover:text-white" onClick={() => setMobileOpen(!mobileOpen)}>
+        <button className="text-[#6b7280] hover:text-white transition-colors" onClick={() => setMobileOpen(!mobileOpen)}>
           {mobileOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </header>
@@ -190,23 +191,30 @@ export default function Navbar() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-40 pt-16"
-             style={{ background: 'rgba(10,10,15,0.98)' }}>
-          <nav className="p-4 space-y-1">
-            {links.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setMobileOpen(false)}
-                className={`sidebar-link ${isActive(href) ? 'active' : ''}`}
-              >
-                <Icon size={17} />
-                {label}
-              </Link>
-            ))}
-            <div className="pt-4 border-t border-white/5">
+             style={{ background: '#050505' }}>
+          <nav className="p-5 space-y-2">
+            {links.map(({ href, label, icon: Icon }) => {
+              const active = isActive(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                    active 
+                      ? 'bg-white text-black shadow-sm' 
+                      : 'text-[#6b7280] hover:text-white hover:bg-[#111111]'
+                  }`}
+                >
+                  <Icon size={16} />
+                  {label}
+                </Link>
+              );
+            })}
+            <div className="pt-5 mt-2" style={{ borderTop: '1px solid #161616' }}>
               <button onClick={handleLogout}
-                className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-red-400">
-                <LogOut size={15} /> Sign out
+                className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-bold text-[#6b7280] hover:text-[#ef4444] transition-colors">
+                <LogOut size={16} /> Sign out
               </button>
             </div>
           </nav>

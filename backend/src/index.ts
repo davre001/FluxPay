@@ -2,10 +2,13 @@ import { pathToFileURL } from 'node:url';
 import { createApp } from './app.ts';
 import { config } from './config/index.ts';
 import { connectDatabase } from './database/connection.ts';
+import { seedInitialData } from './utils/seedData.ts';
 
 export async function startApp(port = config.port) {
   await connectDatabase();
   const app = createApp();
+  
+  await seedInitialData((app as any).locals);
 
   return new Promise((resolve) => {
     app.listen(port, () => {

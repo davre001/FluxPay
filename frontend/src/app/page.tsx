@@ -83,11 +83,11 @@ function FadeInView({
 
 // ─── Deal flow data ───────────────────────────────────────────────────────────
 const STEPS = [
-  { n: '01', icon: Briefcase, title: 'Brand posts a deal',          desc: 'Set milestones, budget, and requirements. Funds lock into escrow instantly.', color: '#2563ef', glow: 'rgba(37,99,239,0.45)',  tag: 'Brand'   },
-  { n: '02', icon: Users,     title: 'Creators apply',              desc: 'Eligible creators browse and submit applications with their portfolio.',        color: '#1a4eda', glow: 'rgba(26,78,218,0.45)',  tag: 'Creators'},
-  { n: '03', icon: UserCheck, title: 'Brand selects a creator',     desc: 'Review reputation, socials, and apply notes. Pick your perfect partner.',       color: '#3a81f6', glow: 'rgba(58,129,246,0.45)', tag: 'Brand'   },
-  { n: '04', icon: Upload,    title: 'Creator submits deliverables', desc: 'Upload the content link per milestone. AI reviews it instantly.',              color: '#1f3fad', glow: 'rgba(31,63,173,0.45)',  tag: 'Creator' },
-  { n: '05', icon: Zap,       title: 'Funds release automatically', desc: 'On AI approval, USDC flows to the creator. Reputation scores update on-chain.', color: '#91c5ff', glow: 'rgba(145,197,255,0.5)', tag: 'Auto'    },
+  { n: '01', icon: Briefcase, title: 'Brand posts a deal', desc: 'Set milestones, budget, and requirements. Funds lock into escrow instantly.', color: '#2563ef', glow: 'rgba(37,99,239,0.45)', tag: 'Brand' },
+  { n: '02', icon: Users, title: 'Creators apply', desc: 'Eligible creators browse and submit applications with their portfolio.', color: '#1a4eda', glow: 'rgba(26,78,218,0.45)', tag: 'Creators' },
+  { n: '03', icon: UserCheck, title: 'Brand selects a creator', desc: 'Review reputation, socials, and apply notes. Pick your perfect partner.', color: '#3a81f6', glow: 'rgba(58,129,246,0.45)', tag: 'Brand' },
+  { n: '04', icon: Upload, title: 'Creator submits deliverables', desc: 'Upload the content link per milestone. AI reviews it instantly.', color: '#1f3fad', glow: 'rgba(31,63,173,0.45)', tag: 'Creator' },
+  { n: '05', icon: Zap, title: 'Funds release automatically', desc: 'On AI approval, USDC flows to the creator. Reputation scores update on-chain.', color: '#91c5ff', glow: 'rgba(145,197,255,0.5)', tag: 'Auto' },
 ];
 
 // ─── Deal flow section ────────────────────────────────────────────────────────
@@ -345,8 +345,10 @@ function DealFlowSection() {
             >
               <motion.div
                 className="absolute rounded-full"
-                style={{ width: 28, height: 28, top: -14, left: -14,
-                  background: `radial-gradient(circle, ${STEPS[Math.max(activeStep, 0)]?.glow} 0%, transparent 70%)` }}
+                style={{
+                  width: 28, height: 28, top: -14, left: -14,
+                  background: `radial-gradient(circle, ${STEPS[Math.max(activeStep, 0)]?.glow} 0%, transparent 70%)`
+                }}
                 animate={{ scale: [1, 2, 1], opacity: [0.7, 0, 0.7] }}
                 transition={{ duration: 1.2, repeat: Infinity }}
               />
@@ -454,17 +456,17 @@ function DealFlowSection() {
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 const features = [
-  { icon: Bot,       title: 'AI Milestone Verification', desc: 'Every deliverable is reviewed by AI against the original brief — no manual approvals needed.',      color: 'from-brand-600 to-brand-500',   glow: 'shadow-glow-sm'  },
-  { icon: Lock,      title: 'On-Chain Escrow',            desc: 'USDC locked in smart contracts per milestone. Funds release automatically on approval.',              color: 'from-accent-600 to-accent-500', glow: 'shadow-glow-cyan' },
-  { icon: Star,      title: 'Reputation System',          desc: 'Every deal updates on-chain scores for both creators and brands — building trust over time.',         color: 'from-yellow-600 to-amber-500',  glow: ''                },
-  { icon: TrendingUp,title: 'Milestone Payouts',          desc: 'Split big deals into milestones. Get paid progressively as you deliver results.',                    color: 'from-emerald-600 to-green-500', glow: ''                },
+  { icon: Bot, title: 'AI Milestone Verification', desc: 'Every deliverable is reviewed by AI against the original brief — no manual approvals needed.', color: 'from-brand-600 to-brand-500', glow: 'shadow-glow-sm' },
+  { icon: Lock, title: 'On-Chain Escrow', desc: 'USDC locked in smart contracts per milestone. Funds release automatically on approval.', color: 'from-accent-600 to-accent-500', glow: 'shadow-glow-cyan' },
+  { icon: Star, title: 'Reputation System', desc: 'Every deal updates on-chain scores for both creators and brands — building trust over time.', color: 'from-yellow-600 to-amber-500', glow: '' },
+  { icon: TrendingUp, title: 'Milestone Payouts', desc: 'Split big deals into milestones. Get paid progressively as you deliver results.', color: 'from-emerald-600 to-green-500', glow: '' },
 ];
 
 const stats = [
   { value: '$2.4M+', label: 'Escrowed to date' },
-  { value: '1,200+', label: 'Deals completed'  },
-  { value: '98%',    label: 'AI approval rate' },
-  { value: '< 24h',  label: 'Avg. verification time' },
+  { value: '1,200+', label: 'Deals completed' },
+  { value: '98%', label: 'AI approval rate' },
+  { value: '< 24h', label: 'Avg. verification time' },
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -641,7 +643,7 @@ export default function Home() {
 
                 {/* Divider stats row */}
                 <div className="grid grid-cols-3 gap-0 max-w-sm mx-auto" style={{ borderTop: '1px solid #1f1f1f', paddingTop: '2rem' }}>
-                  {[['$2.4M+','Escrowed'], ['1,200+','Deals done'], ['98%','AI approval']].map(([val, lbl], i) => (
+                  {[['$2.4M+', 'Escrowed'], ['1,200+', 'Deals done'], ['98%', 'AI approval']].map(([val, lbl], i) => (
                     <div key={lbl} className="text-center px-4"
                       style={i < 2 ? { borderRight: '1px solid #1f1f1f' } : {}}>
                       <p className="text-xl font-black" style={{ color: '#3a81f6' }}>{val}</p>

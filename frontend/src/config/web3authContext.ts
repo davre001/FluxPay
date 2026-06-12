@@ -1,5 +1,6 @@
 import { WEB3AUTH_NETWORK } from '@web3auth/modal'
 import type { Web3AuthContextConfig } from '@web3auth/modal/react'
+import settings from './settings'
 
 // MetaMask Embedded Wallets (Web3Auth) configuration.
 // `clientId` comes from your MetaMask / Web3Auth developer dashboard and is
@@ -29,9 +30,20 @@ const aaChains = Object.entries(BUNDLER_URLS)
   .filter(([, url]) => Boolean(url))
   .map(([chainId, url]) => ({ chainId, bundlerConfig: { url: url as string } }))
 
+const hexChainId = '0x' + settings.blockchain.chainId.toString(16)
+
 const web3AuthOptions: Web3AuthOptions = {
   clientId: (process.env.NEXT_PUBLIC_CLIENT_ID || 'BPi5PB_UiIZt2w-CegcSDGCO8A_vEsYGYDG9Z42gZ3pQ4J1r-w18e7751a021a8309e4a81c4e7a898b3b5c') as string,
   web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
+  chainConfig: {
+    chainNamespace: 'eip155',
+    chainId: hexChainId,
+    rpcTarget: settings.blockchain.rpcUrl,
+    displayName: settings.blockchain.chainName,
+    blockExplorerUrl: settings.blockchain.explorerUrl,
+    ticker: 'ETH',
+    tickerName: 'Ethereum',
+  }
 }
 
 if (aaChains.length > 0) {
