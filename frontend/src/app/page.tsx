@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, CheckCircle, TrendingUp, Bot, Lock, Star, Briefcase, Users, UserCheck, Upload, Zap, UserRound, Building2 } from 'lucide-react';
+import { ArrowRight, CheckCircle, TrendingUp, Bot, Lock, Star, Briefcase, Users, UserCheck, Upload, Zap, UserRound, Building2, Search } from 'lucide-react';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
 import { TestimonialsSection } from '@/components/ui/testimonials-section';
 import Footer4Col from '@/components/ui/footer-column';
-import { motion, animate } from 'framer-motion';
+import { motion, animate, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUserStore } from '@/stores/userStore';
 
 // ─── Counter (fires on scroll-into-view) ────────────────────────────────────
 function Counter({ value }: { value: string }) {
@@ -75,7 +77,7 @@ function FadeInView({
       className={className}
       initial={initial}
       whileInView={{ opacity: 1, y: 0, x: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
+      viewport={{ once: false, margin: '-60px' }}
       transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
     >
       {children}
@@ -473,65 +475,118 @@ const stats = [
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function Home() {
+  const { isAuthenticated, user } = useUserStore();
+  const router = useRouter();
+
+  // Redirect authenticated users to their dashboard
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push(user?.profileType === 'organization' ? '/organization/dashboard' : '/creator/dashboard');
+    }
+  }, [isAuthenticated, user, router]);
+
+  // Sliding images for background
+  const backgrounds = [
+    'https://images.unsplash.com/photo-1573164713988-8665fc963095?q=80&w=2069&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=2000&auto=format&fit=crop', // Replaced netflix one with ugc creator
+    'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?q=80&w=2070&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=2074&auto=format&fit=crop', // Content Creator
+    'https://images.unsplash.com/photo-1516280440502-614749323df5?q=80&w=2069&auto=format&fit=crop', // Creator setup
+    'https://images.unsplash.com/photo-1590402494587-44b71d7772f6?q=80&w=2070&auto=format&fit=crop'  // Studio lighting
+  ];
+  const [bgIndex, setBgIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState<'brand' | 'creator'>('brand');
+
+  const brandChips = ["Fashion", "Tech Startup", "E-commerce", "SaaS"];
+  const creatorChips = ["Content Writing", "Video Editing", "UGC Creator", "Web3 Developer"];
+  const activeChips = activeTab === 'brand' ? brandChips : creatorChips;
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setBgIndex((prev) => (prev + 1) % backgrounds.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [backgrounds.length]);
+
+  if (isAuthenticated) return null; // Prevent flash of landing page while redirecting
+
   return (
     <main className="relative min-h-screen overflow-hidden" style={{ background: '#0a0a0f' }}>
 
-      {/* ── Hero (stays dark) ── */}
-      <HeroGeometric
-        badge="Multichain · USDC Escrow"
-        title1="Creator-Brand Deals,"
-        title2="Secured On-Chain."
-        description="FluxPay escrows every deal in a smart contract. Milestones are verified by AI. Payments release automatically. No trust required."
-      >
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mt-4">
-          <Link href="/auth/signup?type=creator" className="group">
-            <div className="relative w-64 rounded-2xl p-6 text-left transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02]"
-              style={{ background: 'rgba(124,58,237,0.10)', border: '1px solid rgba(124,58,237,0.30)' }}>
-              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{ boxShadow: '0 0 48px rgba(124,58,237,0.22)', background: 'rgba(124,58,237,0.06)' }} />
-              <div className="relative">
-                {/* Premium icon avatar */}
-                <div className="w-12 h-12 mb-4 rounded-xl flex items-center justify-center"
-                  style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.5) 0%, rgba(167,139,250,0.3) 100%)', border: '1px solid rgba(124,58,237,0.4)', boxShadow: '0 4px 16px rgba(124,58,237,0.25)' }}>
-                  <UserRound size={22} className="text-violet-300" />
-                </div>
-                <h2 className="text-lg font-black text-white mb-1">I'm a Creator</h2>
-                <div className="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out">
-                  <div className="overflow-hidden">
-                    <p className="text-sm text-slate-400 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Browse brand deals, apply, and get paid per milestone.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/auth/signup?type=organization" className="group">
-            <div className="relative w-64 rounded-2xl p-6 text-left transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02]"
-              style={{ background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.25)' }}>
-              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{ boxShadow: '0 0 48px rgba(6,182,212,0.18)', background: 'rgba(6,182,212,0.05)' }} />
-              <div className="relative">
-                {/* Premium icon avatar */}
-                <div className="w-12 h-12 mb-4 rounded-xl flex items-center justify-center"
-                  style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.45) 0%, rgba(103,232,249,0.25) 100%)', border: '1px solid rgba(6,182,212,0.35)', boxShadow: '0 4px 16px rgba(6,182,212,0.2)' }}>
-                  <Building2 size={22} className="text-cyan-300" />
-                </div>
-                <h2 className="text-lg font-black text-white mb-1">I'm a Brand</h2>
-                <div className="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out">
-                  <div className="overflow-hidden">
-                    <p className="text-sm text-slate-400 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Post deals, find creators, and verify results automatically.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Link>
+      {/* ── Hero (FluxPay style dark) ── */}
+      <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden flex flex-col items-start justify-center min-h-[90vh]">
+        {/* Background Image Slider with Dark Overlay */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <AnimatePresence>
+            <motion.div 
+              key={bgIndex}
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: 0.4, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.5, ease: "easeInOut" }}
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+              style={{ backgroundImage: `url('${backgrounds[bgIndex]}')` }}
+            />
+          </AnimatePresence>
+          {/* Gradient to blend with the dark page background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0f] via-[#0a0a0f]/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0a0f]/20 to-[#0a0a0f]" />
         </div>
 
-        <p className="mt-8 text-xs text-slate-500">
-          Already have an account?{' '}
-          <Link href="/auth/login" className="text-brand-400 hover:text-brand-300 font-semibold transition-colors">Sign in</Link>
-        </p>
-      </HeroGeometric>
+        <div className="container-custom relative z-10 w-full max-w-7xl mx-auto px-4 md:px-8">
+          
+          <div className="max-w-4xl">
+            <h1 className="text-4xl md:text-[5rem] font-bold tracking-tight text-white mb-6 leading-[1.05]">
+              Creator-Brand Deals,<br />Secured On-Chain.
+            </h1>
+            
+            <p className="text-lg md:text-xl text-slate-200 mb-10 max-w-xl leading-relaxed font-light">
+              FluxPay escrows every deal in a smart contract. Milestones are verified by AI. Payments release automatically. No trust required.
+            </p>
+
+            {/* Toggle Buttons */}
+            <div className="flex items-center gap-0 mb-6 w-fit rounded-full overflow-hidden border border-white/20 bg-white/5 backdrop-blur-md p-1">
+              <button 
+                onClick={() => setActiveTab('brand')}
+                className={`px-8 py-2.5 rounded-full font-medium text-sm transition-all active:scale-95 ${activeTab === 'brand' ? 'bg-white/20 border border-white/30 text-white shadow-sm' : 'text-slate-300 hover:text-white border border-transparent'}`}>
+                I am a Brand
+              </button>
+              <button 
+                onClick={() => setActiveTab('creator')}
+                className={`px-8 py-2.5 rounded-full font-medium text-sm transition-all active:scale-95 ${activeTab === 'creator' ? 'bg-white/20 border border-white/30 text-white shadow-sm' : 'text-slate-300 hover:text-white border border-transparent'}`}>
+                I am a Creator
+              </button>
+            </div>
+
+            {/* Search Bar */}
+            <div className="relative w-full max-w-2xl mb-8 group">
+              <div className="absolute inset-0 bg-white/5 rounded-full blur-md transition-all duration-300"></div>
+              <div className="relative flex items-center bg-white rounded-full p-2 shadow-xl border border-white/20">
+                <input 
+                  type="text" 
+                  placeholder="What type of deal are you looking for?" 
+                  className="flex-1 bg-transparent border-none outline-none px-6 text-slate-900 placeholder:text-slate-500 text-base font-medium"
+                />
+                <button className="bg-[#141414] hover:bg-black text-white px-6 py-2.5 rounded-full font-medium transition-all active:scale-95 flex items-center gap-2">
+                  <Search size={16} className="text-[#a3e635]" />
+                  Search
+                </button>
+              </div>
+            </div>
+
+            {/* Suggestion Chips */}
+            <div className="flex flex-wrap items-center gap-3">
+              {activeChips.map((chip) => (
+                <button key={chip} className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/30 bg-transparent hover:bg-white/10 text-slate-300 text-sm transition-all hover:text-white active:scale-95">
+                  {chip}
+                  <ArrowRight size={14} className="opacity-70" />
+                </button>
+              ))}
+            </div>
+
+          </div>
+        </div>
+      </section>
 
       {/* ── Content sections (profile theme = white/neutral) ── */}
       <div className="profile-theme relative z-10">
@@ -547,7 +602,7 @@ export default function Home() {
                   style={idx < 3 ? { borderRight: '1px solid #1f1f1f' } : {}}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-50px' }}
+                  viewport={{ once: false, margin: '-50px' }}
                   transition={{ duration: 0.6, delay: idx * 0.12, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <p className="text-3xl font-black tracking-tight" style={{ color: '#fafafa', fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}>

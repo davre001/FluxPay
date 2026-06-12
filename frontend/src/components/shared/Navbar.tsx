@@ -89,7 +89,8 @@ export default function Navbar() {
           )}
           {!isAuthenticated && (
             <div className="flex items-center gap-4">
-              <Link href="/auth/signup" className="bg-white text-black hover:bg-[#f0f0f0] text-xs py-2 px-5 font-bold transition-all rounded-lg">Get Started</Link>
+              <Link href="/auth/login" className="text-sm font-semibold text-[#d1d5db] hover:text-white transition-colors">Log in</Link>
+              <Link href="/auth/signup?type=organization" className="bg-white text-black hover:bg-[#f0f0f0] text-xs py-2 px-5 font-bold transition-all rounded-lg active:scale-95">Sign up</Link>
             </div>
           )}
         </div>

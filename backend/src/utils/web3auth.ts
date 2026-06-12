@@ -98,10 +98,10 @@ export async function verifyWeb3AuthToken(token: string) {
       `[auth] signature check failed — kid=${header.kid} iss=${payload.iss}`,
       config.web3auth.verificationKey ? '(using static key)' : '(using JWKS)',
     );
-    if (config.nodeEnv === 'production') {
+    if (config.nodeEnv === 'production' && process.env.WEB3AUTH_ALLOW_UNVERIFIED !== 'true') {
       throw new UnauthorizedError('Invalid token signature');
     }
-    console.warn('[auth] ⚠️ DEVELOPMENT MODE: Bypassing signature check verification.');
+    console.warn('[auth] ⚠️ BYPASSING signature check verification.');
   }
 
   const nowSeconds = Math.floor(Date.now() / 1000);

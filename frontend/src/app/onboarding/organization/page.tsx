@@ -27,6 +27,7 @@ export default function OrganizationOnboarding() {
         name: brandName,
         bio: description,
         profile_picture_url: picUrl || null,
+        website_url: websiteUrl || null,
       });
       toast.success('Brand profile created!');
       router.push('/organization/dashboard');

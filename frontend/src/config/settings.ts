@@ -14,7 +14,7 @@ export const config = {
   // wallet (Web3Auth dashboard chains). These are only fallback defaults.
   blockchain: {
     chainId: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '1'),
-    rpcUrl: process.env.NEXT_PUBLIC_RPC_URL || 'https://cloudflare-eth.com',
+    rpcUrl: process.env.NEXT_PUBLIC_RPC_URL || 'https://rpc.ankr.com/eth',
     chainName: process.env.NEXT_PUBLIC_CHAIN_NAME || 'Ethereum',
     explorerUrl: process.env.NEXT_PUBLIC_EXPLORER_URL || 'https://etherscan.io',
   },

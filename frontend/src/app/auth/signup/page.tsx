@@ -49,7 +49,7 @@ function SignupForm() {
       .then(({ data }) => {
         if (data?.funded) toast.success(`Welcome gift: $${data.amount} USDC added for gas 🎉`);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     router.push(role === 'creator' ? '/onboarding/creator' : '/onboarding/organization');
   });
@@ -66,7 +66,7 @@ function SignupForm() {
   };
 
   return (
-    <SignInPage 
+    <SignInPage
       isSignup={true}
       profileType={profileType}
       setProfileType={setProfileType}
