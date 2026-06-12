@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { profileAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
+import Footer4Col from '@/components/ui/footer-column';
 
 export default function OrganizationOnboarding() {
   const router = useRouter();
@@ -37,8 +38,8 @@ export default function OrganizationOnboarding() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
-          style={{ background: '#0a0a0a', fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
+    <div className="flex flex-col min-h-screen w-full" style={{ background: '#0a0a0a', fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
+      <main className="flex-1 flex items-center justify-center px-4 relative overflow-hidden">
       
       <motion.div 
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}
@@ -99,6 +100,8 @@ export default function OrganizationOnboarding() {
           </form>
         </div>
       </motion.div>
-    </main>
+      </main>
+      <Footer4Col />
+    </div>
   );
 }

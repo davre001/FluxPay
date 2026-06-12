@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { profileAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
+import Footer4Col from '@/components/ui/footer-column';
 
 // Using public CDN icons for social platforms
 
@@ -58,8 +59,8 @@ export default function CreatorOnboarding() {
   const progress = (step / steps.length) * 100;
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden"
-          style={{ background: '#0a0a0a', fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
+    <div className="flex flex-col min-h-screen w-full" style={{ background: '#0a0a0a', fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
+      <main className="flex-1 flex items-center justify-center px-4 py-12 relative overflow-hidden">
       
       <div className="relative z-10 w-full max-w-lg">
         {/* Header */}
@@ -237,6 +238,8 @@ export default function CreatorOnboarding() {
           </AnimatePresence>
         </div>
       </div>
-    </main>
+      </main>
+      <Footer4Col />
+    </div>
   );
 }
