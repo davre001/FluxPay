@@ -2,7 +2,8 @@ export const config = {
   port: Number(process.env.PORT || 3000),
   nodeEnv: process.env.NODE_ENV || 'development',
   frontendUrl: process.env.FRONTEND_URL || '*',
-  databaseUrl: process.env.DATABASE_URL || '',
+  // Accept either name — the Neon connection string has shown up as both in env.
+  databaseUrl: process.env.DATABASE_URL || process.env.POSTGREL_URL || '',
   ethereumRpcUrl: process.env.ETHEREUM_RPC_URL || '',
   contractAddress: process.env.CONTRACT_ADDRESS || '',
 

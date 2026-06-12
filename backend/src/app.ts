@@ -8,6 +8,11 @@ import { InMemoryMilestoneRepository } from './models/milestone.ts';
 import { InMemoryProfileRepository } from './models/profile.ts';
 import { InMemoryWalletRepository } from './models/wallet.ts';
 import { InMemoryUserRepository } from './models/user.ts';
+import {
+  PgPaymentRepository, PgJobRepository, PgApplicationRepository,
+  PgMilestoneRepository, PgProfileRepository, PgWalletRepository, PgUserRepository,
+} from './models/postgres.ts';
+import { isDbEnabled } from './database/client.ts';
 import { createPaymentRoutes } from './routes/payment.ts';
 import { createJobRoutes } from './routes/job.ts';
 import { createAuthRoutes } from './routes/auth.ts';
@@ -70,31 +75,59 @@ async function requireAuth(req, authService: AuthService, skipAuth?: boolean, mo
   return user;
 }
 
+// Picks Postgres-backed repos when DATABASE_URL is configured, otherwise the
+// in-memory ones (used by tests and local dev with no DB). Both implement the
+// same interfaces, so nothing downstream changes.
+function defaultRepositories() {
+  if (isDbEnabled()) {
+    return {
+      payment: new PgPaymentRepository(),
+      user: new PgUserRepository(),
+      profile: new PgProfileRepository(),
+      job: new PgJobRepository(),
+      application: new PgApplicationRepository(),
+      milestone: new PgMilestoneRepository(),
+      wallet: new PgWalletRepository(),
+    };
+  }
+  return {
+    payment: new InMemoryPaymentRepository(),
+    user: new InMemoryUserRepository(),
+    profile: new InMemoryProfileRepository(),
+    job: new InMemoryJobRepository(),
+    application: new InMemoryApplicationRepository(),
+    milestone: new InMemoryMilestoneRepository(),
+    wallet: new InMemoryWalletRepository(),
+  };
+}
+
 export function createApp(options: any = {}) {
+  const repos = defaultRepositories();
+
   // Payment slice (existing)
-  const repository = options.repository || new InMemoryPaymentRepository();
+  const repository = options.repository || repos.payment;
   const service = options.service || new PaymentService(repository);
   const routes = createPaymentRoutes(service);
 
   // Auth slice (existing)
-  const userRepository = options.userRepository || new InMemoryUserRepository();
+  const userRepository = options.userRepository || repos.user;
   const authService = options.authService || new AuthService(userRepository);
   const authRoutes = createAuthRoutes(authService);
 
   // Profile slice
-  const profileRepository = options.profileRepository || new InMemoryProfileRepository();
+  const profileRepository = options.profileRepository || repos.profile;
   const profileService = options.profileService || new ProfileService(profileRepository, userRepository);
   const profileRoutes = createProfileRoutes(profileService);
 
   // Job slice
-  const jobRepository = options.jobRepository || new InMemoryJobRepository();
-  const applicationRepository = options.applicationRepository || new InMemoryApplicationRepository();
-  const milestoneRepository = options.milestoneRepository || new InMemoryMilestoneRepository();
+  const jobRepository = options.jobRepository || repos.job;
+  const applicationRepository = options.applicationRepository || repos.application;
+  const milestoneRepository = options.milestoneRepository || repos.milestone;
   const jobService = options.jobService || new JobService(jobRepository, applicationRepository, milestoneRepository, profileRepository);
   const jobRoutes = createJobRoutes(jobService);
 
   // Wallet slice
-  const walletRepository = options.walletRepository || new InMemoryWalletRepository();
+  const walletRepository = options.walletRepository || repos.wallet;
   const walletService = options.walletService || new WalletService(walletRepository);
   const walletRoutes = createWalletRoutes(walletService);
 
@@ -120,7 +153,7 @@ export function createApp(options: any = {}) {
       let response;
 
       if (req.method === 'GET' && pathname === '/health') {
-        response = { statusCode: 200, body: { status: 'ok', service: 'fluxpay-backend', storage: 'memory' } };
+        response = { statusCode: 200, body: { status: 'ok', service: 'fluxpay-backend', storage: isDbEnabled() ? 'postgres' : 'memory' } };
       } else if (parts[0] === 'auth') {
         response = await dispatchAuthRoute(req, parts, authRoutes);
       } else if (parts[0] === 'payments') {

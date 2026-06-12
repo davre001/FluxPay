@@ -6,10 +6,11 @@ import {
   Zap, LayoutDashboard, Briefcase, User, Wallet, Star,
   LogOut, Menu, X, ChevronRight, Building2, Search, FileText,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { useWeb3AuthConnect, useWeb3AuthDisconnect } from '@web3auth/modal/react';
 import { useUserStore } from '@/stores/userStore';
+import { profileAPI } from '@/lib/api-client';
 
 const creatorLinks = [
   { href: '/creator/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
@@ -32,12 +33,18 @@ const orgLinks = [
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileName, setProfileName] = useState('');
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, logout } = useUserStore();
   const { address, isConnected } = useAccount();
   const { connect } = useWeb3AuthConnect();
   const { disconnect } = useWeb3AuthDisconnect();
+
+  useEffect(() => {
+    if (!user?.id) return;
+    profileAPI.getMe().then(({ data }: any) => setProfileName(data?.name || '')).catch(() => {});
+  }, [user?.id]);
 
   const links = user?.profileType === 'organization' ? orgLinks : creatorLinks;
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
@@ -116,10 +123,10 @@ export default function Navbar() {
           <div className="flex items-center gap-3 px-3 py-3 rounded-xl"
                style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)' }}>
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-600 to-accent-500 flex items-center justify-center text-white text-xs font-bold">
-              {user?.email?.[0]?.toUpperCase() ?? '?'}
+              {(profileName || user?.email)?.[0]?.toUpperCase() ?? '?'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-white truncate">{user?.email}</p>
+              <p className="text-xs font-bold text-white truncate">{profileName || user?.email}</p>
               <span className={`badge text-xs mt-0.5 ${user?.profileType === 'organization' ? 'badge-cyan' : 'badge-purple'}`}>
                 {user?.profileType === 'organization' ? 'Brand' : 'Creator'}
               </span>

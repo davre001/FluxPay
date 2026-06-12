@@ -188,6 +188,7 @@ export function parseProfileInput(data: any = {}) {
   return {
     name: String(sanitizeString(data.name || '')),
     bio: String(sanitizeString(data.bio || '')),
+    website_url: data.website_url || null,
     profile_picture_url: data.profile_picture_url || null,
     niche_tags: Array.isArray(data.niche_tags) ? data.niche_tags : [],
     instagram: data.instagram || null,
