@@ -121,7 +121,7 @@ export default function JobDetailsPage() {
     }
     setApplying(true);
     try {
-      await applicationAPI.apply({ job_id: jobId, cover_note: pitch });
+      await jobAPI.apply(jobId, { cover_note: pitch });
       toast.success('Application submitted successfully!');
       setHasApplied(true);
     } catch (e: any) {

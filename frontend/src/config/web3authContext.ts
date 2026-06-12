@@ -50,7 +50,9 @@ const aaChains = Object.entries(BUNDLER_URLS)
 
 const hexChainId = '0x' + settings.blockchain.chainId.toString(16)
 
-const web3AuthOptions: Web3AuthOptions = {
+// Cast (not annotate) so the extra `chainConfig` the SDK tolerates at runtime
+// doesn't trip the object-literal excess-property check in v11's types.
+const web3AuthOptions = {
   clientId: (process.env.NEXT_PUBLIC_CLIENT_ID || 'BPi5PB_UiIZt2w-CegcSDGCO8A_vEsYGYDG9Z42gZ3pQ4J1r-w18e7751a021a8309e4a81c4e7a898b3b5c') as string,
   web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
   chainConfig: {
@@ -61,8 +63,8 @@ const web3AuthOptions: Web3AuthOptions = {
     blockExplorerUrl: settings.blockchain.explorerUrl,
     ticker: 'ETH',
     tickerName: 'Ethereum',
-  }
-}
+  },
+} as Web3AuthOptions
 
 if (aaChains.length > 0) {
   web3AuthOptions.accountAbstractionConfig = {
