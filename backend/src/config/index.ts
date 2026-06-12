@@ -22,6 +22,11 @@ export const config = {
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean),
+    // DEVNET ONLY: Sapphire Devnet signs idTokens with rotating keys that are not
+    // published on any reachable JWKS, so the signature can't be verified server-side.
+    // When true, we still enforce audience + issuer + expiry, but skip the signature
+    // check. MUST be false on mainnet (where api-auth.web3auth.io JWKS works).
+    allowUnverifiedSignature: process.env.WEB3AUTH_ALLOW_UNVERIFIED === 'true',
   },
 };
 
