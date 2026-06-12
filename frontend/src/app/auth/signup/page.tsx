@@ -9,6 +9,7 @@ import { useWeb3AuthConnect } from '@web3auth/modal/react';
 import { useUserStore } from '@/stores/userStore';
 import { useOnWeb3AuthConnected } from '@/hooks/useOnWeb3AuthConnected';
 import { establishSession } from '@/lib/establishSession';
+import { faucetAPI } from '@/lib/api-client';
 
 type ProfileType = 'creator' | 'organization';
 
@@ -39,6 +40,16 @@ function SignupForm() {
     );
     sessionStorage.removeItem('fp_signup_role');
     toast.success('Smart wallet ready!');
+
+    // First-signup welcome: drip $2 testnet USDC for gas. Fire-and-forget — the
+    // backend is idempotent per address, so re-runs are harmless, and a faucet
+    // hiccup must never block onboarding.
+    faucetAPI.drip(address)
+      .then(({ data }) => {
+        if (data?.funded) toast.success(`Welcome gift: $${data.amount} USDC added for gas 🎉`);
+      })
+      .catch(() => {});
+
     router.push(role === 'creator' ? '/onboarding/creator' : '/onboarding/organization');
   });
 

@@ -25,9 +25,27 @@ const BUNDLER_URLS: Record<string, string | undefined> = {
   '0x14a34': process.env.NEXT_PUBLIC_BUNDLER_BASE_SEPOLIA,
 }
 
+// ── Sponsored gas (paymaster) ────────────────────────────────────────────────
+// When a chain has a paymaster URL, user operations are sent for sponsorship so
+// the user pays NO gas (free on testnet via Pimlico's sponsorship policy). This
+// is the bridge until step 3, where 1Shot makes gas payable in USDC. A chain
+// with a bundler but no paymaster still works — the user just pays gas normally.
+const PAYMASTER_URLS: Record<string, string | undefined> = {
+  '0x1': process.env.NEXT_PUBLIC_PAYMASTER_ETHEREUM,
+  '0x2105': process.env.NEXT_PUBLIC_PAYMASTER_BASE,
+  '0xa4b1': process.env.NEXT_PUBLIC_PAYMASTER_ARBITRUM,
+  '0xaa36a7': process.env.NEXT_PUBLIC_PAYMASTER_SEPOLIA,
+  '0x14a34': process.env.NEXT_PUBLIC_PAYMASTER_BASE_SEPOLIA,
+}
+
 const aaChains = Object.entries(BUNDLER_URLS)
   .filter(([, url]) => Boolean(url))
-  .map(([chainId, url]) => ({ chainId, bundlerConfig: { url: url as string } }))
+  .map(([chainId, url]) => {
+    const chain: any = { chainId, bundlerConfig: { url: url as string } }
+    const paymasterUrl = PAYMASTER_URLS[chainId]
+    if (paymasterUrl) chain.paymasterConfig = { url: paymasterUrl }
+    return chain
+  })
 
 const web3AuthOptions: Web3AuthOptions = {
   clientId: (process.env.NEXT_PUBLIC_CLIENT_ID || 'BPi5PB_UiIZt2w-CegcSDGCO8A_vEsYGYDG9Z42gZ3pQ4J1r-w18e7751a021a8309e4a81c4e7a898b3b5c') as string,

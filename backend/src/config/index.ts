@@ -7,6 +7,18 @@ export const config = {
   ethereumRpcUrl: process.env.ETHEREUM_RPC_URL || '',
   contractAddress: process.env.CONTRACT_ADDRESS || '',
 
+  // Testnet USDC faucet — sends a one-time $2 USDC welcome drip to a user's
+  // wallet on first signup, used as their gas budget via the USDC paymaster.
+  // Safe no-op when FAUCET_PRIVATE_KEY is unset. TESTNET ONLY — never put a
+  // mainnet key here (it would hand out real money).
+  faucet: {
+    privateKey: process.env.FAUCET_PRIVATE_KEY || '',
+    rpcUrl: process.env.BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org',
+    // Circle's official testnet USDC on Base Sepolia (6 decimals).
+    usdcAddress: process.env.FAUCET_USDC_ADDRESS || '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    dripUsdc: process.env.FAUCET_DRIP_USDC || '2',
+  },
+
   // Web3Auth (MetaMask Embedded Wallets) — used to verify the idToken the
   // frontend sends. clientId checks the token's audience; leave empty to skip
   // that check (signature + expiry are always enforced).

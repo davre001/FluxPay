@@ -12,6 +12,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@metamask/delegation-toolkit": "^0.13.0",
     "@solana/accounts": "^6.9.0",
     "@solana/addresses": "^6.9.0",
     "@solana/keys": "^6.9.0",

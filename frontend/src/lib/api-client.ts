@@ -102,4 +102,22 @@ export const applicationAPI = {
     request('GET', '/api/applications/mine', undefined, params as Record<string, unknown>),
 }
 
-export default { authAPI, profileAPI, jobAPI, milestoneAPI, walletAPI, reputationAPI, applicationAPI }
+// ─── Permissions (ERC-7715) ───────────────────────────────────────────────────
+export const permissionAPI = {
+  // Persist a granted spending permission for a job.
+  store: (data: Record<string, unknown>) => request('POST', '/api/permissions', data),
+  // The latest active permission for a job.
+  getForJob: (jobId: string) => request('GET', `/api/permissions/${jobId}`),
+}
+
+// ─── Faucet ───────────────────────────────────────────────────────────────────
+export const faucetAPI = {
+  // One-time welcome USDC drip. Idempotent server-side (once per address), so
+  // it's safe to call on every signup; the backend skips already-funded wallets.
+  drip: (address: string) =>
+    request<{ funded: boolean; reason?: string; txHash?: string; amount?: string }>(
+      'POST', '/api/faucet/drip', { address },
+    ),
+}
+
+export default { authAPI, profileAPI, jobAPI, milestoneAPI, walletAPI, reputationAPI, applicationAPI, faucetAPI, permissionAPI }

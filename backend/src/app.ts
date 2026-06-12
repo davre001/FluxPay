@@ -19,6 +19,12 @@ import { createAuthRoutes } from './routes/auth.ts';
 import { createProfileRoutes } from './routes/profile.ts';
 import { createWalletRoutes } from './routes/wallet.ts';
 import { createReputationRoutes } from './routes/reputation.ts';
+import { createFaucetRoutes } from './routes/faucet.ts';
+import { FaucetService } from './services/faucetService.ts';
+import { createPermissionRoutes } from './routes/permission.ts';
+import { PermissionService } from './services/permissionService.ts';
+import { InMemoryPermissionRepository } from './models/permission.ts';
+import { PgPermissionRepository } from './models/postgres.ts';
 import { PaymentService } from './services/paymentService.ts';
 import { JobService } from './services/jobService.ts';
 import { ProfileService } from './services/profileService.ts';
@@ -88,6 +94,7 @@ function defaultRepositories() {
       application: new PgApplicationRepository(),
       milestone: new PgMilestoneRepository(),
       wallet: new PgWalletRepository(),
+      permission: new PgPermissionRepository(),
     };
   }
   return {
@@ -98,6 +105,7 @@ function defaultRepositories() {
     application: new InMemoryApplicationRepository(),
     milestone: new InMemoryMilestoneRepository(),
     wallet: new InMemoryWalletRepository(),
+    permission: new InMemoryPermissionRepository(),
   };
 }
 
@@ -133,6 +141,15 @@ export function createApp(options: any = {}) {
 
   // Reputation routes (shares profileService)
   const reputationRoutes = createReputationRoutes(profileService);
+
+  // Faucet slice — one-time welcome USDC drip on signup
+  const faucetService = options.faucetService || new FaucetService();
+  const faucetRoutes = createFaucetRoutes(faucetService);
+
+  // Permission slice — ERC-7715 spending permissions granted per job
+  const permissionRepository = options.permissionRepository || repos.permission;
+  const permissionService = options.permissionService || new PermissionService(permissionRepository);
+  const permissionRoutes = createPermissionRoutes(permissionService);
 
   const skipAuth: boolean = options.skipAuth ?? false;
   const mockUser: any = options.mockUser;
@@ -176,6 +193,12 @@ export function createApp(options: any = {}) {
       } else if (parts[0] === 'applications') {
         const user = await requireAuth(req, authService, skipAuth, mockUser);
         response = await dispatchApplicationRoute(req, parts, jobRoutes, user);
+      } else if (parts[0] === 'faucet') {
+        const user = await requireAuth(req, authService, skipAuth, mockUser);
+        response = await dispatchFaucetRoute(req, parts, faucetRoutes, user);
+      } else if (parts[0] === 'permissions') {
+        const user = await requireAuth(req, authService, skipAuth, mockUser);
+        response = await dispatchPermissionRoute(req, parts, permissionRoutes, user);
       } else {
         throw new NotFoundError('Route not found');
       }
@@ -193,6 +216,8 @@ export function createApp(options: any = {}) {
     profileRepository, profileService,
     walletRepository, walletService,
     userRepository, authService,
+    faucetService,
+    permissionRepository, permissionService,
   };
 
   return server;
@@ -350,6 +375,29 @@ async function dispatchWalletRoute(req, parts, query, routes, user) {
 async function dispatchApplicationRoute(req, parts, routes, user) {
   if (req.method === 'GET' && parts[1] === 'mine') {
     return routes.listMyApplications(user);
+  }
+  throw new NotFoundError('Route not found');
+}
+
+// ─── Faucet dispatch ──────────────────────────────────────────────────────────
+
+async function dispatchFaucetRoute(req, parts, routes, user) {
+  if (req.method === 'POST' && parts[1] === 'drip') {
+    return routes.drip(user, await readJsonBody(req));
+  }
+  throw new NotFoundError('Route not found');
+}
+
+// ─── Permission dispatch ──────────────────────────────────────────────────────
+
+async function dispatchPermissionRoute(req, parts, routes, user) {
+  // POST /api/permissions
+  if (req.method === 'POST' && parts.length === 1) {
+    return routes.store(user, await readJsonBody(req));
+  }
+  // GET /api/permissions/:jobId
+  if (req.method === 'GET' && parts[1]) {
+    return routes.getForJob(decodeURIComponent(parts[1]));
   }
   throw new NotFoundError('Route not found');
 }

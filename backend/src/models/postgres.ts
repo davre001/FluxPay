@@ -12,6 +12,7 @@ import { createApplicationRecord } from './application.ts';
 import { createMilestoneRecord } from './milestone.ts';
 import { createProfileRecord } from './profile.ts';
 import { createPaymentRecord } from './payment.ts';
+import { createPermissionRecord } from './permission.ts';
 import { randomUUID } from 'node:crypto';
 
 const json = (value: any) => JSON.stringify(value);
@@ -256,6 +257,53 @@ export class PgPaymentRepository {
 
   async clear() {
     await query(`DELETE FROM payments`);
+  }
+}
+
+// ─── Permissions (ERC-7715) ─────────────────────────────────────────────────────
+export class PgPermissionRepository {
+  async create(input: any) {
+    const permission: any = createPermissionRecord(input);
+    await query(
+      `INSERT INTO permissions (id, job_id, status, data, created_at) VALUES ($1, $2, $3, $4, $5)`,
+      [permission.id, permission.job_id, permission.status, json(permission), permission.created_at],
+    );
+    return { ...permission };
+  }
+
+  async findById(id: any) {
+    const rows = await query(`SELECT data FROM permissions WHERE id = $1`, [id]);
+    return rows[0] ? rows[0].data : null;
+  }
+
+  async findByJobId(jobId: any) {
+    const rows = await query(
+      `SELECT data FROM permissions WHERE job_id = $1 ORDER BY created_at DESC LIMIT 1`, [jobId],
+    );
+    return rows[0] ? rows[0].data : null;
+  }
+
+  async findMany(filters: any = {}) {
+    const conds: string[] = [];
+    const params: any[] = [];
+    const add = (sql: string, value: any) => { params.push(value); conds.push(sql.replace('?', `$${params.length}`)); };
+    if (filters.job_id) add('job_id = ?', filters.job_id);
+    if (filters.status) add('status = ?', filters.status);
+    const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
+    const rows = await query(`SELECT data FROM permissions ${where} ORDER BY created_at DESC`, params);
+    return rows.map((r: any) => r.data);
+  }
+
+  async update(id: any, changes: any) {
+    const existing = await this.findById(id);
+    if (!existing) return null;
+    const updated = { ...existing, ...changes, id: existing.id, created_at: existing.created_at, updated_at: nowIso() };
+    await query(`UPDATE permissions SET status = $2, data = $3 WHERE id = $1`, [id, updated.status, json(updated)]);
+    return { ...updated };
+  }
+
+  async clear() {
+    await query(`DELETE FROM permissions`);
   }
 }
 

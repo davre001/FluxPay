@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { jobAPI, milestoneAPI } from '@/lib/api-client';
+import { useGrantMilestonePermission } from '@/hooks/useGrantMilestonePermission';
 
 const MILESTONE_STATUS_STYLE: Record<string, { label: string; badge: string }> = {
   pending:   { label: 'Pending',   badge: 'badge-slate' },
@@ -100,6 +101,7 @@ export default function OrgJobDetailPage() {
   const [applications, setApplications] = useState<any[]>([]);
   const [tab, setTab] = useState<'applicants' | 'milestones'>('applicants');
   const [selecting, setSelecting] = useState<string | null>(null);
+  const { grant } = useGrantMilestonePermission();
 
   const reload = async () => {
     try {
@@ -119,6 +121,25 @@ export default function OrgJobDetailPage() {
     try {
       await jobAPI.selectCreator(jobId, creatorId);
       toast.success('Creator selected! Deal has started.');
+
+      // Grant the ERC-7715 spending permission so the FluxPay agent can release
+      // milestone USDC automatically on approval — one signature, no per-payout
+      // approvals. Non-fatal: the deal is already started if this is declined.
+      try {
+        const budget = Number(job?.total_budget ?? 0);
+        if (budget > 0) {
+          await grant({
+            jobId,
+            organizationId: job?.organization_id,
+            creatorId,
+            budgetUsdc: budget,
+          });
+          toast.success(`Approved auto-release of up to $${budget} USDC 🔐`);
+        }
+      } catch (permErr: any) {
+        toast.error(permErr?.message || 'Permission not granted — you can retry from the deal page');
+      }
+
       await reload();
       setTab('milestones');
     } catch (e: any) {

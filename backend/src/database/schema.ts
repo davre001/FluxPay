@@ -78,4 +78,26 @@ export const SCHEMA_STATEMENTS: string[] = [
      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
    )`,
   `CREATE INDEX IF NOT EXISTS wallet_tx_user_idx ON wallet_transactions (user_id)`,
+
+  // One row per address that has received the welcome USDC drip — enforces the
+  // "first signup only" rule and survives restarts.
+  `CREATE TABLE IF NOT EXISTS faucet_drips (
+     address TEXT PRIMARY KEY,
+     tx_hash TEXT,
+     amount TEXT,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+
+  // ERC-7715 spending permissions a brand grants per job — "release up to
+  // <amount> USDC for this job's milestones." The backend later redeems the
+  // stored permissionsContext (ERC-7710) to pay creators. Persisted so a server
+  // restart never loses a signed permission.
+  `CREATE TABLE IF NOT EXISTS permissions (
+     id TEXT PRIMARY KEY,
+     job_id TEXT,
+     status TEXT,
+     data JSONB NOT NULL,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS permissions_job_idx ON permissions (job_id)`,
 ];
