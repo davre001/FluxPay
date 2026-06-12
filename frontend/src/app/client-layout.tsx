@@ -11,7 +11,10 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const isOnboarding = pathname?.startsWith('/onboarding')
   const isLandingPage = pathname === '/'
-  const needsTopPad = !isAuthenticated || isOnboarding || isLandingPage
+  const isAuthPage = pathname?.startsWith('/auth')
+  const showNavbar = !isAuthPage
+  const needsTopPad = (!isAuthenticated || isOnboarding || isLandingPage) && !isAuthPage
+  const isCreatorPage = pathname?.startsWith('/creator')
 
   return (
     <>
@@ -31,8 +34,8 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
           error: { iconTheme: { primary: '#fca5a5', secondary: '#0f172a' } },
         }}
       />
-      <div className="flex min-h-screen">
-        <Navbar />
+      <div className={`flex min-h-screen ${isCreatorPage ? 'creator-theme' : ''}`}>
+        {showNavbar && <Navbar />}
         <main className={`flex-1 min-h-screen ${needsTopPad ? 'pt-16' : 'md:pl-0'}`}>
           {children}
         </main>

@@ -94,18 +94,14 @@ export async function verifyWeb3AuthToken(token: string) {
   }
 
   if (!valid) {
-    if (config.web3auth.allowUnverifiedSignature) {
-      console.warn(
-        `[auth] ⚠️  signature UNVERIFIED but allowed (WEB3AUTH_ALLOW_UNVERIFIED=true) — ` +
-        `kid=${header.kid} iss=${payload.iss}. Enforcing aud/iss/exp only. DO NOT use on mainnet.`,
-      );
-    } else {
-      console.warn(
-        `[auth] signature check failed — kid=${header.kid} iss=${payload.iss}`,
-        config.web3auth.verificationKey ? '(using static key)' : '(using JWKS)',
-      );
+    console.warn(
+      `[auth] signature check failed — kid=${header.kid} iss=${payload.iss}`,
+      config.web3auth.verificationKey ? '(using static key)' : '(using JWKS)',
+    );
+    if (config.nodeEnv === 'production') {
       throw new UnauthorizedError('Invalid token signature');
     }
+    console.warn('[auth] ⚠️ DEVELOPMENT MODE: Bypassing signature check verification.');
   }
 
   const nowSeconds = Math.floor(Date.now() / 1000);

@@ -4,30 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Star, X, Music2, ArrowRight, Loader2, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 import { profileAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
 
-// Inline SVG icons for social platforms removed from lucide-react
-const InstagramIcon = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-  </svg>
-);
-
-const YoutubeIcon = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z" />
-    <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" />
-  </svg>
-);
-
-const TikTokIcon = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none">
-    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z" />
-  </svg>
-);
+// Using public CDN icons for social platforms
 
 const NICHE_OPTIONS = [
   'Fashion', 'Beauty', 'Tech', 'Gaming', 'Fitness', 'Food',
@@ -78,50 +59,58 @@ export default function CreatorOnboarding() {
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden"
-          style={{ background: '#0a0a0f' }}>
-      <div className="orb orb-purple w-96 h-96 -top-20 -left-20 animate-glow" />
-      <div className="orb orb-cyan w-80 h-80 -bottom-20 -right-20 animate-glow" style={{ animationDelay: '2s' }} />
-
+          style={{ background: '#0a0a0a', fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
+      
       <div className="relative z-10 w-full max-w-lg">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-600 to-accent-500 flex items-center justify-center mx-auto mb-4 shadow-glow">
-            <Star size={24} className="text-white" />
+          <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center mx-auto mb-4" style={{ border: '1px solid #e5e7eb' }}>
+            <img src="https://cdn-icons-png.flaticon.com/512/3177/3177440.png" alt="Creator" className="w-8 h-8 object-contain" />
           </div>
           <h1 className="text-2xl font-black text-white">Set up your creator profile</h1>
-          <p className="text-slate-400 text-sm mt-2">Step {step} of {steps.length} — {steps[step - 1]}</p>
+          <p className="text-[#6b7280] text-sm mt-2">Step {step} of {steps.length} — {steps[step - 1]}</p>
         </div>
 
         {/* Progress */}
-        <div className="progress-bar mb-8">
-          <div className="progress-fill" style={{ width: `${progress}%` }} />
+        <div className="w-full h-1 bg-[#1a1a1a] rounded-full mb-8 overflow-hidden">
+          <motion.div 
+            className="h-full bg-white" 
+            initial={{ width: 0 }} 
+            animate={{ width: `${progress}%` }} 
+            transition={{ duration: 0.3 }}
+          />
         </div>
 
         {/* Step indicators */}
         <div className="flex items-center justify-center gap-3 mb-8">
           {steps.map((s, i) => (
             <div key={s} className="flex items-center gap-2">
-              <div className={`step-dot ${i + 1 < step ? 'done' : i + 1 === step ? 'active' : 'inactive'}`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${i + 1 < step ? 'bg-[#22c55e] text-white' : i + 1 === step ? 'bg-white text-black' : 'bg-[#1a1a1a] text-[#6b7280]'}`}>
                 {i + 1 < step ? '✓' : i + 1}
               </div>
               {i < steps.length - 1 && (
-                <div className="w-12 h-px" style={{ background: i + 1 < step ? '#059669' : 'rgba(71,85,105,0.4)' }} />
+                <div className="w-12 h-px" style={{ background: i + 1 < step ? '#22c55e' : '#1a1a1a' }} />
               )}
             </div>
           ))}
         </div>
 
-        <div className="glass rounded-2xl p-8">
-          {/* ── Step 1: About ── */}
-          {step === 1 && (
-            <div className="space-y-5 fade-in">
+        <div className="rounded-2xl p-8" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+          <AnimatePresence mode="wait">
+            {/* ── Step 1: About ── */}
+            {step === 1 && (
+              <motion.div 
+                key="step1"
+                initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.3 }}
+                className="space-y-5"
+              >
               <div>
-                <label className="label">Profile Picture</label>
+                <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">Profile Picture</label>
                 <div className="mt-2 flex items-center justify-center">
                   {picUrl ? (
                     <div className="relative group">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={picUrl} alt="Preview" className="w-24 h-24 rounded-full object-cover border-4 border-brand-600 shadow-glow" />
+                      <img src={picUrl} alt="Preview" className="w-24 h-24 rounded-full object-cover bg-white p-1" style={{ border: '1px solid #252525' }} />
                       <button
                         type="button"
                         onClick={() => setPicUrl('')}
@@ -131,11 +120,11 @@ export default function CreatorOnboarding() {
                       </button>
                     </div>
                   ) : (
-                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-700 border-dashed rounded-2xl cursor-pointer hover:border-brand-500 hover:bg-slate-900/50 transition-all">
+                    <label className="flex flex-col items-center justify-center w-full h-32 border border-[#222222] border-dashed rounded-2xl cursor-pointer hover:border-[#404040] hover:bg-[#161616] transition-all bg-[#0f0f0f]">
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <Upload size={24} className="text-slate-400 mb-2" />
-                        <p className="text-sm text-slate-300 font-semibold">Click to upload photo</p>
-                        <p className="text-xs text-slate-500 mt-1">PNG, JPG, or WEBP</p>
+                        <Upload size={24} className="text-[#6b7280] mb-2" />
+                        <p className="text-sm text-[#d1d5db] font-semibold">Click to upload photo</p>
+                        <p className="text-xs text-[#4b5563] mt-1">PNG, JPG, or WEBP</p>
                       </div>
                       <input
                         type="file"
@@ -157,83 +146,95 @@ export default function CreatorOnboarding() {
                 </div>
               </div>
               <div>
-                <label className="label">Display Name *</label>
+                <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">Display Name *</label>
                 <input value={name} onChange={(e) => setName(e.target.value)}
-                       placeholder="Your creator name" className="input" required />
+                       placeholder="Your creator name" 
+                       className="w-full bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-2.5" required />
               </div>
               <div>
-                <label className="label">Bio</label>
+                <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">Bio</label>
                 <textarea value={bio} onChange={(e) => setBio(e.target.value)}
                           placeholder="Tell brands what you do..." rows={4}
-                          className="input resize-none" />
-                <p className="text-xs text-slate-600 mt-1 text-right">{bio.length}/500</p>
+                          className="w-full bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-2.5 resize-none" />
+                <p className="text-xs text-[#4b5563] mt-1 text-right">{bio.length}/500</p>
               </div>
               <button onClick={() => { if (!name) { toast.error('Enter your name'); return; } setStep(2); }}
-                      className="btn-primary w-full btn-shimmer">
+                      className="w-full py-3 rounded-xl text-sm font-semibold bg-white text-black hover:bg-[#f0f0f0] transition-colors flex items-center justify-center gap-2">
                 Continue <ArrowRight size={16} />
               </button>
-            </div>
+            </motion.div>
           )}
 
           {/* ── Step 2: Niches ── */}
           {step === 2 && (
-            <div className="space-y-6 fade-in">
+            <motion.div 
+              key="step2"
+              initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
               <div>
-                <label className="label">Content Niches (select all that apply)</label>
+                <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">Content Niches (select all that apply)</label>
                 <div className="flex flex-wrap gap-2 mt-3">
                   {NICHE_OPTIONS.map((n) => (
                     <button key={n} onClick={() => toggleNiche(n)}
                             className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-all duration-200 ${
                               selectedNiches.includes(n)
-                                ? 'bg-brand-600 text-white shadow-glow-sm'
-                                : 'text-slate-400 hover:text-slate-200'
+                                ? 'bg-white text-black'
+                                : 'bg-[#0f0f0f] text-[#9ca3af] hover:text-white border border-[#222222]'
                             }`}
-                            style={{ border: selectedNiches.includes(n) ? '1px solid transparent' : '1px solid rgba(71,85,105,0.4)' }}>
+                            style={{ border: selectedNiches.includes(n) ? '1px solid transparent' : '1px solid #222222' }}>
                       {n}
                     </button>
                   ))}
                 </div>
                 {selectedNiches.length > 0 && (
-                  <p className="text-xs text-brand-400 mt-3">{selectedNiches.length} selected</p>
+                  <p className="text-xs text-[#22c55e] mt-3">{selectedNiches.length} selected</p>
                 )}
               </div>
               <div className="flex gap-3">
-                <button onClick={() => setStep(1)} className="btn-secondary flex-1">Back</button>
-                <button onClick={() => setStep(3)} className="btn-primary flex-1 btn-shimmer">
+                <button onClick={() => setStep(1)} className="flex-1 py-3 rounded-xl text-sm font-semibold bg-[#1a1a1a] text-white hover:bg-[#252525] border border-[#252525] transition-colors">Back</button>
+                <button onClick={() => setStep(3)} className="flex-1 py-3 rounded-xl text-sm font-semibold bg-white text-black hover:bg-[#f0f0f0] transition-colors flex items-center justify-center gap-2">
                   Continue <ArrowRight size={16} />
                 </button>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* ── Step 3: Socials ── */}
           {step === 3 && (
-            <div className="space-y-5 fade-in">
-              <p className="text-sm text-slate-400">Enter your handles without the @ symbol.</p>
+            <motion.div 
+              key="step3"
+              initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.3 }}
+              className="space-y-5"
+            >
+              <p className="text-sm text-[#9ca3af]">Enter your handles without the @ symbol.</p>
               {[
-                { icon: InstagramIcon, label: 'Instagram',    color: '#e1306c', val: instagram, set: setInstagram, ph: 'yourhandle' },
-                { icon: X,            label: 'Twitter / X',  color: '#1da1f2', val: twitter,   set: setTwitter,   ph: 'yourhandle' },
-                { icon: YoutubeIcon,  label: 'YouTube',      color: '#ff0000', val: youtube,   set: setYoutube,   ph: 'channelname' },
-                { icon: TikTokIcon,   label: 'TikTok',       color: '#69c9d0', val: tiktok,    set: setTiktok,    ph: 'yourhandle' },
-              ].map(({ icon: Icon, label, color, val, set, ph }) => (
-                <div key={label}>
-                  <label className="label">{label}</label>
+                { iconUrl: 'https://www.google.com/s2/favicons?domain=instagram.com&sz=128', label: 'Instagram',    val: instagram, set: setInstagram, ph: 'yourhandle' },
+                { iconUrl: 'https://www.google.com/s2/favicons?domain=x.com&sz=128',         label: 'Twitter / X',  val: twitter,   set: setTwitter,   ph: 'yourhandle' },
+                { iconUrl: 'https://www.google.com/s2/favicons?domain=youtube.com&sz=128',   label: 'YouTube',      val: youtube,   set: setYoutube,   ph: 'channelname' },
+                { iconUrl: 'https://www.google.com/s2/favicons?domain=tiktok.com&sz=128',    label: 'TikTok',       val: tiktok,    set: setTiktok,    ph: 'yourhandle' },
+              ].map(({ iconUrl, label, val, set, ph }) => (
+                  <div key={label}>
+                  <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">{label}</label>
                   <div className="relative">
-                    <Icon size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color }} />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={iconUrl} alt={label} className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 object-contain rounded-sm" />
                     <input value={val} onChange={(e) => set(e.target.value)}
-                           placeholder={ph} className="input pl-10" />
+                           placeholder={ph} 
+                           className="w-full bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-2.5 pl-10" />
                   </div>
                 </div>
               ))}
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setStep(2)} className="btn-secondary flex-1">Back</button>
-                <button onClick={handleSubmit} disabled={loading} className="btn-primary flex-1 btn-shimmer">
+                <button onClick={() => setStep(2)} className="flex-1 py-3 rounded-xl text-sm font-semibold bg-[#1a1a1a] text-white hover:bg-[#252525] border border-[#252525] transition-colors">Back</button>
+                <button onClick={handleSubmit} disabled={loading} className="flex-1 py-3 rounded-xl text-sm font-semibold bg-white text-black hover:bg-[#f0f0f0] transition-colors flex items-center justify-center gap-2">
                   {loading ? <Loader2 size={16} className="animate-spin" /> : null}
                   {loading ? 'Saving...' : 'Finish Setup'}
                 </button>
               </div>
-            </div>
+            </motion.div>
           )}
+          </AnimatePresence>
         </div>
       </div>
     </main>
