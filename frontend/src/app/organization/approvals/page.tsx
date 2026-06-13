@@ -1,10 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Check, X, User, ExternalLink, Zap, ShieldCheck } from 'lucide-react';
-import { jobAPI } from '@/lib/api-client';
-import { useUserStore } from '@/stores/userStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const containerVariants = {
@@ -24,18 +22,10 @@ const MOCK_APPS = [
 ];
 
 export default function ApprovalsPage() {
-  const { user } = useUserStore();
-  const [jobs, setJobs] = useState<any[]>([]);
-  // In a real app we would fetch real applications here.
-  // For design/demonstration purposes, we'll populate some mock offers for the brand to review.
+  // NOTE (Phase 2): real per-job approval (select creator) happens on the job
+  // detail page (/organization/jobs/[jobId]). This inbox stays a mock summary
+  // until there's a cross-job "incoming applications" aggregation endpoint.
   const [applications, setApplications] = useState<any[]>(MOCK_APPS);
-
-  useEffect(() => {
-    if (!user?.id) return;
-    jobAPI.listMine().then(({ data }) => {
-      setJobs(data as any[]);
-    }).catch(() => {});
-  }, [user?.id]);
 
   const handleApprove = (id: string) => {
     setApplications(apps => apps.filter(app => app.id !== id));

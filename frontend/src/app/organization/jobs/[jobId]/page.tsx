@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -8,8 +8,10 @@ import {
   Loader2, ChevronDown, ChevronUp, X, ShieldCheck, Zap
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { jobAPI, milestoneAPI } from '@/lib/api-client';
 import { useGrantMilestonePermission } from '@/hooks/useGrantMilestonePermission';
+import { useDeal, useJobApplications } from '@/hooks/useDeals';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const containerVariants = {
@@ -150,34 +152,23 @@ function MilestoneRow({ milestone, onAction }: { milestone: any; onAction: () =>
 export default function OrgJobDetailPage() {
   const { jobId } = useParams<{ jobId: string }>();
   const router = useRouter();
-  
-  const [job, setJob] = useState<any | null>(null);
-  const [applications, setApplications] = useState<any[]>([]);
+  const qc = useQueryClient();
+  const isMock = jobId.startsWith('mock_');
+
+  const { deal: fetchedJob } = useDeal(isMock ? undefined : jobId);
+  const { applications: fetchedApps } = useJobApplications(isMock ? undefined : jobId);
+  const job = isMock ? (MOCK_JOBS.find(j => j.id === jobId) ?? null) : fetchedJob;
+  const applications = isMock ? MOCK_APPS : fetchedApps;
+
   const [tab, setTab] = useState<'applicants' | 'milestones'>('applicants');
   const [selecting, setSelecting] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const { grant } = useGrantMilestonePermission();
 
-  const reload = async () => {
-    if (jobId.startsWith('mock_')) {
-      const mj = MOCK_JOBS.find(j => j.id === jobId);
-      if (mj) {
-        setJob(mj);
-        setApplications(MOCK_APPS);
-      }
-      return;
-    }
-    try {
-      const [{ data: j }, { data: apps }] = await Promise.all([
-        jobAPI.detail(jobId),
-        jobAPI.getApplications(jobId),
-      ]);
-      setJob(j as any);
-      setApplications(apps as any[]);
-    } catch {}
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ['deal', jobId] });
+    qc.invalidateQueries({ queryKey: ['job-applications', jobId] });
   };
-
-  useEffect(() => { reload(); }, [jobId]);
 
   const handleDelete = async () => {
     if (!window.confirm('Are you sure you want to delete/withdraw this deal?')) return;
@@ -227,7 +218,7 @@ export default function OrgJobDetailPage() {
         toast.error(permErr?.message || 'Permission not granted — you can retry from the deal page');
       }
 
-      await reload();
+      refresh();
       setTab('milestones');
     } catch (e: any) {
       toast.error(e?.message || 'Failed to select creator');
@@ -415,7 +406,7 @@ export default function OrgJobDetailPage() {
                 </div>
               ) : (
                 milestones.map((m: any) => (
-                  <MilestoneRow key={m.id} milestone={m} onAction={reload} />
+                  <MilestoneRow key={m.id} milestone={m} onAction={refresh} />
                 ))
               )}
             </div>

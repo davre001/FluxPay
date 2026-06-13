@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { jobAPI, applicationAPI } from '@/lib/api-client';
+import { jobAPI, applicationAPI, milestoneAPI } from '@/lib/api-client';
 import { EXTRA_MOCK_JOBS } from '@/lib/mock-jobs';
 import { useUserStore } from '@/stores/userStore';
 
@@ -102,5 +102,75 @@ export function useApplyToDeal() {
     mutationFn: ({ jobId, coverNote }: { jobId: string; coverNote: string }) =>
       jobAPI.apply(jobId, { cover_note: coverNote }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['my-applications'] }),
+  });
+}
+
+// ── Organization (brand) side ───────────────────────────────────────────────
+// The org's own posted jobs. User-specific → no mock fallback in the hook;
+// pages keep their own demo jobs as a logged-out fallback.
+export function useMyJobs(filters?: { status?: string }) {
+  const { user } = useUserStore();
+  const query = useQuery({
+    queryKey: ['my-jobs', user?.id, filters ?? {}],
+    enabled: Boolean(user?.id),
+    staleTime: 15_000,
+    queryFn: async () => {
+      const { data } = await jobAPI.listMine(filters);
+      return (data as any[]) ?? [];
+    },
+  });
+  return {
+    jobs: query.data ?? [],
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error as Error | null,
+  };
+}
+
+// Applications submitted to a specific job (brand reviews these).
+export function useJobApplications(jobId: string | undefined) {
+  const query = useQuery({
+    queryKey: ['job-applications', jobId],
+    enabled: Boolean(jobId),
+    staleTime: 15_000,
+    queryFn: async () => {
+      const { data } = await jobAPI.getApplications(jobId as string);
+      return (data as any[]) ?? [];
+    },
+  });
+  return {
+    applications: query.data ?? [],
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error as Error | null,
+  };
+}
+
+export function useSelectCreator(jobId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (creatorId: string) => jobAPI.selectCreator(jobId, creatorId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['deal', jobId] });
+      qc.invalidateQueries({ queryKey: ['job-applications', jobId] });
+      qc.invalidateQueries({ queryKey: ['my-jobs'] });
+    },
+  });
+}
+
+export function useApproveMilestone(jobId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (milestoneId: string) => milestoneAPI.approve(milestoneId),
+    onSuccess: () => { if (jobId) qc.invalidateQueries({ queryKey: ['deal', jobId] }); },
+  });
+}
+
+export function useDisputeMilestone(jobId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ milestoneId, reason }: { milestoneId: string; reason: string }) =>
+      milestoneAPI.dispute(milestoneId, { reason }),
+    onSuccess: () => { if (jobId) qc.invalidateQueries({ queryKey: ['deal', jobId] }); },
   });
 }

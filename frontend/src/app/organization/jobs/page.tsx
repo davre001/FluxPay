@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Plus, Search, ArrowRight, Briefcase, Users, LayoutList } from 'lucide-react';
-import { jobAPI } from '@/lib/api-client';
-import { useUserStore } from '@/stores/userStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMyJobs } from '@/hooks/useDeals';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -28,19 +27,11 @@ const MOCK_JOBS = [
 ];
 
 export default function OrgJobsListPage() {
-  const { user } = useUserStore();
-  const [jobs, setJobs] = useState<any[]>(MOCK_JOBS);
+  const { jobs: myJobs } = useMyJobs();
+  // Real posted jobs when signed in; demo jobs keep the page populated otherwise.
+  const jobs = myJobs.length > 0 ? myJobs : MOCK_JOBS;
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
-
-  useEffect(() => {
-    if (!user?.id) return;
-    jobAPI.listMine().then(({ data }) => {
-      if (Array.isArray(data) && data.length) {
-        setJobs([...(data as any[]), ...MOCK_JOBS]);
-      }
-    }).catch(() => {});
-  }, [user?.id]);
 
   const filteredJobs = jobs.filter((j) => {
     // Tab filter

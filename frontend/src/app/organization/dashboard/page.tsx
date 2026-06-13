@@ -7,7 +7,8 @@ import {
   CheckCircle, Zap, Eye, EyeOff, Wallet as WalletIcon, ChevronRight 
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { jobAPI, profileAPI } from '@/lib/api-client';
+import { profileAPI } from '@/lib/api-client';
+import { useMyJobs } from '@/hooks/useDeals';
 import { useUserStore } from '@/stores/userStore';
 import { cn } from '@/lib/utils';
 
@@ -52,7 +53,9 @@ const MOCK_JOBS = [
 
 export default function OrgDashboard() {
   const { user } = useUserStore();
-  const [jobs, setJobs] = useState<any[]>(MOCK_JOBS);
+  const { jobs: myJobs } = useMyJobs();
+  // Real posted jobs when signed in; demo jobs keep the page populated otherwise.
+  const jobs = myJobs.length > 0 ? myJobs : MOCK_JOBS;
   const [profileName, setProfileName] = useState('');
   const [hideStats, setHideStats] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -77,11 +80,6 @@ export default function OrgDashboard() {
 
   useEffect(() => {
     if (!user?.id) return;
-    jobAPI.listMine().then(({ data }) => {
-      if (Array.isArray(data) && data.length) {
-        setJobs([...(data as any[]), ...MOCK_JOBS]);
-      }
-    }).catch(() => {});
     profileAPI.getMe().then(({ data }: any) => setProfileName(data?.name || '')).catch(() => {});
   }, [user?.id]);
 
