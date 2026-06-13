@@ -208,21 +208,44 @@ export default function CreatorOnboarding() {
               initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.3 }}
               className="space-y-5"
             >
-              <p className="text-sm text-[#9ca3af]">Enter your handles without the @ symbol.</p>
+              <p className="text-sm text-[#9ca3af]">Connect your social media accounts to verify your audience.</p>
               {[
-                { iconUrl: 'https://www.google.com/s2/favicons?domain=instagram.com&sz=128', label: 'Instagram',    val: instagram, set: setInstagram, ph: 'yourhandle' },
-                { iconUrl: 'https://www.google.com/s2/favicons?domain=x.com&sz=128',         label: 'Twitter / X',  val: twitter,   set: setTwitter,   ph: 'yourhandle' },
-                { iconUrl: 'https://www.google.com/s2/favicons?domain=youtube.com&sz=128',   label: 'YouTube',      val: youtube,   set: setYoutube,   ph: 'channelname' },
-                { iconUrl: 'https://www.google.com/s2/favicons?domain=tiktok.com&sz=128',    label: 'TikTok',       val: tiktok,    set: setTiktok,    ph: 'yourhandle' },
-              ].map(({ iconUrl, label, val, set, ph }) => (
-                  <div key={label}>
+                { iconUrl: 'https://www.google.com/s2/favicons?domain=instagram.com&sz=128', label: 'Instagram',    val: instagram, set: setInstagram, domain: 'instagram.com' },
+                { iconUrl: 'https://www.google.com/s2/favicons?domain=x.com&sz=128',         label: 'Twitter / X',  val: twitter,   set: setTwitter,   domain: 'x.com' },
+                { iconUrl: 'https://www.google.com/s2/favicons?domain=youtube.com&sz=128',   label: 'YouTube',      val: youtube,   set: setYoutube,   domain: 'youtube.com' },
+                { iconUrl: 'https://www.google.com/s2/favicons?domain=tiktok.com&sz=128',    label: 'TikTok',       val: tiktok,    set: setTiktok,    domain: 'tiktok.com' },
+              ].map(({ iconUrl, label, val, set, domain }) => (
+                <div key={label}>
                   <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">{label}</label>
                   <div className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={iconUrl} alt={label} className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 object-contain rounded-sm" />
-                    <input value={val} onChange={(e) => set(e.target.value)}
-                           placeholder={ph} 
-                           className="w-full bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-2.5 pl-10" />
+                    <img src={iconUrl} alt={label} className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 object-contain rounded-sm z-10" />
+                    
+                    {val ? (
+                      <div className="w-full bg-[#152015] border border-[#22c55e]/30 rounded-lg text-sm text-white px-4 py-2.5 pl-10 flex items-center justify-between">
+                        <span className="text-[#22c55e] font-medium">Connected as @{val}</span>
+                        <button onClick={() => set('')} className="text-xs text-red-500/70 hover:text-red-500 font-semibold transition-colors">Disconnect</button>
+                      </div>
+                    ) : (
+                      <button 
+                        onClick={() => {
+                          const mockUsername = 'creator_' + Math.floor(Math.random() * 1000);
+                          // Open in new tab to simulate real OAuth redirect
+                          window.open(`https://${domain}`, '_blank');
+                          // Simulate connection delay
+                          set('Connecting...');
+                          setTimeout(() => set(mockUsername), 1500);
+                        }}
+                        className="w-full bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white px-4 py-2.5 pl-10 flex items-center hover:bg-[#1a1a1a] transition-colors text-left"
+                      >
+                        <span className="flex-1 font-medium">{val === 'Connecting...' ? 'Connecting...' : `Connect ${label}`}</span>
+                        {val === 'Connecting...' ? (
+                          <Loader2 size={16} className="animate-spin text-[#6b7280]" />
+                        ) : (
+                          <ArrowRight size={14} className="text-[#6b7280]" />
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

@@ -596,7 +596,7 @@ export default function Home() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && searchQuery.trim()) {
-                      router.push(`/explore?q=${encodeURIComponent(searchQuery.trim())}`);
+                      router.push(`/explore?q=${encodeURIComponent(searchQuery.trim())}&role=${activeTab}`);
                     }
                   }}
                   placeholder="What type of deal are you looking for?" 
@@ -605,7 +605,7 @@ export default function Home() {
                 <button 
                   onClick={() => {
                     if (searchQuery.trim()) {
-                      router.push(`/explore?q=${encodeURIComponent(searchQuery.trim())}`);
+                      router.push(`/explore?q=${encodeURIComponent(searchQuery.trim())}&role=${activeTab}`);
                     }
                   }}
                   className="bg-[#141414] hover:bg-black text-white px-6 py-2.5 rounded-full font-medium transition-all active:scale-95 flex items-center gap-2"
@@ -621,7 +621,7 @@ export default function Home() {
               {activeChips.map((chip) => (
                 <button 
                   key={chip} 
-                  onClick={() => router.push(`/explore?q=${encodeURIComponent(chip)}`)}
+                  onClick={() => router.push(`/explore?q=${encodeURIComponent(chip)}&role=${activeTab}`)}
                   className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/30 bg-transparent hover:bg-white/10 text-slate-300 text-sm transition-all hover:text-white active:scale-95"
                 >
                   {chip}

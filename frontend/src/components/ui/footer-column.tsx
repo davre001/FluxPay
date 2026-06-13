@@ -1,9 +1,5 @@
 import {
-  Dribbble,
-  Facebook,
   Github,
-  Instagram,
-  Mail,
   MapPin,
   Phone,
   Twitter,
@@ -11,20 +7,18 @@ import {
 import Link from 'next/link';
 
 const data = {
-  facebookLink: 'https://facebook.com/fluxpay',
-  instaLink: 'https://instagram.com/fluxpay',
   twitterLink: 'https://twitter.com/fluxpay',
-  githubLink: 'https://github.com/fluxpay',
+  githubLink: 'https://github.com/davre001/FluxPay',
   dribbbleLink: 'https://dribbble.com/fluxpay',
   services: {
-    webdev: '/about',
-    webdesign: '/about',
-    marketing: '/about',
-    googleads: '/about',
+    creators: '/creators',
+    brands: '/brands',
+    howitworks: '/how-it-works',
+    escrow: '/smart-escrow',
   },
   about: {
     history: '/about',
-    team: '/about',
+    team: '/team',
     handbook: '/about',
     careers: '/about',
   },
@@ -34,9 +28,8 @@ const data = {
     livechat: '/about',
   },
   contact: {
-    email: 'hello@fluxpay.io',
-    phone: '+1 (800) 555-FLUX',
-    address: 'Africa',
+    phone: '( +234 ) 807-296-6135',
+    address: 'Akure, Nigeria',
   },
   company: {
     name: 'FluxPay',
@@ -47,35 +40,27 @@ const data = {
 };
 
 const socialLinks = [
-  { icon: Facebook, label: 'Facebook', href: data.facebookLink },
-  { icon: Instagram, label: 'Instagram', href: data.instaLink },
   { icon: Twitter, label: 'Twitter', href: data.twitterLink },
   { icon: Github, label: 'GitHub', href: data.githubLink },
-  { icon: Dribbble, label: 'Dribbble', href: data.dribbbleLink },
 ];
 
 const aboutLinks = [
   { text: 'About FluxPay', href: data.about.history },
   { text: 'Meet the Team', href: data.about.team },
-  { text: 'Documentation', href: data.about.handbook },
-  { text: 'Careers', href: data.about.careers },
 ];
 
 const serviceLinks = [
-  { text: 'For Creators', href: data.services.webdev },
-  { text: 'For Brands', href: data.services.webdesign },
-  { text: 'How it Works', href: data.services.marketing },
-  { text: 'Smart Escrow', href: data.services.googleads },
+  { text: 'For Creators', href: data.services.creators },
+  { text: 'For Brands', href: data.services.brands },
+  { text: 'How it Works', href: data.services.howitworks },
+  { text: 'Smart Escrow', href: data.services.escrow },
 ];
 
 const helpfulLinks = [
   { text: 'FAQs', href: data.help.faqs },
-  { text: 'Support', href: data.help.support },
-  { text: 'Live Chat', href: data.help.livechat, hasIndicator: true },
 ];
 
 const contactInfo = [
-  { icon: Mail, text: data.contact.email },
   { icon: Phone, text: data.contact.phone },
   { icon: MapPin, text: data.contact.address, isAddress: true },
 ];

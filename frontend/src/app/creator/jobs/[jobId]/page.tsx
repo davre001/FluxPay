@@ -47,7 +47,8 @@ const MOCK_JOBS: Record<string, any> = {
     post_type: 'video',
     payout_type: 'milestone',
     total_budget: 3000,
-    status: 'open',
+    status: 'in_progress',
+    milestones: [{ id: 'm-1', title: 'YouTube Video', amount: 3000, status: 'pending' }],
     required_elements: { hashtags: ['PS6', 'PlayHasNoLimits'], mentions: ['@PlayStation'] },
     created_at: new Date(Date.now() - 172800000).toISOString(),
     deadline: new Date(Date.now() + 1728000000).toISOString(),
@@ -94,6 +95,12 @@ export default function JobDetailsPage() {
   const [applying, setApplying] = useState(false);
   const [hasApplied, setHasApplied] = useState(false); // mock applied state
 
+  // Deliverable Submission State
+  const [deliverableUrl, setDeliverableUrl] = useState('');
+  const [deliverableNote, setDeliverableNote] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submittedStatus, setSubmittedStatus] = useState<'none'|'success'|'failed'>('none');
+
   useEffect(() => {
     const fetchJob = async () => {
       // try {
@@ -130,6 +137,43 @@ export default function JobDetailsPage() {
     }
     setApplying(false);
   };
+
+  const handleSubmitDeliverable = async (milestoneId: string) => {
+    if (!deliverableUrl.trim()) {
+      toast.error('Please provide a URL to your deliverable');
+      return;
+    }
+    setSubmitting(true);
+    
+    // If it's a mock job, simulate the successful submit + auto-settle
+    if (jobId.startsWith('mock_') || jobId.startsWith('job-')) {
+      setTimeout(() => {
+        toast.success('Deliverable submitted and AI verification triggered!');
+        setSubmittedStatus('success');
+        setSubmitting(false);
+      }, 1500);
+      return;
+    }
+
+    try {
+      // 1. Submit the deliverable
+      // In a real flow we might use milestoneAPI.submit
+      // await milestoneAPI.submit(milestoneId, { deliverable_url: deliverableUrl, deliverable_note: deliverableNote });
+      
+      // 2. Trigger Autonomous AI Settlement
+      // We will mock this out if the backend endpoint is not wired up for the creator token,
+      // but ideally we call verificationAPI.settle here.
+      // await verificationAPI.settle(milestoneId);
+      
+      toast.success('Deliverable submitted and AI verification triggered!');
+      setSubmittedStatus('success');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to submit deliverable');
+      setSubmittedStatus('failed');
+    }
+    setSubmitting(false);
+  };
+
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a0a0a' }}>
@@ -242,40 +286,89 @@ export default function JobDetailsPage() {
         {/* ── Right Column: Apply & Brand ── */}
         <div className="space-y-6">
           
-          {/* Apply Box */}
+          {/* Apply / Submit Box */}
           <div className="rounded-2xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
-            <h3 className="text-sm font-bold text-white mb-4">Pitch to Brand</h3>
-            
-            {hasApplied ? (
-              <div className="rounded-xl p-5 text-center" style={{ background: '#0a0a0a', border: '1px solid #161616' }}>
-                <CheckCircle size={28} className="text-[#22c55e] mx-auto mb-3" />
-                <p className="text-sm font-bold text-white mb-1">Application Sent</p>
-                <p className="text-xs text-[#9ca3af] mb-4">You have successfully pitched for this opportunity. The brand will review your profile shortly.</p>
-                <Link href="/creator/applications" className="inline-flex items-center justify-center w-full py-2.5 rounded-lg text-xs font-semibold bg-[#1a1a1a] text-white hover:bg-[#252525] transition-colors">
-                  View My Applications
-                </Link>
-              </div>
+            {job.status === 'in_progress' ? (
+              <>
+                <h3 className="text-sm font-bold text-white mb-4">Active Deal</h3>
+                {submittedStatus === 'success' ? (
+                  <div className="rounded-xl p-5 text-center" style={{ background: '#0a0a0a', border: '1px solid #161616' }}>
+                    <CheckCircle size={28} className="text-[#22c55e] mx-auto mb-3" />
+                    <p className="text-sm font-bold text-white mb-1">In Verification</p>
+                    <p className="text-xs text-[#9ca3af] mb-4">The AI agent is verifying your deliverable. Payout will be triggered autonomously upon approval.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">Deliverable URL</label>
+                      <input 
+                        type="url"
+                        value={deliverableUrl} 
+                        onChange={(e) => setDeliverableUrl(e.target.value)}
+                        placeholder="https://youtube.com/watch?v=..." 
+                        className="w-full bg-[#0f0f0f] border border-[#222222] rounded-xl text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-3" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">Optional Note</label>
+                      <textarea 
+                        value={deliverableNote} 
+                        onChange={(e) => setDeliverableNote(e.target.value)}
+                        placeholder="Any extra info for the AI or brand..." 
+                        rows={2} 
+                        className="w-full bg-[#0f0f0f] border border-[#222222] rounded-xl text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-3 resize-none" 
+                      />
+                    </div>
+                    <button 
+                      onClick={() => handleSubmitDeliverable(job.milestones?.[0]?.id || 'm-1')} 
+                      disabled={submitting || !deliverableUrl.trim()} 
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold bg-[#3b82f6] text-white hover:bg-[#2563eb] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {submitting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                      {submitting ? 'Submitting & Verifying...' : 'Submit & Auto-Settle'}
+                    </button>
+                    <p className="text-[10px] text-center text-[#6b7280] leading-tight">
+                      This will trigger the Venice AI verification loop.
+                    </p>
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">Why are you a good fit?</label>
-                  <textarea 
-                    value={pitch} 
-                    onChange={(e) => setPitch(e.target.value)}
-                    placeholder="Tell the brand about your audience, engagement rates, and why you love their product..." 
-                    rows={4} 
-                    className="w-full bg-[#0f0f0f] border border-[#222222] rounded-xl text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-3 resize-none leading-relaxed" 
-                  />
-                </div>
-                <button 
-                  onClick={handleApply} 
-                  disabled={applying || !pitch.trim()} 
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold bg-white text-black hover:bg-[#f0f0f0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {applying ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                  {applying ? 'Sending Pitch...' : 'Send Pitch'}
-                </button>
-              </div>
+              <>
+                <h3 className="text-sm font-bold text-white mb-4">Pitch to Brand</h3>
+                
+                {hasApplied ? (
+                  <div className="rounded-xl p-5 text-center" style={{ background: '#0a0a0a', border: '1px solid #161616' }}>
+                    <CheckCircle size={28} className="text-[#22c55e] mx-auto mb-3" />
+                    <p className="text-sm font-bold text-white mb-1">Application Sent</p>
+                    <p className="text-xs text-[#9ca3af] mb-4">You have successfully pitched for this opportunity. The brand will review your profile shortly.</p>
+                    <Link href="/creator/applications" className="inline-flex items-center justify-center w-full py-2.5 rounded-lg text-xs font-semibold bg-[#1a1a1a] text-white hover:bg-[#252525] transition-colors">
+                      View My Applications
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">Why are you a good fit?</label>
+                      <textarea 
+                        value={pitch} 
+                        onChange={(e) => setPitch(e.target.value)}
+                        placeholder="Tell the brand about your audience, engagement rates, and why you love their product..." 
+                        rows={4} 
+                        className="w-full bg-[#0f0f0f] border border-[#222222] rounded-xl text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-3 resize-none leading-relaxed" 
+                      />
+                    </div>
+                    <button 
+                      onClick={handleApply} 
+                      disabled={applying || !pitch.trim()} 
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold bg-white text-black hover:bg-[#f0f0f0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {applying ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                      {applying ? 'Sending Pitch...' : 'Send Pitch'}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import {
   Save, Loader2, X, User, Upload, Pencil, Check,
   MapPin, Clock, Star, Shield, TrendingUp,
-  Eye, Trash2, Camera
+  Eye, Trash2, Camera, ArrowRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { profileAPI } from '@/lib/api-client';
@@ -45,10 +45,10 @@ const XLogo = ({ size = 16, color = 'currentColor' }: { size?: number; color?: s
 );
 
 const SOCIALS = [
-  { key: 'instagram', icon: InstagramIcon, label: 'Instagram', color: '#e1306c', placeholder: 'username (without @)' },
-  { key: 'twitter',   icon: XLogo,         label: 'Twitter',   color: '#1da1f2', placeholder: 'handle (without @)' },
-  { key: 'youtube',   icon: YoutubeIcon,   label: 'YouTube',   color: '#ff0000', placeholder: 'channel ID or URL' },
-  { key: 'tiktok',    icon: TikTokIcon,    label: 'TikTok',    color: '#e2e8f0', placeholder: 'handle (without @)' },
+  { key: 'instagram', icon: InstagramIcon, label: 'Instagram', color: '#e1306c', placeholder: 'username (without @)', domain: 'instagram.com' },
+  { key: 'twitter',   icon: XLogo,         label: 'Twitter',   color: '#1da1f2', placeholder: 'handle (without @)', domain: 'x.com' },
+  { key: 'youtube',   icon: YoutubeIcon,   label: 'YouTube',   color: '#ff0000', placeholder: 'channel ID or URL', domain: 'youtube.com' },
+  { key: 'tiktok',    icon: TikTokIcon,    label: 'TikTok',    color: '#e2e8f0', placeholder: 'handle (without @)', domain: 'tiktok.com' },
 ] as const;
 
 /* ── Reusable section header ── */
@@ -373,7 +373,7 @@ export default function CreatorProfilePage() {
             <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
               <SectionHeader title="Social Channels" subtitle="Connect your social media accounts" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {SOCIALS.map(({ key, icon: Icon, label, color, placeholder }) => {
+                {SOCIALS.map(({ key, icon: Icon, label, color, domain }) => {
                   const value = socials[key];
                   if (!isEditing && !value) return null;
                   return (
@@ -388,15 +388,32 @@ export default function CreatorProfilePage() {
                         </div>
                       ) : (
                         <div className="relative">
-                          <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 flex justify-center">
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 flex justify-center z-10">
                             <Icon size={16} color={color} />
                           </div>
-                          <input
-                            value={value}
-                            onChange={(e) => socialSetters[key](e.target.value)}
-                            placeholder={placeholder}
-                            className="w-full bg-[#0f0f0f] border border-[#1f1f1f] rounded-lg text-sm text-white placeholder-[#3d3d3d] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-3 pl-11"
-                          />
+                          {value && value !== 'Connecting...' ? (
+                            <div className="w-full bg-[#152015] border border-[#22c55e]/30 rounded-lg text-sm text-white px-4 py-3 pl-11 flex items-center justify-between">
+                              <span className="text-[#22c55e] font-medium truncate pr-2">Connected as @{value}</span>
+                              <button onClick={() => socialSetters[key]('')} className="text-xs text-red-500/70 hover:text-red-500 font-semibold transition-colors shrink-0">Disconnect</button>
+                            </div>
+                          ) : (
+                            <button 
+                              onClick={() => {
+                                const mockUsername = 'creator_' + Math.floor(Math.random() * 1000);
+                                window.open(`https://${domain}`, '_blank');
+                                socialSetters[key]('Connecting...');
+                                setTimeout(() => socialSetters[key](mockUsername), 1500);
+                              }}
+                              className="w-full bg-[#0f0f0f] border border-[#1f1f1f] rounded-lg text-sm text-white px-4 py-3 pl-11 flex items-center justify-between hover:bg-[#1a1a1a] transition-colors"
+                            >
+                              <span className="font-medium">{value === 'Connecting...' ? 'Connecting...' : `Connect ${label}`}</span>
+                              {value === 'Connecting...' ? (
+                                <Loader2 size={16} className="animate-spin text-[#6b7280]" />
+                              ) : (
+                                <ArrowRight size={14} className="text-[#6b7280]" />
+                              )}
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>

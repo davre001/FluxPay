@@ -24,7 +24,7 @@ const itemVariants = {
 
 const MOCK_JOBS = [
   { id: 'mock_1', title: 'Summer TikTok Campaign', status: 'open', target_platform: 'tiktok', post_type: 'video', total_budget: 1500, application_count: 5, description: 'We are looking for a creator to make a 30-second TikTok showing off our new summer collection at the beach.' },
-  { id: 'mock_2', title: 'Tech Gadget Review', status: 'in_progress', target_platform: 'youtube', post_type: 'video', total_budget: 3000, application_count: 12, description: 'Deep dive tech review video featuring our new wireless headphones. Must cover battery life and sound quality.', milestones: [{ id: 'm1', title: 'Script Approval', amount: 500, status: 'approved' }, { id: 'm2', title: 'Final Video', amount: 2500, status: 'pending' }] },
+  { id: 'mock_2', title: 'Tech Gadget Review', status: 'in_progress', target_platform: 'youtube', post_type: 'video', total_budget: 3000, application_count: 12, description: 'Deep dive tech review video featuring our new wireless headphones. Must cover battery life and sound quality.', milestones: [{ id: 'm1', title: 'Script Approval', amount: 500, status: 'approved', ai_verification: { score: 0.95, reasoning: "Video prominently features the wireless headphones. Battery life mentioned at 2:15, sound quality review at 4:30. Highly positive sentiment and all required tags present." } }, { id: 'm2', title: 'Final Video', amount: 2500, status: 'submitted' }] },
   { id: 'mock_3', title: 'Instagram Reel Unboxing', status: 'open', target_platform: 'instagram', post_type: 'video', total_budget: 800, application_count: 2, description: 'A quick and energetic unboxing of our monthly subscription box.' },
   { id: 'mock_4', title: 'Sponsored Blog Feature', status: 'in_progress', target_platform: 'other', post_type: 'content_writing', total_budget: 500, application_count: 1, description: 'Write a dedicated SEO-friendly blog post reviewing our software tool.' },
   { id: 'mock_5', title: 'Spring Promo Twitter Thread', status: 'completed', target_platform: 'twitter', post_type: 'content_writing', total_budget: 300, application_count: 8, description: 'A 5-part twitter thread explaining the benefits of our spring promo.' },
@@ -69,6 +69,11 @@ function MilestoneRow({ milestone, onAction }: { milestone: any; onAction: () =>
     } catch (e: any) { toast.error(e?.message || 'Failed to dispute'); }
     setActing(null);
   };
+  
+  const payoutAmount = milestone.ai_verification?.score 
+    ? (Number(milestone.amount) * Number(milestone.ai_verification.score)).toFixed(2) 
+    : milestone.amount;
+
 
   return (
     <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1a1a1a', background: '#0a0a0a' }}>
@@ -103,15 +108,35 @@ function MilestoneRow({ milestone, onAction }: { milestone: any; onAction: () =>
               )}
 
               {milestone.status === 'submitted' && (
-                <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                  <button onClick={approve} disabled={!!acting} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold bg-[#22c55e] text-black hover:bg-[#1ea852] transition-colors">
-                    {acting === 'approve' ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                    Approve & Release
-                  </button>
-                  <button onClick={dispute} disabled={!!acting} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold bg-[#1a1a1a] text-white hover:bg-[#ef4444] hover:border-[#ef4444] transition-colors border border-[#333333]">
+                <div className="flex flex-col gap-3 pt-2">
+                  <div className="rounded-xl p-4 bg-[#111111] border border-[#222222] flex items-center gap-3">
+                    <Loader2 size={18} className="animate-spin text-[#3b82f6]" />
+                    <p className="text-sm font-semibold text-[#d1d5db]">AI Verification in progress. Payout will be released autonomously once complete.</p>
+                  </div>
+                  <button onClick={dispute} disabled={!!acting} className="w-full sm:w-auto self-start flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold bg-[#1a1a1a] text-white hover:bg-[#ef4444] hover:border-[#ef4444] transition-colors border border-[#333333]">
                     {acting === 'dispute' ? <Loader2 size={16} className="animate-spin" /> : <AlertCircle size={16} />}
-                    Raise Dispute
+                    Halt & Dispute
                   </button>
+                </div>
+              )}
+
+              {milestone.status === 'approved' && milestone.ai_verification && (
+                <div className="mt-4 rounded-xl p-5 border border-[rgba(34,197,94,0.2)] bg-[rgba(34,197,94,0.05)]">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-bold text-[#22c55e] flex items-center gap-2">
+                      <Zap size={16} fill="currentColor" /> AI Verified & Settled
+                    </h4>
+                    <span className="px-2 py-1 rounded text-xs font-bold bg-[#111111] border border-[#222222] text-[#e5e7eb]">
+                      Score: {milestone.ai_verification.score * 100}%
+                    </span>
+                  </div>
+                  <p className="text-sm text-[#d1d5db] leading-relaxed mb-4 italic">
+                    "{milestone.ai_verification.reasoning}"
+                  </p>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-semibold text-[#6b7280]">Released Amount:</span>
+                    <span className="font-black text-white">${payoutAmount} USDC</span>
+                  </div>
                 </div>
               )}
             </div>

@@ -120,4 +120,15 @@ export const faucetAPI = {
     ),
 }
 
-export default { authAPI, profileAPI, jobAPI, milestoneAPI, walletAPI, reputationAPI, applicationAPI, faucetAPI, permissionAPI }
+// ─── Verification & Settlement (Venice AI & 1Shot) ────────────────────────────
+export const verificationAPI = {
+  // Run AI verification on a milestone's deliverable
+  verify: (milestoneId: string) => 
+    request('POST', '/api/verify', { milestoneId }),
+  
+  // Autonomous loop: AI verifies, score sets amount, USDC released via direct or 1Shot relayer
+  settle: (milestoneId: string, options?: { via?: 'direct' | 'relayer', minScore?: number }) => 
+    request('POST', '/api/settle', { milestoneId, ...options }),
+}
+
+export default { authAPI, profileAPI, jobAPI, milestoneAPI, walletAPI, reputationAPI, applicationAPI, faucetAPI, permissionAPI, verificationAPI }
