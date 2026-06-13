@@ -38,3 +38,4 @@ backend/.tmp_*
 backend/registration_payload*.json
 
 .env
+.claude
