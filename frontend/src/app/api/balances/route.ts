@@ -18,18 +18,18 @@ interface WalletToken {
   isNative: boolean
 }
 
-// chainId → Alchemy network slug (EVM only; Solana stays GoldRush-only).
+// chainId → Alchemy network slug — mirrors the supported chain set in
+// config/chains.ts (eight 1Shot mainnets + Base Sepolia).
 const ALCHEMY_NETWORKS: Record<number, string> = {
   1: 'eth-mainnet',
   8453: 'base-mainnet',
   42161: 'arb-mainnet',
-  43114: 'avax-mainnet',
-  59144: 'linea-mainnet',
+  10: 'opt-mainnet',
+  137: 'polygon-mainnet',
   56: 'bnb-mainnet',
-  42220: 'celo-mainnet',
-  11155111: 'eth-sepolia',
+  59144: 'linea-mainnet',
+  534352: 'scroll-mainnet',
   84532: 'base-sepolia',
-  421614: 'arb-sepolia',
 }
 
 // ── GoldRush (Covalent): balances + metadata + USD in one call ──

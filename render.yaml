@@ -25,3 +25,5 @@ services:
         sync: false
       - key: DATABASE_URL
         sync: false          # postgres connection string if needed
+      - key: SEED_DEMO_DATA
+        value: "true"        # set to "false" once on real data — stops demo seeding/reseeds

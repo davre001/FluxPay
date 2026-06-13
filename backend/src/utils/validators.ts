@@ -139,6 +139,8 @@ export function parseJobInput(data: any = {}) {
   return {
     title,
     description: String(sanitizeString(data.description || '')),
+    category: data.category ? String(sanitizeString(data.category)) : null,
+    skills: Array.isArray(data.skills) ? data.skills.map((s: any) => String(s)).slice(0, 20) : [],
     total_budget,
     payout_type,
     target_platform,

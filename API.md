@@ -118,6 +118,21 @@ Idempotent per address — sends $2 testnet USDC once on first signup.
 Stores the brand's signed spending permission so the agent can release milestone
 USDC. See `useGrantMilestonePermission` on the frontend.
 
+## Verification & Settlement (Venice AI + 1Shot)
+
+| Method | Path | Body | Auth |
+|---|---|---|---|
+| POST | `/api/verify` | `{ milestoneId }` | yes |
+| POST | `/api/settle` | `{ milestoneId, via?: 'direct' \| 'relayer', minScore? }` | yes |
+
+- `verify` runs AI verification on a milestone's deliverable and returns the score/result.
+- `settle` is the autonomous loop: AI verifies, the score sets the amount, and the
+  scored USDC is released **with no human approval** — `via: 'relayer'` settles through
+  1Shot (mainnets), `via: 'direct'` redeems directly (default; the testnet path).
+  Returns `503 { error: { code: 'unavailable' } }` if the settlement service isn't configured.
+- Frontend methods: `verificationAPI.verify(milestoneId)` and
+  `verificationAPI.settle(milestoneId, { via, minScore })`.
+
 ## Payments (legacy dataset slice — no auth)
 
 | Method | Path | Body |

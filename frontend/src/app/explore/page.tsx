@@ -7,6 +7,7 @@ import {
   Search, ArrowRight, Zap, Instagram, Twitter, Youtube, Music2, Star, CheckCircle, User
 } from 'lucide-react';
 import { jobAPI } from '@/lib/api-client';
+import { EXTRA_MOCK_JOBS as MOCK_JOBS } from '@/lib/mock-jobs';
 
 const PLATFORMS = ['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'other'];
 const POST_TYPES = ['all', 'video', 'image', 'content_writing', 'other'];
@@ -19,12 +20,6 @@ const PLATFORM_COLOR: Record<string, string> = {
   instagram: '#e1306c', twitter: '#1da1f2', youtube: '#ff0000',
   tiktok: '#69c9d0', other: '#8b5cf6',
 };
-
-const MOCK_JOBS = [
-  { id: 'm1', title: 'Summer Fashion Campaign', description: 'Looking for creators to showcase our new summer collection.', target_platform: 'instagram', post_type: 'video', total_budget: 1500, status: 'open', organization: { brand_name: 'StyleBrand' }, milestones: [1,2] },
-  { id: 'm2', title: 'Tech Review - New Wireless Earbuds', description: 'Seeking tech reviewers for an honest unboxing and review.', target_platform: 'youtube', post_type: 'video', total_budget: 3000, status: 'open', organization: { brand_name: 'AudioTech' }, milestones: [1,2,3] },
-  { id: 'm3', title: 'Viral Dance Challenge', description: 'Join our viral hashtag challenge and create a short dance video.', target_platform: 'tiktok', post_type: 'video', total_budget: 800, status: 'open', organization: { brand_name: 'GrooveApp' }, milestones: [1] },
-];
 
 const MOCK_CREATORS = [
   // Fashion (3 creators)

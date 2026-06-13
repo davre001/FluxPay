@@ -100,4 +100,12 @@ export const SCHEMA_STATEMENTS: string[] = [
      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
    )`,
   `CREATE INDEX IF NOT EXISTS permissions_job_idx ON permissions (job_id)`,
+
+  // Tracks which seed version has been applied. Bumping SEED_VERSION in
+  // utils/seedData.ts makes the next deploy clear + rebuild the seeded tables.
+  `CREATE TABLE IF NOT EXISTS seed_meta (
+     key TEXT PRIMARY KEY,
+     value TEXT NOT NULL,
+     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
 ];

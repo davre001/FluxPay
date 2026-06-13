@@ -7,6 +7,8 @@ export function createJobRecord(input) {
     organization_id: input.organization_id,
     title: input.title,
     description: input.description || '',
+    category: input.category || null,
+    skills: input.skills || [],
     target_platform: input.target_platform || 'other',
     post_type: input.post_type || 'other',
     required_elements: input.required_elements || {
@@ -27,8 +29,12 @@ export function createJobRecord(input) {
       region: null,
       invite_only: false,
     },
-    status: 'open',
-    selected_creator_id: null,
+    status: input.status || 'open',
+    // Escrow/settlement state for the deal: unfunded | funded | partially_released | released.
+    funding_status: input.funding_status || 'unfunded',
+    // true only for demo/seed deals — lets them be deleted without touching real ones.
+    seeded: input.seeded || false,
+    selected_creator_id: input.selected_creator_id || null,
     organization: input.organization || { brand_name: input.organization_id },
     created_at: timestamp,
     updated_at: timestamp,

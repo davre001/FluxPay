@@ -10,6 +10,9 @@ export interface MockJob {
   id: string;
   title: string;
   description: string;
+  category?: string;
+  skills?: string[];
+  funding_status?: 'unfunded' | 'funded' | 'partially_released' | 'released';
   target_platform: string;
   post_type: string;
   total_budget: number;
@@ -58,6 +61,8 @@ const SEED_JOBS: MockJob[] = [
   {
     id: 'job_001',
     title: 'Instagram Reel — Summer Collection Launch',
+    category: 'Fashion',
+    skills: ['Short-form video', 'Styling', 'Storytelling'],
     description: 'Create a 30-60s Instagram Reel showcasing our new summer fashion collection. You have creative freedom — we just need authentic energy and the hashtag #SummerByLuma.',
     target_platform: 'instagram',
     post_type: 'video',
@@ -76,6 +81,8 @@ const SEED_JOBS: MockJob[] = [
   {
     id: 'job_002',
     title: 'YouTube Review — Pro Wireless Earbuds X7',
+    category: 'Tech',
+    skills: ['Product review', 'Video editing', 'Audio'],
     description: 'Honest 5-10 minute unboxing and audio quality review of our flagship X7 earbuds. We want your genuine opinion — we believe in the product.',
     target_platform: 'youtube',
     post_type: 'video',
@@ -95,6 +102,8 @@ const SEED_JOBS: MockJob[] = [
   {
     id: 'job_003',
     title: 'TikTok Series — 3 Videos on Productivity Hacks',
+    category: 'Tech',
+    skills: ['Short-form video', 'Storytelling'],
     description: 'Create 3 short TikToks (under 60s each) about productivity using our Notion templates. Fun, relatable tone — not corporate.',
     target_platform: 'tiktok',
     post_type: 'video',
@@ -110,6 +119,8 @@ const SEED_JOBS: MockJob[] = [
   {
     id: 'job_004',
     title: 'Twitter/X Thread — Crypto Savings Explainer',
+    category: 'Crypto',
+    skills: ['Thread writing', 'Copywriting', 'Research'],
     description: 'Write a 10-tweet educational thread explaining DeFi savings for beginners. Must be accurate, engaging, and include our referral link at the end.',
     target_platform: 'twitter',
     post_type: 'content_writing',
@@ -125,6 +136,8 @@ const SEED_JOBS: MockJob[] = [
   {
     id: 'job_005',
     title: 'Instagram Story Takeover — Fitness Challenge',
+    category: 'Fitness',
+    skills: ['Photography', 'Fitness coaching'],
     description: '24-hour story takeover for our fitness brand during the launch week of our new app. Document your workout routine using our app.',
     target_platform: 'instagram',
     post_type: 'image',
@@ -140,6 +153,8 @@ const SEED_JOBS: MockJob[] = [
   {
     id: 'job_006',
     title: 'YouTube Short — Skincare Routine Feature',
+    category: 'Beauty',
+    skills: ['Tutorial creation', 'Lighting', 'Voiceover'],
     description: '60-second YouTube Short featuring our new vitamin C serum in your morning skincare routine. Natural lighting, minimal editing preferred.',
     target_platform: 'youtube',
     post_type: 'video',
