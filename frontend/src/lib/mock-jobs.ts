@@ -156,6 +156,46 @@ export const EXTRA_MOCK_JOBS: MockDeal[] = [
     milestones: ms('job-17', [['Shot list', 'Approve locations', 500], ['Film', 'Submit footage', 1300], ['Publish', 'Upload final cut', 1000]]),
     required_elements: { hashtags: ['Airbnb', 'CityGuide'], mentions: ['@Airbnb'] }, created_at: hoursAgo(8), deadline: inDays(22),
   },
+
+  // ── Chip-matching deals — titles contain the home-page creator chips
+  // (Content Writing / Video Editing / UGC Creator / Brand Ambassador) so those
+  // chips return results on Explore. Folds in a teammate's earlier inline deals.
+  {
+    id: 'job-18', title: 'B2B SaaS Content Writing Specialist', category: 'Tech',
+    organization: { brand_name: 'SaaSPro', bio: 'Developer tools for modern teams.', reputation: 4.6 },
+    description: 'Write a high-quality blog post about our Web3 developer tools — clear, technical, and SEO-aware.',
+    skills: ['Copywriting', 'SEO', 'Research'],
+    target_platform: 'other', post_type: 'content_writing', payout_type: 'milestone', total_budget: 1200, status: 'open', funding_status: 'funded',
+    milestones: ms('job-18', [['Outline', 'Approve structure + keywords', 300], ['Draft', 'Submit 1500-word post', 500], ['Publish', 'Final edits + publish', 400]]),
+    required_elements: { hashtags: ['SaaS', 'Web3Dev'], mentions: ['@SaaSPro'] }, created_at: hoursAgo(4), deadline: inDays(10),
+  },
+  {
+    id: 'job-19', title: 'Professional Video Editing for YouTube', category: 'Entertainment',
+    organization: { brand_name: 'VlogStars', bio: 'High-production creator network.', reputation: 4.7 },
+    description: 'Edit a 10-minute high-production vlog with custom sound design and motion graphics.',
+    skills: ['Video editing', 'Motion graphics', 'Sound design'],
+    target_platform: 'youtube', post_type: 'video', payout_type: 'milestone', total_budget: 2500, status: 'open', funding_status: 'funded',
+    milestones: ms('job-19', [['Rough cut', 'Submit assembly edit', 1000], ['Final cut', 'Color, sound + graphics', 1500]]),
+    required_elements: { hashtags: ['VideoEditing', 'YouTube'], mentions: ['@VlogStars'] }, created_at: hoursAgo(7), deadline: inDays(9),
+  },
+  {
+    id: 'job-20', title: 'UGC Creator for Skincare Line', category: 'Beauty',
+    organization: { brand_name: 'GlowBeauty', bio: 'Clean, organic skincare.', reputation: 4.8 },
+    description: 'Produce 3 authentic short-form videos demonstrating our new organic skincare collection.',
+    skills: ['Short-form video', 'UGC', 'Storytelling'],
+    target_platform: 'tiktok', post_type: 'video', payout_type: 'milestone', total_budget: 950, status: 'open', funding_status: 'unfunded',
+    milestones: ms('job-20', [['Concept', 'Confirm 3 hooks', 250], ['Film + edit', 'Deliver 3 clips', 400], ['Publish', 'Post series', 300]]),
+    required_elements: { hashtags: ['UGC', 'Skincare'], mentions: ['@GlowBeauty'] }, created_at: hoursAgo(11), deadline: inDays(13),
+  },
+  {
+    id: 'job-21', title: 'Long-term Brand Ambassador', category: 'Fitness',
+    organization: { brand_name: 'FitLife', bio: 'Premium fitness apparel.', reputation: 4.9 },
+    description: 'Represent our premium fitness apparel brand across your socials for the next 3 months.',
+    skills: ['Brand ambassadorship', 'Content creation', 'Community management'],
+    target_platform: 'instagram', post_type: 'image', payout_type: 'milestone', total_budget: 5000, status: 'open', funding_status: 'funded',
+    milestones: ms('job-21', [['Month 1', 'Kickoff + 4 posts', 1700], ['Month 2', '4 posts', 1700], ['Month 3', '4 posts + recap', 1600]]),
+    required_elements: { hashtags: ['BrandAmbassador', 'FitLife'], mentions: ['@FitLife'] }, created_at: hoursAgo(16), deadline: inDays(30),
+  },
 ];
 
 // Alias for clarity at call sites that want the full list of deals.

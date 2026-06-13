@@ -5,7 +5,7 @@ import { isDbEnabled, query } from '../database/client.ts';
 // this value, those three tables are cleared and rebuilt from the seed below;
 // other tables (users, profiles, wallets, permissions) are left untouched.
 // With no DATABASE_URL (in-memory) data resets every restart, so it's unused there.
-const SEED_VERSION = '2026-06-13-rich-deals';
+const SEED_VERSION = '2026-06-13-rich-deals-2';
 
 // Master switch. Set SEED_DEMO_DATA=false (e.g. in Render) once you're running on
 // real data: the seeder then never clears or inserts demo deals again, so every
@@ -129,6 +129,22 @@ const DEALS: SeedDeal[] = [
   { title: 'TikTok Unboxing — Smart Home Kit', brand_name: 'NestGadgets', category: 'Lifestyle', target_platform: 'tiktok', post_type: 'video', total_budget: 1100, payout_type: 'milestone', status: 'open', funding_status: 'funded', deadlineDays: 12,
     skills: ['Unboxing', 'Short-form video'],
     milestones: [ { title: 'Unbox + script', description: 'Confirm angle', amount: 300 }, { title: 'Film + edit', description: 'Submit draft', amount: 400 }, { title: 'Publish', description: 'Post + link in bio', amount: 400 } ] },
+
+  // ── Chip-matching deals — titles contain the home-page creator chips
+  // (Content Writing / Video Editing / UGC Creator / Brand Ambassador) so those
+  // chips return results on Explore (which searches by job title/brand).
+  { title: 'B2B SaaS Content Writing Specialist', brand_name: 'SaaSPro', category: 'Tech', target_platform: 'other', post_type: 'content_writing', total_budget: 1200, payout_type: 'milestone', status: 'open', funding_status: 'funded', deadlineDays: 10,
+    skills: ['Copywriting', 'SEO', 'Research'],
+    milestones: [ { title: 'Outline', description: 'Approve structure + keywords', amount: 300 }, { title: 'Draft', description: 'Submit 1500-word post', amount: 500 }, { title: 'Publish', description: 'Final edits + publish', amount: 400 } ] },
+  { title: 'Professional Video Editing for YouTube', brand_name: 'VlogStars', category: 'Entertainment', target_platform: 'youtube', post_type: 'video', total_budget: 2500, payout_type: 'milestone', status: 'open', funding_status: 'funded', deadlineDays: 9,
+    skills: ['Video editing', 'Motion graphics', 'Sound design'],
+    milestones: [ { title: 'Rough cut', description: 'Submit assembly edit', amount: 1000 }, { title: 'Final cut', description: 'Color, sound + graphics', amount: 1500 } ] },
+  { title: 'UGC Creator for Skincare Line', brand_name: 'GlowBeauty', category: 'Beauty', target_platform: 'tiktok', post_type: 'video', total_budget: 950, payout_type: 'milestone', status: 'open', funding_status: 'unfunded', deadlineDays: 13,
+    skills: ['Short-form video', 'UGC', 'Storytelling'],
+    milestones: [ { title: 'Concept', description: 'Confirm 3 hooks', amount: 250 }, { title: 'Film + edit', description: 'Deliver 3 clips', amount: 400 }, { title: 'Publish', description: 'Post series', amount: 300 } ] },
+  { title: 'Long-term Brand Ambassador', brand_name: 'FitLife', category: 'Fitness', target_platform: 'instagram', post_type: 'image', total_budget: 5000, payout_type: 'milestone', status: 'open', funding_status: 'funded', deadlineDays: 30,
+    skills: ['Brand ambassadorship', 'Content creation', 'Community management'],
+    milestones: [ { title: 'Month 1', description: 'Kickoff + 4 posts', amount: 1700 }, { title: 'Month 2', description: '4 posts', amount: 1700 }, { title: 'Month 3', description: '4 posts + recap', amount: 1600 } ] },
 ];
 
 export async function seedInitialData(locals: any) {
