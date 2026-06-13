@@ -22,7 +22,7 @@ export interface DealFilters {
 // filter is honored in the fallback so an "open" browse never shows taken deals.
 async function fetchDeals(filters?: DealFilters): Promise<any[]> {
   try {
-    const { data } = await jobAPI.list(filters as Record<string, unknown>);
+    const { data } = await jobAPI.list(filters);
     if (Array.isArray(data) && data.length > 0) return data as any[];
   } catch {
     /* fall through to mock */

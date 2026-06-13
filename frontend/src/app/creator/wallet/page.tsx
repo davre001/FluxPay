@@ -1,5 +1,9 @@
 'use client';
 
+// Balances: on-chain holdings (useWalletInfo, wagmi) are the source of truth.
+// walletAPI below is the in-app LEDGER (app-recorded deposits/escrow/payouts),
+// shown as activity/history — not the authoritative USDC balance. See API.md.
+
 import { useEffect, useState } from 'react';
 import { Wallet, ArrowDownToLine, ArrowUpFromLine, Loader2, Clock, ExternalLink, ArrowRightLeft, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';

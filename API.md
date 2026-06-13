@@ -88,6 +88,14 @@ that do **not** require it are `POST /api/auth/session` and the `payments` slice
 | POST | `/api/wallet/withdraw` | `{ amount, to_address }` |
 | GET | `/api/wallet/transactions` | `?page&page_size` |
 
+> **Balances — source of truth.** On-chain is authoritative. The real multi-chain
+> wallet view (`/wallet`) reads holdings **on-chain** (wagmi `useBalance` +
+> USDC `balanceOf`, with the GoldRush/Alchemy proxy at `/api/balances` for the
+> full token list). These `/api/wallet/*` endpoints are an **internal ledger**
+> (app-tracked deposits/escrow/payouts) used by the in-app `creator/wallet`
+> activity view — they do **not** reflect on-chain truth and shouldn't be used
+> as the authoritative USDC balance.
+
 ## Applications
 
 | Method | Path | Query |
