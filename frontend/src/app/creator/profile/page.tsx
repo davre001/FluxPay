@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import {
   Save, Loader2, X, User, Upload, Pencil, Check,
   MapPin, Clock, Star, Shield, TrendingUp,
+  Eye, Trash2, Camera
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { profileAPI } from '@/lib/api-client';
@@ -62,7 +63,7 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }
 
 /* ── Premium input ── */
 function PremiumInput({
-  label, value, onChange, placeholder, type = 'text', prefix, textarea, rows = 4, hint,
+  label, value, onChange, placeholder, type = 'text', prefix, textarea, rows = 4, hint, isEditing = true
 }: {
   label: string;
   value: string;
@@ -73,9 +74,25 @@ function PremiumInput({
   textarea?: boolean;
   rows?: number;
   hint?: string;
+  isEditing?: boolean;
 }) {
   const base =
-    'w-full bg-[#111111] border border-[#1f1f1f] rounded-lg text-sm text-white placeholder-[#3d3d3d] focus:outline-none focus:border-[#404040] transition-colors duration-200';
+    'w-full bg-[#0f0f0f] border border-[#1f1f1f] rounded-lg text-sm text-white placeholder-[#3d3d3d] focus:outline-none focus:border-[#404040] transition-colors duration-200';
+  
+  if (!isEditing) {
+    return (
+      <div>
+        <label className="block text-xs font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">
+          {label}
+        </label>
+        <div className="text-sm text-white py-2 flex items-center">
+          {prefix && <span className="mr-2 text-[#6b7280]">{prefix}</span>}
+          {value || <span className="text-[#4b5563] italic">Not provided</span>}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <label className="block text-xs font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">
@@ -121,6 +138,8 @@ export default function CreatorProfilePage() {
   const [twitter, setTwitter] = useState('');
   const [youtube, setYoutube] = useState('');
   const [tiktok, setTiktok] = useState('');
+  const [showPicMenu, setShowPicMenu] = useState(false);
+  const [showPicModal, setShowPicModal] = useState(false);
 
   const socials: Record<string, string> = { instagram, twitter, youtube, tiktok };
   const socialSetters: Record<string, (v: string) => void> = { instagram: setInstagram, twitter: setTwitter, youtube: setYoutube, tiktok: setTiktok };
@@ -157,6 +176,16 @@ export default function CreatorProfilePage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handlePicUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setPicUrl(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+    setShowPicMenu(false);
   };
 
   return (
@@ -203,61 +232,60 @@ export default function CreatorProfilePage() {
 
             {/* Identity Card */}
             <div className="rounded-xl p-6 text-center space-y-4" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
-              <div className="relative inline-block">
-                {picUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={picUrl}
-                    alt="Avatar"
-                    className="w-20 h-20 rounded-full object-cover"
-                    style={{ border: '2px solid #2a2a2a' }}
-                  />
-                ) : (
-                  <div
-                    className="w-20 h-20 rounded-full flex items-center justify-center"
-                    style={{ background: '#1a1a1a', border: '2px solid #222222' }}
-                  >
-                    <User size={30} className="text-[#4b5563]" />
+              <div className="relative inline-flex justify-center">
+                <button 
+                  onClick={() => isEditing && setShowPicMenu(!showPicMenu)}
+                  className={cn("relative group focus:outline-none", !isEditing && "cursor-default")}
+                >
+                  {picUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={picUrl}
+                      alt="Avatar"
+                      className="w-20 h-20 rounded-full object-cover transition-opacity group-hover:opacity-70"
+                      style={{ border: '2px solid #2a2a2a' }}
+                    />
+                  ) : (
+                    <div
+                      className="w-20 h-20 rounded-full flex items-center justify-center transition-opacity group-hover:opacity-70"
+                      style={{ background: '#1a1a1a', border: '2px solid #222222' }}
+                    >
+                      <User size={30} className="text-[#4b5563]" />
+                    </div>
+                  )}
+                  {isEditing && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                      <Camera size={20} className="text-white drop-shadow-md" />
+                    </div>
+                  )}
+                </button>
+
+                {/* Profile Pic Dropdown Menu */}
+                {showPicMenu && (
+                  <div className="absolute top-[85px] left-1/2 -translate-x-1/2 z-50 w-48 rounded-lg shadow-xl py-1" style={{ background: '#1a1a1a', border: '1px solid #252525' }}>
+                    {picUrl && (
+                      <button onClick={() => { setShowPicModal(true); setShowPicMenu(false); }} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#252525] flex items-center gap-2">
+                        <Eye size={14} /> View Picture
+                      </button>
+                    )}
+                    <label className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#252525] flex items-center gap-2 cursor-pointer">
+                      <Upload size={14} /> {picUrl ? 'Change Picture' : 'Add Picture'}
+                      <input type="file" accept="image/*" className="hidden" onChange={handlePicUpload} />
+                    </label>
+                    {picUrl && (
+                      <button onClick={() => { setPicUrl(''); setShowPicMenu(false); }} className="w-full text-left px-4 py-2 text-sm text-[#ef4444] hover:bg-[#252525] flex items-center gap-2">
+                        <Trash2 size={14} /> Remove Picture
+                      </button>
+                    )}
                   </div>
                 )}
-                <span
-                  className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full"
-                  style={{ background: '#22c55e', border: '2px solid #111111' }}
-                />
               </div>
 
               <div>
                 <div className="flex items-center justify-center gap-1.5 mb-1">
                   <p className="font-bold text-lg text-white leading-tight">{name || 'Your Name'}</p>
-                  <img src="https://img.icons8.com/fluency/48/verified-badge.png" className="w-4 h-4 flex-shrink-0" alt="Verified" />
                 </div>
                 <p className="text-xs text-[#4b5563] truncate">{user?.email}</p>
-              </div>
-
-              <div className="flex flex-wrap justify-center gap-2">
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-md text-[11px] font-semibold bg-white text-black">
-                  Pro Creator
-                </span>
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-md text-[11px] font-semibold text-[#d1d5db]" style={{ background: '#1a1a1a', border: '1px solid #252525' }}>
-                  <Star size={10} className="fill-[#f59e0b] text-[#f59e0b]" /> 4.8
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 pt-4" style={{ borderTop: '1px solid #1a1a1a' }}>
-                <div className="text-left">
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <MapPin size={11} className="text-[#4b5563]" />
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-[#4b5563]">Location</p>
-                  </div>
-                  <p className="text-xs font-semibold text-[#d1d5db]">Remote / Global</p>
-                </div>
-                <div className="text-left">
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <Clock size={11} className="text-[#4b5563]" />
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-[#4b5563]">Response</p>
-                  </div>
-                  <p className="text-xs font-semibold text-[#d1d5db]">{'< 2 hours'}</p>
-                </div>
               </div>
             </div>
 
@@ -282,42 +310,6 @@ export default function CreatorProfilePage() {
                 ))}
               </div>
             </div>
-
-            {/* Social Channels */}
-            <div className="rounded-xl p-5 space-y-3" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#4b5563]">Social Channels</p>
-              {SOCIALS.map(({ key, icon: Icon, label, color }) => {
-                const val = socials[key];
-                const connected = Boolean(val);
-                return (
-                  <div key={key} className="flex items-center gap-3 py-2.5 rounded-lg px-3" style={{ background: '#0f0f0f', border: '1px solid #1a1a1a' }}>
-                    <Icon size={14} color={connected ? color : '#374151'} />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-[#4b5563]">{label}</p>
-                      <p className="text-xs font-semibold text-[#d1d5db] truncate">
-                        {connected ? `@${val}` : <span className="text-[#374151]">Not connected</span>}
-                      </p>
-                    </div>
-                    {connected && <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] flex-shrink-0" />}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Wallet */}
-            <div className="rounded-xl p-5 space-y-3" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-[#4b5563]">Smart Wallet</p>
-                <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
-              </div>
-              <p className="text-xs text-[#4b5563] leading-relaxed">USDC escrow payments — automated via smart contracts.</p>
-              <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg" style={{ background: '#0f0f0f', border: '1px solid #1a1a1a' }}>
-                <div className="w-1.5 h-1.5 rounded-full bg-[#d1d5db] flex-shrink-0" />
-                <span className="text-[11px] font-mono text-[#9ca3af] truncate select-all">
-                  {user?.walletAddress ?? 'No wallet connected'}
-                </span>
-              </div>
-            </div>
           </div>
 
           {/* ── Right Main Content ── */}
@@ -325,122 +317,108 @@ export default function CreatorProfilePage() {
             {isEditing ? (
               <>
                 {/* Edit: Profile Details */}
-                <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
-                  <SectionHeader title="Profile Details" subtitle="Your public-facing profile information" />
-                  <div className="space-y-5">
+            <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+              <SectionHeader title="Profile Details" subtitle="Your public-facing profile information" />
+              <div className="space-y-5">
+                <PremiumInput
+                  label="Display Name"
+                  value={name}
+                  onChange={setName}
+                  placeholder="Your professional name"
+                  isEditing={isEditing}
+                />
+                <PremiumInput
+                  label="Professional Bio"
+                  value={bio}
+                  onChange={setBio}
+                  placeholder="Describe your expertise..."
+                  textarea
+                  rows={5}
+                  hint={isEditing ? `${bio.length} / 500 characters` : undefined}
+                  isEditing={isEditing}
+                />
+              </div>
+            </div>
 
-                    {/* Avatar upload */}
-                    <div>
-                      <label className="block text-xs font-semibold text-[#6b7280] uppercase tracking-widest mb-2">
-                        Profile Photo
+            {/* Niches */}
+            <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+              <SectionHeader title="Content Niches" subtitle="Select the categories that best describe your content" />
+              <div className="flex flex-wrap gap-2">
+                {NICHE_OPTIONS.map((ind) => {
+                  const active = niches.includes(ind);
+                  if (!isEditing && !active) return null;
+                  return (
+                    <button
+                      key={ind}
+                      onClick={() => isEditing && toggleNiche(ind)}
+                      disabled={!isEditing}
+                      className={cn(
+                        'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150',
+                        active
+                          ? 'bg-white text-black border-white'
+                          : 'text-[#9ca3af] border-[#1f1f1f] bg-[#0f0f0f]',
+                        isEditing && !active && 'hover:border-[#333333] hover:text-white',
+                        !isEditing && 'opacity-90 cursor-default'
+                      )}
+                    >
+                      {active && <Check size={11} />}
+                      {ind}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Socials */}
+            <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+              <SectionHeader title="Social Channels" subtitle="Connect your social media accounts" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {SOCIALS.map(({ key, icon: Icon, label, color, placeholder }) => {
+                  const value = socials[key];
+                  if (!isEditing && !value) return null;
+                  return (
+                    <div key={key}>
+                      <label className="block text-xs font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">
+                        {label}
                       </label>
-                      {picUrl ? (
-                        <div className="flex items-center gap-4">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <div className="relative group">
-                            <img src={picUrl} alt="Preview" className="w-16 h-16 rounded-xl object-cover" style={{ border: '1px solid #222222' }} />
-                            <button
-                              type="button"
-                              onClick={() => setPicUrl('')}
-                              className="absolute -top-2 -right-2 w-5 h-5 rounded-full flex items-center justify-center bg-[#ef4444] text-white hover:bg-[#dc2626] transition-colors"
-                            >
-                              <X size={10} />
-                            </button>
-                          </div>
-                          <p className="text-xs text-[#6b7280]">Click × to remove and upload a new photo.</p>
+                      {!isEditing ? (
+                        <div className="text-sm text-white py-2 flex items-center">
+                          <Icon size={16} color={color} />
+                          <span className="ml-3 font-medium">{value}</span>
                         </div>
                       ) : (
-                        <label className="flex flex-col items-center justify-center h-28 cursor-pointer rounded-xl transition-colors hover:border-[#404040]" style={{ border: '1.5px dashed #222222', background: '#0f0f0f' }}>
-                          <Upload size={18} className="text-[#4b5563] mb-2" />
-                          <p className="text-sm font-semibold text-[#9ca3af]">Upload Photo</p>
-                          <p className="text-[11px] text-[#4b5563] mt-0.5">PNG, JPG or WEBP</p>
-                          <input type="file" accept="image/*" className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onloadend = () => setPicUrl(reader.result as string);
-                                reader.readAsDataURL(file);
-                              }
-                            }}
+                        <div className="relative">
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 flex justify-center">
+                            <Icon size={16} color={color} />
+                          </div>
+                          <input
+                            value={value}
+                            onChange={(e) => socialSetters[key](e.target.value)}
+                            placeholder={placeholder}
+                            className="w-full bg-[#0f0f0f] border border-[#1f1f1f] rounded-lg text-sm text-white placeholder-[#3d3d3d] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-3 pl-11"
                           />
-                        </label>
+                        </div>
                       )}
                     </div>
+                  );
+                })}
+              </div>
+            </div>
 
-                    <PremiumInput
-                      label="Display Name"
-                      value={name}
-                      onChange={setName}
-                      placeholder="Your professional name"
-                    />
-
-                    <PremiumInput
-                      label="Professional Bio"
-                      value={bio}
-                      onChange={setBio}
-                      placeholder="Describe your expertise, audience size, and what content you specialise in…"
-                      textarea
-                      rows={5}
-                      hint={`${bio.length} / 500 characters`}
-                    />
-                  </div>
-                </div>
-
-                {/* Edit: Niches */}
-                <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
-                  <SectionHeader title="Content Niches" subtitle="Select the categories that best describe your content" />
-                  <div className="flex flex-wrap gap-2">
-                    {NICHE_OPTIONS.map((n) => {
-                      const active = niches.includes(n);
-                      return (
-                        <button
-                          key={n}
-                          onClick={() => toggleNiche(n)}
-                          className={cn(
-                            'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150',
-                            active
-                              ? 'bg-white text-black border-white'
-                              : 'text-[#9ca3af] border-[#1f1f1f] bg-[#0f0f0f] hover:border-[#333333] hover:text-white'
-                          )}
-                        >
-                          {active && <Check size={11} />}
-                          {n}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Edit: Socials */}
-                <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
-                  <SectionHeader title="Social Channels" subtitle="Connect your social media accounts" />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {SOCIALS.map(({ key, icon: Icon, label, color, placeholder }) => (
-                      <PremiumInput
-                        key={key}
-                        label={label}
-                        value={socials[key]}
-                        onChange={(v) => socialSetters[key](v)}
-                        placeholder={placeholder}
-                        prefix={<Icon size={14} color={color} />}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Save */}
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold bg-white text-black hover:bg-[#f0f0f0] transition-all duration-150 disabled:opacity-50"
-                >
-                  {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-                  {saving ? 'Saving…' : 'Save Profile'}
-                </button>
-              </>
-            ) : (
-              <>
+            {/* Save Button (when editing) */}
+            {isEditing && (
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold bg-white text-black hover:bg-[#f0f0f0] transition-all duration-150 disabled:opacity-50"
+              >
+                {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+                {saving ? 'Saving…' : 'Save Profile'}
+              </button>
+            )}
+          </>
+        ) : (
+          <>
                 {/* View: Bio */}
                 <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
                   <SectionHeader title="Professional Summary" />
@@ -532,6 +510,19 @@ export default function CreatorProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Picture Viewer Modal */}
+      {showPicModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowPicModal(false)}>
+          <div className="relative max-w-2xl w-full p-4 flex flex-col items-center">
+            <button className="absolute top-0 right-0 p-2 text-white hover:text-gray-300" onClick={() => setShowPicModal(false)}>
+              <X size={24} />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={picUrl} alt="Creator Avatar" className="w-full max-h-[80vh] object-contain rounded-full" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

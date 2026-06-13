@@ -191,7 +191,16 @@ export function createApp(options: any = {}) {
       } else if (parts[0] === 'payments') {
         response = await dispatchPaymentRoute(req, parts, url.searchParams, routes);
       } else if (parts[0] === 'jobs') {
-        const user = await requireAuth(req, authService, skipAuth, mockUser);
+        // GET /jobs and GET /jobs/:id are public, everything else requires auth
+        let user;
+        const isPublicJobRoute = req.method === 'GET' && (parts.length === 1 || (parts.length === 2 && parts[1] !== 'mine'));
+        
+        if (isPublicJobRoute) {
+          try { user = await requireAuth(req, authService, skipAuth, mockUser); } catch (e) { user = undefined; }
+        } else {
+          user = await requireAuth(req, authService, skipAuth, mockUser);
+        }
+        
         response = await dispatchJobRoute(req, parts, url.searchParams, jobRoutes, user);
       } else if (parts[0] === 'milestones') {
         const user = await requireAuth(req, authService, skipAuth, mockUser);

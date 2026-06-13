@@ -22,5 +22,7 @@ export async function startApp(port = config.port) {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  // Trigger restart for new seeded jobs
   startApp();
 }
+

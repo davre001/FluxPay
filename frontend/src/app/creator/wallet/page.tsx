@@ -36,8 +36,19 @@ export default function CreatorWalletPage() {
   const [depositing, setDepositing] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   const [tab, setTab] = useState<'deposit' | 'withdraw'>('deposit');
-  const [showBalance, setShowBalance] = useState(true);
+  const [showBalance, setShowBalance] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('fluxpay_wallet_visibility');
+      if (saved !== null) return saved === 'true';
+    }
+    return true;
+  });
 
+  const toggleShowBalance = () => {
+    const next = !showBalance;
+    setShowBalance(next);
+    localStorage.setItem('fluxpay_wallet_visibility', String(next));
+  };
   const loadData = async () => {
     try {
       const [{ data: bal }, { data: txs }] = await Promise.all([
@@ -113,7 +124,7 @@ export default function CreatorWalletPage() {
               </p>
               <p className="text-xl font-bold text-[#4b5563]">USDC</p>
               <button 
-                onClick={() => setShowBalance(!showBalance)}
+                onClick={toggleShowBalance}
                 className="ml-2 text-[#6b7280] hover:text-[#d1d5db] transition-colors"
                 title={showBalance ? "Hide balance" : "Show balance"}
               >

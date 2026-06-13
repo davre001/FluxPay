@@ -7,6 +7,7 @@ export function createProfileRecord(userId, input) {
     name: input.name || '',
     bio: input.bio || '',
     website_url: input.website_url || null,
+    location: input.location || null,
     profile_picture_url: input.profile_picture_url || null,
     niche_tags: Array.isArray(input.niche_tags) ? input.niche_tags : [],
     instagram: input.instagram || null,

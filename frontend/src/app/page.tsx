@@ -485,20 +485,34 @@ export default function Home() {
     }
   }, [isAuthenticated, user, router]);
 
-  // Sliding images for background
   const backgrounds = [
     'https://images.unsplash.com/photo-1573164713988-8665fc963095?q=80&w=2069&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=2000&auto=format&fit=crop', // Replaced netflix one with ugc creator
+    'https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=2000&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?q=80&w=2070&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=2074&auto=format&fit=crop', // Content Creator
-    'https://images.unsplash.com/photo-1516280440502-614749323df5?q=80&w=2069&auto=format&fit=crop', // Creator setup
-    'https://images.unsplash.com/photo-1590402494587-44b71d7772f6?q=80&w=2070&auto=format&fit=crop'  // Studio lighting
+    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop', // Data/Analytics Dashboard
+    'https://images.unsplash.com/photo-1516280440502-614749323df5?q=80&w=2069&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1590402494587-44b71d7772f6?q=80&w=2070&auto=format&fit=crop'
   ];
   const [bgIndex, setBgIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<'brand' | 'creator'>('brand');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const animatedPhrases = [
+    "Secured On-Chain.",
+    "Verified by AI.",
+    "Trusted globally."
+  ];
+  const [phraseIndex, setPhraseIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPhraseIndex((prev) => (prev + 1) % animatedPhrases.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
 
   const brandChips = ["Fashion", "Tech Startup", "E-commerce", "SaaS"];
-  const creatorChips = ["Content Writing", "Video Editing", "UGC Creator", "Web3 Developer"];
+  const creatorChips = ["Content Writing", "Video Editing", "UGC Creator", "Brand Ambassador"];
   const activeChips = activeTab === 'brand' ? brandChips : creatorChips;
 
   useEffect(() => {
@@ -514,7 +528,7 @@ export default function Home() {
     <main className="relative min-h-screen overflow-hidden" style={{ background: '#0a0a0f' }}>
 
       {/* ── Hero (FluxPay style dark) ── */}
-      <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden flex flex-col items-start justify-center min-h-[90vh]">
+      <section className="relative pt-24 pb-16 md:pt-32 md:pb-24 overflow-hidden flex flex-col items-start justify-center">
         {/* Background Image Slider with Dark Overlay */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <AnimatePresence>
@@ -536,8 +550,22 @@ export default function Home() {
         <div className="container-custom relative z-10 w-full max-w-7xl mx-auto px-4 md:px-8">
           
           <div className="max-w-4xl">
-            <h1 className="text-4xl md:text-[5rem] font-bold tracking-tight text-white mb-6 leading-[1.05]">
-              Creator-Brand Deals,<br />Secured On-Chain.
+            <h1 className="text-4xl md:text-[5rem] font-bold tracking-tight text-white mb-6 leading-[1.05] flex flex-col">
+              <span>Creator-Brand Deals,</span>
+              <span className="h-[1.2em] relative overflow-hidden block">
+                <AnimatePresence mode="popLayout">
+                  <motion.span
+                    key={phraseIndex}
+                    initial={{ y: 80, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -80, opacity: 0 }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                    className="block absolute whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600"
+                  >
+                    {animatedPhrases[phraseIndex]}
+                  </motion.span>
+                </AnimatePresence>
+              </span>
             </h1>
             
             <p className="text-lg md:text-xl text-slate-200 mb-10 max-w-xl leading-relaxed font-light">
@@ -564,10 +592,24 @@ export default function Home() {
               <div className="relative flex items-center bg-white rounded-full p-2 shadow-xl border border-white/20">
                 <input 
                   type="text" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && searchQuery.trim()) {
+                      router.push(`/explore?q=${encodeURIComponent(searchQuery.trim())}`);
+                    }
+                  }}
                   placeholder="What type of deal are you looking for?" 
                   className="flex-1 bg-transparent border-none outline-none px-6 text-slate-900 placeholder:text-slate-500 text-base font-medium"
                 />
-                <button className="bg-[#141414] hover:bg-black text-white px-6 py-2.5 rounded-full font-medium transition-all active:scale-95 flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    if (searchQuery.trim()) {
+                      router.push(`/explore?q=${encodeURIComponent(searchQuery.trim())}`);
+                    }
+                  }}
+                  className="bg-[#141414] hover:bg-black text-white px-6 py-2.5 rounded-full font-medium transition-all active:scale-95 flex items-center gap-2"
+                >
                   <Search size={16} className="text-[#a3e635]" />
                   Search
                 </button>
@@ -577,7 +619,11 @@ export default function Home() {
             {/* Suggestion Chips */}
             <div className="flex flex-wrap items-center gap-3">
               {activeChips.map((chip) => (
-                <button key={chip} className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/30 bg-transparent hover:bg-white/10 text-slate-300 text-sm transition-all hover:text-white active:scale-95">
+                <button 
+                  key={chip} 
+                  onClick={() => router.push(`/explore?q=${encodeURIComponent(chip)}`)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/30 bg-transparent hover:bg-white/10 text-slate-300 text-sm transition-all hover:text-white active:scale-95"
+                >
                   {chip}
                   <ArrowRight size={14} className="opacity-70" />
                 </button>

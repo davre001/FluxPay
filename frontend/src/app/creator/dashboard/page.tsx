@@ -151,7 +151,13 @@ export default function CreatorDashboard() {
   const [coverNote, setCoverNote] = useState('');
   const [applying, setApplying] = useState(false);
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
-  const [hideStats, setHideStats] = useState(false);
+  const [hideStats, setHideStats] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('fluxpay_dashboard_stats');
+      if (saved !== null) return saved === 'true';
+    }
+    return false;
+  });
   const [welcomeText, setWelcomeText] = useState('');
   
   const fullText = `Welcome back, ${user?.email?.split('@')[0] || 'Creator'}`;
@@ -215,12 +221,26 @@ export default function CreatorDashboard() {
           <div>
             <div className="flex items-center gap-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#4b5563]">Creator Dashboard</p>
-              <button onClick={() => setHideStats(!hideStats)} className="text-[#4b5563] hover:text-white transition-colors">
+              <button 
+                onClick={() => {
+                  const next = !hideStats;
+                  setHideStats(next);
+                  localStorage.setItem('fluxpay_dashboard_stats', String(next));
+                }} 
+                className="text-[#4b5563] hover:text-white transition-colors"
+              >
                 {hideStats ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
             <h1 className="text-2xl font-black text-white mt-1 tracking-tight">
-              {welcomeText}<span className="animate-pulse">|</span>
+              {welcomeText}<span className="animate-pulse">|</span>{' '}
+              <motion.span
+                className="inline-block origin-[70%_70%]"
+                animate={{ rotate: [0, 14, -8, 14, -4, 10, 0, 0] }}
+                transition={{ repeat: Infinity, repeatDelay: 1.5, duration: 2.5 }}
+              >
+                👋
+              </motion.span>
             </h1>
             <p className="text-[#6b7280] text-xs font-semibold mt-1">Here's your earnings & activity overview.</p>
           </div>

@@ -115,8 +115,8 @@ export default function CreatorReputationPage() {
               
               <div className="grid grid-cols-3 gap-3 text-center">
                 {[
-                  { label: 'Deals Done',  val: '—' },
-                  { label: 'Accepted',    val: '—' },
+                  { label: 'Deals Done',  val: '14' },
+                  { label: 'Accepted',    val: '92%' },
                   { label: 'Avg. Rating', val: '4.8 ★' },
                 ].map(({ label, val }) => (
                   <div key={label} className="rounded-xl py-4 px-2" style={{ background: '#0a0a0a', border: '1px solid #161616' }}>

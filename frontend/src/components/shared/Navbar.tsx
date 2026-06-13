@@ -23,9 +23,9 @@ const creatorLinks = [
 
 const orgLinks = [
   { href: '/organization/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
-  { href: '/organization/jobs/active', label: 'Active Jobs', icon: Zap },
   { href: '/organization/jobs',      label: 'All Jobs',     icon: Briefcase },
-  { href: '/jobs/new',               label: 'Post a Job',   icon: Building2 },
+  { href: '/organization/jobs/new',  label: 'Post a Deal',  icon: Building2 },
+  { href: '/organization/approvals', label: 'Approvals',    icon: Zap },
   { href: '/organization/profile',   label: 'Profile',      icon: User },
   { href: '/organization/wallet',    label: 'Wallet',       icon: Wallet },
   { href: '/organization/reputation',label: 'Reputation',   icon: Star },

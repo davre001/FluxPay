@@ -2,13 +2,24 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, X, Loader2, Briefcase } from 'lucide-react';
+import { ArrowLeft, Plus, X, Loader2, Briefcase, Zap, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { jobAPI } from '@/lib/api-client';
+import { motion } from 'framer-motion';
 
 const PLATFORMS = ['instagram', 'youtube', 'tiktok', 'twitter', 'other'];
 const POST_TYPES = ['video', 'image', 'content_writing', 'other'];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 24 } }
+};
 
 export default function NewJobPage() {
   const router = useRouter();
@@ -72,171 +83,275 @@ export default function NewJobPage() {
     }
   };
 
+  const inputStyle = {
+    background: '#0a0a0a',
+    border: '1px solid #1a1a1a',
+    color: '#e5e7eb',
+  };
+
   return (
-    <div className="p-6 md:p-10 min-h-screen" style={{ background: '#0a0a0f' }}>
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 fade-in">
-          <Link href="/organization/dashboard" className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm mb-4 transition-colors">
+    <div className="min-h-screen pb-20" style={{ background: '#0a0a0a', fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
+      
+      {/* ── Top Header Bar ── */}
+      <div style={{ borderBottom: '1px solid #161616', background: '#0a0a0a' }}>
+        <div className="max-w-3xl mx-auto px-6 py-6">
+          <Link href="/organization/dashboard" className="inline-flex items-center gap-2 text-[#6b7280] hover:text-white text-sm mb-4 transition-colors font-semibold">
             <ArrowLeft size={15} /> Back to dashboard
           </Link>
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">New Campaign</p>
-          <h1 className="text-3xl font-black text-white">Post a <span className="gradient-text">Deal</span></h1>
-          <p className="text-slate-400 text-sm mt-1">Create a brand deal and find the perfect creator.</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic info */}
-          <div className="card space-y-5">
-            <h2 className="font-black text-white flex items-center gap-2">
-              <Briefcase size={17} className="text-brand-400" /> Deal Details
-            </h2>
-
-            <div>
-              <label className="label">Job Title *</label>
-              <input value={title} onChange={(e) => setTitle(e.target.value)}
-                     placeholder="e.g. Instagram Reel — Summer Launch" className="input" required />
-            </div>
-
-            <div>
-              <label className="label">Description *</label>
-              <textarea value={description} onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Describe what you need the creator to do. Be specific about deliverables, tone, and any restrictions."
-                        rows={5} className="input resize-none" required />
-              <p className="text-xs text-slate-600 mt-1 text-right">{description.length} chars</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="label">Platform *</label>
-                <select value={platform} onChange={(e) => setPlatform(e.target.value)} className="input">
-                  {PLATFORMS.map((p) => (
-                    <option key={p} value={p} style={{ background: '#0f172a' }}>
-                      {p.charAt(0).toUpperCase() + p.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="label">Content Type *</label>
-                <select value={postType} onChange={(e) => setPostType(e.target.value)} className="input">
-                  {POST_TYPES.map((t) => (
-                    <option key={t} value={t} style={{ background: '#0f172a' }}>
-                      {t.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+          <div className="flex items-center gap-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#4b5563]">New Campaign</p>
           </div>
+          <h1 className="text-3xl font-black text-white mt-1 tracking-tight">Post a Deal</h1>
+          <p className="text-[#6b7280] text-sm font-semibold mt-1">Create a brand deal and find the perfect creator to execute your vision.</p>
+        </div>
+      </div>
 
-          {/* Budget & payout */}
-          <div className="card space-y-5">
-            <h2 className="font-black text-white">💰 Budget & Payout</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="label">Total Budget (USDC) *</label>
-                <input type="number" value={budget} onChange={(e) => setBudget(e.target.value)}
-                       placeholder="0" className="input" required />
+      <div className="max-w-3xl mx-auto px-6 py-10">
+        <motion.form 
+          variants={containerVariants} 
+          initial="hidden" 
+          animate="show"
+          onSubmit={handleSubmit} 
+          className="space-y-8"
+        >
+          {/* Deal Details */}
+          <motion.div variants={itemVariants} className="rounded-2xl p-6 md:p-8 space-y-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+            <div className="flex items-center gap-3 pb-4" style={{ borderBottom: '1px solid #1a1a1a' }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(59, 130, 246, 0.1)' }}>
+                <Briefcase size={18} color="#3b82f6" />
               </div>
               <div>
-                <label className="label">Deadline</label>
-                <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="input" />
+                <h2 className="text-lg font-bold text-white tracking-tight">Deal Details</h2>
+                <p className="text-xs font-semibold text-[#6b7280]">Provide the core information about this campaign.</p>
               </div>
             </div>
 
             <div>
-              <label className="label">Payout Type</label>
-              <div className="grid grid-cols-2 gap-3 mt-2">
+              <label className="block text-xs font-bold text-[#9ca3af] mb-2 uppercase tracking-wide">Job Title *</label>
+              <input 
+                value={title} onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Instagram Reel — Summer Launch" 
+                className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all" 
+                style={inputStyle}
+                required 
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#9ca3af] mb-2 uppercase tracking-wide">Description *</label>
+              <textarea 
+                value={description} onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe what you need the creator to do. Be specific about deliverables, tone, and any restrictions."
+                rows={5} 
+                className="w-full px-4 py-3 rounded-xl text-sm resize-none focus:outline-none focus:ring-1 focus:ring-white transition-all" 
+                style={inputStyle}
+                required 
+              />
+              <p className="text-[10px] font-semibold text-[#6b7280] mt-1.5 text-right">{description.length} chars</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-xs font-bold text-[#9ca3af] mb-2 uppercase tracking-wide">Platform *</label>
+                <select 
+                  value={platform} onChange={(e) => setPlatform(e.target.value)} 
+                  className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all appearance-none"
+                  style={inputStyle}
+                >
+                  {PLATFORMS.map((p) => (
+                    <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#9ca3af] mb-2 uppercase tracking-wide">Content Type *</label>
+                <select 
+                  value={postType} onChange={(e) => setPostType(e.target.value)} 
+                  className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all appearance-none"
+                  style={inputStyle}
+                >
+                  {POST_TYPES.map((t) => (
+                    <option key={t} value={t}>{t.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Budget & Payout */}
+          <motion.div variants={itemVariants} className="rounded-2xl p-6 md:p-8 space-y-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+            <div className="flex items-center gap-3 pb-4" style={{ borderBottom: '1px solid #1a1a1a' }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(34, 197, 94, 0.1)' }}>
+                <Zap size={18} color="#22c55e" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white tracking-tight">Budget & Payout</h2>
+                <p className="text-xs font-semibold text-[#6b7280]">Set the budget and payment structure.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-xs font-bold text-[#9ca3af] mb-2 uppercase tracking-wide">Total Budget (USDC) *</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6b7280] font-bold">$</span>
+                  <input 
+                    type="number" value={budget} onChange={(e) => setBudget(e.target.value)}
+                    placeholder="0.00" 
+                    className="w-full pl-8 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all" 
+                    style={inputStyle}
+                    required 
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#9ca3af] mb-2 uppercase tracking-wide">Overall Deadline</label>
+                <input 
+                  type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} 
+                  className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all" 
+                  style={{...inputStyle, colorScheme: 'dark'}} 
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#9ca3af] mb-3 uppercase tracking-wide">Payout Structure</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {(['full', 'milestone'] as const).map((type) => (
-                  <button key={type} type="button" onClick={() => setPayoutType(type)}
-                          className="p-3 rounded-xl text-left transition-all"
-                          style={{
-                            background: payoutType === type ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.04)',
-                            border: `1px solid ${payoutType === type ? 'rgba(124,58,237,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                          }}>
-                    <p className={`font-bold text-sm ${payoutType === type ? 'text-white' : 'text-slate-400'}`}>
-                      {type === 'full' ? '💵 Full Payment' : '🎯 Milestone-based'}
+                  <button 
+                    key={type} type="button" onClick={() => setPayoutType(type)}
+                    className="p-4 rounded-xl text-left transition-all duration-200"
+                    style={{
+                      background: payoutType === type ? '#1a1a1a' : '#0a0a0a',
+                      border: `1px solid ${payoutType === type ? '#333333' : '#161616'}`,
+                    }}
+                  >
+                    <p className={`font-bold text-sm ${payoutType === type ? 'text-white' : 'text-[#6b7280]'}`}>
+                      {type === 'full' ? 'Single Payment' : 'Milestone-based'}
                     </p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {type === 'full' ? 'Pay on completion' : 'Pay per deliverable'}
+                    <p className="text-xs text-[#6b7280] mt-1 font-semibold">
+                      {type === 'full' ? 'Pay upon full completion' : 'Pay in stages per deliverable'}
                     </p>
                   </button>
                 ))}
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Milestones (optional) */}
           {payoutType === 'milestone' && (
-            <div className="card space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="font-black text-white">🎯 Milestones</h2>
-                <button type="button" onClick={addMilestone} className="btn-secondary text-sm py-1.5 px-3">
-                  <Plus size={14} /> Add
+            <motion.div variants={itemVariants} className="rounded-2xl p-6 md:p-8 space-y-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+              <div className="flex items-center justify-between pb-4" style={{ borderBottom: '1px solid #1a1a1a' }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(139, 92, 246, 0.1)' }}>
+                    <Star size={18} color="#8b5cf6" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-white tracking-tight">Milestones</h2>
+                    <p className="text-xs font-semibold text-[#6b7280]">Break down the payments into deliverables.</p>
+                  </div>
+                </div>
+                <button type="button" onClick={addMilestone} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#1a1a1a] text-white hover:bg-[#222222] transition-colors border border-[#333333]">
+                  <Plus size={14} /> Add Stage
                 </button>
               </div>
+
               {milestones.length === 0 ? (
-                <p className="text-sm text-slate-500 text-center py-4">Add milestones to break payment into stages.</p>
+                <p className="text-sm text-[#6b7280] text-center font-semibold py-4">Add milestones to break the payment into stages.</p>
               ) : (
                 <div className="space-y-4">
                   {milestones.map((m, i) => (
-                    <div key={i} className="p-4 rounded-xl space-y-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-bold text-slate-400">Milestone {i + 1}</span>
-                        <button type="button" onClick={() => removeMilestone(i)} className="text-slate-600 hover:text-red-400 transition-colors">
-                          <X size={14} />
+                    <div key={i} className="p-5 rounded-xl space-y-4" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a' }}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white bg-[#1a1a1a] px-2 py-1 rounded uppercase tracking-wider border border-[#252525]">Stage {i + 1}</span>
+                        <button type="button" onClick={() => removeMilestone(i)} className="text-[#6b7280] hover:text-[#ef4444] transition-colors">
+                          <X size={16} />
                         </button>
                       </div>
-                      <input value={m.title} onChange={(e) => updateMilestone(i, 'title', e.target.value)}
-                             placeholder="Milestone title" className="input text-sm" />
-                      <input value={m.description} onChange={(e) => updateMilestone(i, 'description', e.target.value)}
-                             placeholder="What should the creator deliver?" className="input text-sm" />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-bold text-[#6b7280] mb-1.5 uppercase">Title</label>
+                          <input 
+                            value={m.title} onChange={(e) => updateMilestone(i, 'title', e.target.value)}
+                            placeholder="e.g. First Draft" 
+                            className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all" 
+                            style={inputStyle}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-[#6b7280] mb-1.5 uppercase">Amount (USDC)</label>
+                          <input 
+                            type="number" value={m.amount} onChange={(e) => updateMilestone(i, 'amount', e.target.value)}
+                            placeholder="0" 
+                            className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all" 
+                            style={inputStyle}
+                          />
+                        </div>
+                      </div>
                       <div>
-                        <label className="label text-xs">Payout for this milestone (USDC)</label>
-                        <input type="number" value={m.amount} onChange={(e) => updateMilestone(i, 'amount', e.target.value)}
-                               placeholder="0" className="input text-sm" />
+                        <label className="block text-[10px] font-bold text-[#6b7280] mb-1.5 uppercase">Requirements</label>
+                        <input 
+                          value={m.description} onChange={(e) => updateMilestone(i, 'description', e.target.value)}
+                          placeholder="What needs to be delivered?" 
+                          className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all" 
+                          style={inputStyle}
+                        />
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+            </motion.div>
           )}
 
-          {/* Required elements */}
-          <div className="card space-y-4">
-            <h2 className="font-black text-white"># Required Hashtags</h2>
+          {/* Hashtags */}
+          <motion.div variants={itemVariants} className="rounded-2xl p-6 md:p-8 space-y-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+            <div>
+              <h2 className="text-base font-bold text-white tracking-tight">Required Hashtags</h2>
+              <p className="text-xs font-semibold text-[#6b7280] mt-1">Specify hashtags the creator must use.</p>
+            </div>
             <div className="flex gap-2">
-              <input value={hashInput} onChange={(e) => setHashInput(e.target.value)}
-                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addHashtag(); }}}
-                     placeholder="Type a hashtag and press Enter" className="input flex-1" />
-              <button type="button" onClick={addHashtag} className="btn-secondary px-4">Add</button>
+              <input 
+                value={hashInput} onChange={(e) => setHashInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addHashtag(); }}}
+                placeholder="Type a hashtag and press Enter" 
+                className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all" 
+                style={inputStyle}
+              />
+              <button type="button" onClick={addHashtag} className="px-5 py-3 rounded-xl text-sm font-bold bg-[#1a1a1a] text-white hover:bg-[#222222] transition-colors border border-[#333333]">
+                Add
+              </button>
             </div>
             {hashtags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 pt-2">
                 {hashtags.map((h) => (
-                  <span key={h} className="flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold"
-                        style={{ background: 'rgba(124,58,237,0.2)', border: '1px solid rgba(124,58,237,0.3)', color: '#a78bfa' }}>
+                  <span key={h} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                        style={{ background: '#1a1a1a', border: '1px solid #252525', color: '#e5e7eb' }}>
                     #{h}
-                    <button type="button" onClick={() => setHashtags(hashtags.filter((x) => x !== h))} className="ml-1 hover:text-white">
+                    <button type="button" onClick={() => setHashtags(hashtags.filter((x) => x !== h))} className="ml-1 text-[#6b7280] hover:text-white">
                       <X size={12} />
                     </button>
                   </span>
                 ))}
               </div>
             )}
-          </div>
+          </motion.div>
 
           {/* Submit */}
-          <div className="flex gap-3">
-            <Link href="/organization/dashboard" className="btn-secondary flex-1 text-center">Cancel</Link>
-            <button type="submit" disabled={loading} className="btn-primary flex-1 btn-shimmer">
+          <motion.div variants={itemVariants} className="pt-4 flex gap-4">
+            <Link href="/organization/dashboard" className="px-6 py-3 rounded-xl font-bold text-sm bg-[#1a1a1a] text-white hover:bg-[#222222] transition-colors border border-[#333333] text-center flex-1 sm:flex-none">
+              Cancel
+            </Link>
+            <button 
+              type="submit" disabled={loading} 
+              className="flex-1 px-6 py-3 rounded-xl font-bold text-sm bg-white text-black hover:bg-[#f0f0f0] transition-colors flex items-center justify-center gap-2"
+            >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-              {loading ? 'Posting...' : 'Post Deal'}
+              {loading ? 'Posting Deal...' : 'Publish Deal'}
             </button>
-          </div>
-        </form>
+          </motion.div>
+
+        </motion.form>
       </div>
     </div>
   );
