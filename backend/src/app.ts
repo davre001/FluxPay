@@ -126,17 +126,17 @@ export function createApp(options: any = {}) {
   const authService = options.authService || new AuthService(userRepository);
   const authRoutes = createAuthRoutes(authService);
 
-  // Profile slice
-  const profileRepository = options.profileRepository || repos.profile;
-  const profileService = options.profileService || new ProfileService(profileRepository, userRepository);
-  const profileRoutes = createProfileRoutes(profileService);
-
-  // Job slice
+  // Job slice (declared before profile — ProfileService needs job + milestone repos)
   const jobRepository = options.jobRepository || repos.job;
   const applicationRepository = options.applicationRepository || repos.application;
   const milestoneRepository = options.milestoneRepository || repos.milestone;
+  const profileRepository = options.profileRepository || repos.profile;
   const jobService = options.jobService || new JobService(jobRepository, applicationRepository, milestoneRepository, profileRepository);
   const jobRoutes = createJobRoutes(jobService);
+
+  // Profile slice (needs job + milestone repos for reputation computation)
+  const profileService = options.profileService || new ProfileService(profileRepository, userRepository, jobRepository, milestoneRepository);
+  const profileRoutes = createProfileRoutes(profileService);
 
   // Wallet slice
   const walletRepository = options.walletRepository || repos.wallet;
@@ -206,8 +206,13 @@ export function createApp(options: any = {}) {
         const user = await requireAuth(req, authService, skipAuth, mockUser);
         response = await dispatchMilestoneRoute(req, parts, jobRoutes, user, settlementService);
       } else if (parts[0] === 'profile') {
-        const user = await requireAuth(req, authService, skipAuth, mockUser);
-        response = await dispatchProfileRoute(req, parts, profileRoutes, user);
+        // GET /api/profile/:userId (public, no auth) — must check before auth
+        if (req.method === 'GET' && parts[1] && parts[1] !== 'me' && parts[1] !== 'reputation') {
+          response = await dispatchProfileRoute(req, parts, profileRoutes, null);
+        } else {
+          const user = await requireAuth(req, authService, skipAuth, mockUser);
+          response = await dispatchProfileRoute(req, parts, profileRoutes, user);
+        }
       } else if (parts[0] === 'wallet') {
         const user = await requireAuth(req, authService, skipAuth, mockUser);
         response = await dispatchWalletRoute(req, parts, url.searchParams, walletRoutes, user);
@@ -388,6 +393,10 @@ async function dispatchProfileRoute(req, parts, routes, user) {
   // GET /api/profile/reputation/:wallet
   if (req.method === 'GET' && parts[1] === 'reputation' && parts[2]) {
     return routes.getReputation(decodeURIComponent(parts[2]));
+  }
+  // GET /api/profile/:userId — public creator profile (no auth required)
+  if (req.method === 'GET' && parts[1] && parts[1] !== 'me' && parts[1] !== 'reputation') {
+    return routes.getPublic(decodeURIComponent(parts[1]));
   }
   throw new NotFoundError('Route not found');
 }

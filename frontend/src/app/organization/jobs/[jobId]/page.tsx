@@ -35,7 +35,7 @@ const MOCK_JOBS = [
 
 const MOCK_APPS = [
   { id: 'app_1', creator_id: 'Alex Rivers', avatar: 'A', reputation: 98, status: 'pending', cover_note: 'I would love to shoot this! I have a background in fashion videography.', applied_at: new Date().toISOString() },
-  { id: 'app_2', creator_id: 'Samira Tech', avatar: 'S', reputation: 120, status: 'pending', cover_note: 'I review tech gadgets every week. Turnaround is 3 days.', applied_at: new Date().toISOString() }
+  { id: 'app_2', creator_id: 'Samira Tech', avatar: 'S', reputation: 92, status: 'pending', cover_note: 'I review tech gadgets every week. Turnaround is 3 days.', applied_at: new Date().toISOString() }
 ];
 
 function MilestoneRow({ milestone, onAction }: { milestone: any; onAction: () => void; }) {

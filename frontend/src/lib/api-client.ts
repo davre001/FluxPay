@@ -53,6 +53,7 @@ export const profileAPI = {
   getMe: () => request<Profile>('GET', '/api/profile/me'),
   updateMe: (data: Record<string, unknown>) => request<Profile>('PUT', '/api/profile/me', data),
   getReputation: (walletAddress: string) => request('GET', `/api/profile/reputation/${walletAddress}`),
+  getPublic: (userId: string) => request('GET', `/api/profile/${userId}`),
 }
 
 // ─── Jobs (Deals) ─────────────────────────────────────────────────────────────

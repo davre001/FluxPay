@@ -6,7 +6,7 @@ export const SUPPORTED_CURRENCIES = ['FPT', 'ETH', 'USDC', 'USD'];
 export const JOB_STATUSES = ['open', 'in_progress', 'completed', 'cancelled'];
 export const APPLICATION_STATUSES = ['pending', 'accepted', 'rejected'];
 export const MILESTONE_STATUSES = ['pending', 'submitted', 'approved', 'disputed'];
-export const TARGET_PLATFORMS = ['instagram', 'twitter', 'youtube', 'tiktok', 'other'];
+export const TARGET_PLATFORMS = ['instagram', 'twitter', 'youtube', 'tiktok', 'facebook', 'other'];
 export const POST_TYPES = ['video', 'image', 'content_writing', 'other'];
 export const PAYOUT_TYPES = ['milestone', 'full'];
 /** @deprecated use JOB_STATUSES */
@@ -133,6 +133,11 @@ export function parseJobInput(data: any = {}) {
   if (!TARGET_PLATFORMS.includes(target_platform)) {
     throw new ValidationError(`target_platform must be one of: ${TARGET_PLATFORMS.join(', ')}`);
   }
+  // Custom platform name is required when "other" is chosen.
+  const platform_other = data.platform_other ? String(sanitizeString(data.platform_other)) : null;
+  if (target_platform === 'other' && !platform_other) {
+    throw new ValidationError('platform_other is required when target_platform is "other"');
+  }
 
   const milestones = Array.isArray(data.milestones) ? data.milestones : [];
 
@@ -144,7 +149,9 @@ export function parseJobInput(data: any = {}) {
     total_budget,
     payout_type,
     target_platform,
+    platform_other,
     post_type: data.post_type || 'other',
+    post_type_other: data.post_type_other ? String(sanitizeString(data.post_type_other)) : null,
     required_elements: data.required_elements || {
       hashtags: [],
       mentions: [],
@@ -182,6 +189,10 @@ export function parseMilestoneInput(data: any = {}) {
     title,
     description: String(sanitizeString(data.description || '')),
     amount,
+    // Structured deliverable: a platform metric (likes/retweets/views…) and the
+    // target count required for this milestone. Optional for back-compat.
+    metric: data.metric ? String(sanitizeString(data.metric)) : null,
+    target: data.target != null && !Number.isNaN(Number(data.target)) ? Number(data.target) : null,
     deadline: data.deadline || null,
   };
 }
@@ -189,6 +200,7 @@ export function parseMilestoneInput(data: any = {}) {
 export function parseProfileInput(data: any = {}) {
   return {
     name: String(sanitizeString(data.name || '')),
+    email: data.email ? String(sanitizeString(data.email)) : null,
     bio: String(sanitizeString(data.bio || '')),
     website_url: data.website_url || null,
     location: data.location || null,

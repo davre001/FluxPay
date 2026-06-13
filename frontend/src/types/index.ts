@@ -5,7 +5,7 @@
 // backend-typecheck hook keeps the backend side honest). When a field is added
 // there, add it here.
 
-export type TargetPlatform = 'instagram' | 'twitter' | 'youtube' | 'tiktok' | 'other';
+export type TargetPlatform = 'instagram' | 'twitter' | 'youtube' | 'tiktok' | 'facebook' | 'other';
 export type PostType = 'video' | 'image' | 'content_writing' | 'other';
 export type PayoutType = 'milestone' | 'full';
 export type DealStatus = 'open' | 'in_progress' | 'completed' | 'draft' | 'cancelled' | 'expired';
@@ -50,6 +50,8 @@ export interface Milestone {
   title: string;
   description: string;
   amount: number;
+  metric?: string | null;   // platform metric this milestone is measured by (likes, retweets…)
+  target?: number | null;   // required count of that metric (e.g. 1000 likes)
   status: MilestoneStatus;
   deliverable_url?: string | null;
   deliverable_note?: string | null;
@@ -70,7 +72,9 @@ export interface Deal {
   category: string | null;
   skills: string[];
   target_platform: TargetPlatform;
+  platform_other?: string | null; // custom platform name when target_platform === 'other'
   post_type: PostType;
+  post_type_other?: string | null; // description of the content when post_type === 'other'
   required_elements: RequiredElements;
   payout_type: PayoutType;
   total_budget: number;
@@ -116,6 +120,7 @@ export interface Profile {
   user_id?: string;
   type?: ProfileType;
   name?: string;
+  email?: string;
   bio?: string;
   website_url?: string;
   profile_picture_url?: string;

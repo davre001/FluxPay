@@ -52,6 +52,15 @@ export const config = {
     model: process.env.VENICE_MODEL || 'claude-opus-4-7',
   },
 
+  // Gemini AI — testing-only fallback when Venice is unavailable. Same
+  // OpenAI-compatible chat/completions interface. Set GEMINI_API_KEY to enable;
+  // Venice takes priority when both are set.
+  gemini: {
+    apiKey: process.env.GEMINI_API_KEY || '',
+    baseUrl: process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai',
+    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+  },
+
   // 1Shot permissionless relayer — relays ERC-7710 redemptions and pays gas in
   // a stablecoin (USDC). Permissionless: no API key. MAINNET ONLY (testnets
   // return empty capabilities), so this is the mainnet payout rail. The fee

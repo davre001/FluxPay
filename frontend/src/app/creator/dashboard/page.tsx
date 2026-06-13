@@ -13,7 +13,7 @@ import { useUserStore } from '@/stores/userStore';
 import { useDeals, useMyApplications, useApplyToDeal } from '@/hooks/useDeals';
 import { cn } from '@/lib/utils';
 
-const PLATFORMS = ['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'other'];
+const PLATFORMS = ['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'facebook', 'other'];
 const POST_TYPES = ['all', 'video', 'image', 'content_writing', 'other'];
 
 const XLogo = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (

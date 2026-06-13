@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useDeals } from '@/hooks/useDeals';
 
-const PLATFORMS = ['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'other'];
+const PLATFORMS = ['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'facebook', 'other'];
 const POST_TYPES = ['all', 'video', 'image', 'content_writing', 'other'];
 
 const PLATFORM_ICON: Record<string, any> = {

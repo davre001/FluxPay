@@ -8,6 +8,9 @@ export function createMilestoneRecord(input) {
     title: input.title,
     description: input.description || '',
     amount: input.amount,
+    // Platform metric + required count this milestone is measured by (e.g. 1000 likes).
+    metric: input.metric || null,
+    target: input.target ?? null,
     status: 'pending',
     deliverable_url: null,
     deliverable_note: null,

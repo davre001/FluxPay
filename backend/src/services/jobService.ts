@@ -196,6 +196,23 @@ export class JobService {
           .filter((a: any) => a.status !== 'withdrawn')
           .map(async (app: any) => {
             const profile = await this.profiles.findByUserId(app.creator_id).catch(() => null);
+
+            // Compute creator reputation inline (0–100):
+            // score = 5 (signup) + approvedMilestones × 5 + completedDeals × 10 − disputes × 3
+            const allJobs = await this.jobs.findMany({});
+            const creatorJobs = allJobs.filter((j: any) => j.selected_creator_id === app.creator_id);
+            const completedDeals = creatorJobs.filter((j: any) => j.status === 'completed').length;
+            let approvedMs = 0;
+            let disputes = 0;
+            for (const cj of creatorJobs) {
+              const ms = await this.milestones.findMany({ job_id: cj.id });
+              for (const m of ms) {
+                if (m.status === 'approved') approvedMs++;
+                if (m.status === 'disputed') disputes++;
+              }
+            }
+            const creatorRep = Math.max(0, Math.min(100, 5 + approvedMs * 5 + completedDeals * 10 - disputes * 3));
+
             return {
               ...app,
               job_id: job.id,
@@ -203,6 +220,7 @@ export class JobService {
               job_target_platform: job.target_platform,
               job_total_budget: job.total_budget,
               creator_name: (profile as any)?.name || app.creator_id,
+              creator_reputation: creatorRep,
             };
           }),
       );

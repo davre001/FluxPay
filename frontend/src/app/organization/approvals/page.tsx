@@ -21,9 +21,9 @@ const itemVariants = {
 };
 
 const MOCK_APPS = [
-  { id: 'app_1', creatorName: 'Alex Rivers', creatorAvatar: 'A', reputation: 98, jobTitle: 'Summer Launch Reel', status: 'pending', coverNote: 'I would love to shoot this reel! I have a background in fashion videography and a dedicated audience of 50k followers who perfectly match your target demographic.', platform: 'instagram' },
-  { id: 'app_2', creatorName: 'Samira Tech', creatorAvatar: 'S', reputation: 120, jobTitle: 'Tech Review Video', status: 'pending', coverNote: 'I review tech gadgets every week. I can guarantee a turnaround of 3 days after receiving the product. Let\'s make this happen!', platform: 'youtube' },
-  { id: 'app_3', creatorName: 'Jordan Creative', creatorAvatar: 'J', reputation: 85, jobTitle: 'Sponsored Blog Feature', status: 'pending', coverNote: 'I specialize in written tech content. I can integrate your brand naturally into my next article reaching 20k readers.', platform: 'other' }
+  { id: 'app_1', creatorName: 'Alex Rivers', creatorAvatar: 'A', reputation: 85, jobTitle: 'Summer Launch Reel', status: 'pending', coverNote: 'I would love to shoot this reel! I have a background in fashion videography and a dedicated audience of 50k followers who perfectly match your target demographic.', platform: 'instagram', creator_id: 'demo_creator_1' },
+  { id: 'app_2', creatorName: 'Samira Tech', creatorAvatar: 'S', reputation: 72, jobTitle: 'Tech Review Video', status: 'pending', coverNote: 'I review tech gadgets every week. I can guarantee a turnaround of 3 days after receiving the product. Let\'s make this happen!', platform: 'youtube', creator_id: 'demo_creator_2' },
+  { id: 'app_3', creatorName: 'Jordan Creative', creatorAvatar: 'J', reputation: 45, jobTitle: 'Sponsored Blog Feature', status: 'pending', coverNote: 'I specialize in written tech content. I can integrate your brand naturally into my next article reaching 20k readers.', platform: 'other', creator_id: 'demo_creator_3' }
 ];
 
 export default function ApprovalsPage() {
@@ -42,7 +42,7 @@ export default function ApprovalsPage() {
         creator_id: a.creator_id,
         creatorName: a.creator_name || a.creator_id,
         creatorAvatar: String(a.creator_name || a.creator_id || '?')[0].toUpperCase(),
-        reputation: a.creator_reputation ?? '—',
+        reputation: a.creator_reputation ?? 0,
         jobTitle: a.job_title || 'Deal',
         status: a.status,
         coverNote: a.cover_note,
@@ -138,7 +138,7 @@ export default function ApprovalsPage() {
                         <div>
                           <h3 className="text-lg font-black text-white">{app.creatorName}</h3>
                           <div className="flex items-center gap-1 mt-0.5 text-[#22c55e] text-xs font-bold">
-                            <Zap size={12} fill="currentColor" /> {app.reputation} Rep Score
+                            <Zap size={12} fill="currentColor" /> {app.reputation} / 100 Rep
                           </div>
                         </div>
                       </div>
@@ -164,7 +164,7 @@ export default function ApprovalsPage() {
                       >
                         <X size={16} /> Decline
                       </button>
-                      <Link href="#" className="hidden md:flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-[#6b7280] hover:text-white transition-colors">
+                      <Link href={`/creators/${app.creator_id || app.id}`} className="hidden md:flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-[#6b7280] hover:text-white transition-colors">
                         <User size={16} /> Profile
                       </Link>
                     </div>

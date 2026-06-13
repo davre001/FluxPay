@@ -8,7 +8,18 @@ import Link from 'next/link';
 import { jobAPI } from '@/lib/api-client';
 import { motion } from 'framer-motion';
 
-const PLATFORMS = ['instagram', 'youtube', 'tiktok', 'twitter', 'other'];
+const PLATFORMS = ['instagram', 'youtube', 'tiktok', 'facebook', 'twitter', 'other'];
+
+// Per-platform engagement metrics a milestone can be measured by.
+const PLATFORM_METRICS: Record<string, string[]> = {
+  instagram: ['likes', 'comments', 'views', 'shares', 'saves', 'reach'],
+  twitter: ['likes', 'comments', 'retweets', 'impressions', 'bookmarks'],
+  youtube: ['views', 'likes', 'comments', 'subscribers', 'watch hours'],
+  tiktok: ['views', 'likes', 'comments', 'shares', 'saves'],
+  facebook: ['likes', 'comments', 'shares', 'views', 'reactions'],
+  other: ['views', 'engagements', 'clicks', 'reach'],
+};
+const metricsFor = (p: string) => PLATFORM_METRICS[p] ?? PLATFORM_METRICS.other;
 const POST_TYPES = ['video', 'image', 'content_writing', 'other'];
 
 const containerVariants = {
@@ -28,13 +39,15 @@ export default function NewJobPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [platform, setPlatform] = useState('instagram');
+  const [platformOther, setPlatformOther] = useState('');
   const [postType, setPostType] = useState('video');
+  const [postTypeOther, setPostTypeOther] = useState('');
   const [budget, setBudget] = useState('');
   const [payoutType, setPayoutType] = useState<'milestone' | 'full'>('full');
   const [deadline, setDeadline] = useState('');
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [hashInput, setHashInput] = useState('');
-  const [milestones, setMilestones] = useState<{ title: string; description: string; amount: string }[]>([]);
+  const [milestones, setMilestones] = useState<{ metric: string; target: string; amount: string }[]>([]);
 
   const addHashtag = () => {
     const h = hashInput.replace('#', '').trim();
@@ -43,7 +56,7 @@ export default function NewJobPage() {
   };
 
   const addMilestone = () =>
-    setMilestones([...milestones, { title: '', description: '', amount: '' }]);
+    setMilestones([...milestones, { metric: metricsFor(platform)[0], target: '', amount: '' }]);
 
   const updateMilestone = (i: number, field: string, val: string) =>
     setMilestones(milestones.map((m, idx) => idx === i ? { ...m, [field]: val } : m));
@@ -57,20 +70,32 @@ export default function NewJobPage() {
       toast.error('Fill in all required fields');
       return;
     }
+    if (platform === 'other' && !platformOther.trim()) {
+      toast.error('Enter the name of the social platform');
+      return;
+    }
+    if (postType === 'other' && !postTypeOther.trim()) {
+      toast.error('Describe the content to be created');
+      return;
+    }
     setLoading(true);
     try {
       await jobAPI.create({
         title,
         description,
         target_platform: platform,
+        platform_other: platform === 'other' ? platformOther.trim() : undefined,
         post_type: postType,
+        post_type_other: postType === 'other' ? postTypeOther.trim() : undefined,
         total_budget: Number(budget),
         payout_type: payoutType,
         deadline: deadline ? new Date(deadline).toISOString() : null,
         required_elements: { hashtags, mentions: [] },
         milestones: milestones.map((m) => ({
-          title: m.title,
-          description: m.description,
+          title: m.metric,
+          description: `${m.target || '0'} ${m.metric}`,
+          metric: m.metric,
+          target: Number(m.target) || 0,
           amount: Number(m.amount),
         })),
       });
@@ -162,6 +187,15 @@ export default function NewJobPage() {
                     <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
                   ))}
                 </select>
+                {platform === 'other' && (
+                  <input
+                    value={platformOther}
+                    onChange={(e) => setPlatformOther(e.target.value)}
+                    placeholder="Name the platform (e.g. Threads, Snapchat)"
+                    className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all mt-2"
+                    style={inputStyle}
+                  />
+                )}
               </div>
               <div>
                 <label className="block text-xs font-bold text-[#9ca3af] mb-2 uppercase tracking-wide">Content Type *</label>
@@ -174,6 +208,15 @@ export default function NewJobPage() {
                     <option key={t} value={t}>{t.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}</option>
                   ))}
                 </select>
+                {postType === 'other' && (
+                  <input
+                    value={postTypeOther}
+                    onChange={(e) => setPostTypeOther(e.target.value)}
+                    placeholder="Describe the content to be created / what's to be done"
+                    className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all mt-2"
+                    style={inputStyle}
+                  />
+                )}
               </div>
             </div>
           </motion.div>
@@ -268,34 +311,37 @@ export default function NewJobPage() {
                           <X size={16} />
                         </button>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-[10px] font-bold text-[#6b7280] mb-1.5 uppercase">Title</label>
-                          <input 
-                            value={m.title} onChange={(e) => updateMilestone(i, 'title', e.target.value)}
-                            placeholder="e.g. First Draft" 
-                            className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all" 
+                          <label className="block text-[10px] font-bold text-[#6b7280] mb-1.5 uppercase">Metric</label>
+                          <select
+                            value={m.metric} onChange={(e) => updateMilestone(i, 'metric', e.target.value)}
+                            className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all appearance-none"
+                            style={inputStyle}
+                          >
+                            {metricsFor(platform).map((mt) => (
+                              <option key={mt} value={mt}>{mt.charAt(0).toUpperCase() + mt.slice(1)}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-[#6b7280] mb-1.5 uppercase">Required {m.metric}</label>
+                          <input
+                            type="number" value={m.target} onChange={(e) => updateMilestone(i, 'target', e.target.value)}
+                            placeholder="e.g. 1000"
+                            className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all"
                             style={inputStyle}
                           />
                         </div>
                         <div>
                           <label className="block text-[10px] font-bold text-[#6b7280] mb-1.5 uppercase">Amount (USDC)</label>
-                          <input 
+                          <input
                             type="number" value={m.amount} onChange={(e) => updateMilestone(i, 'amount', e.target.value)}
-                            placeholder="0" 
-                            className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all" 
+                            placeholder="0"
+                            className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all"
                             style={inputStyle}
                           />
                         </div>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-[#6b7280] mb-1.5 uppercase">Requirements</label>
-                        <input 
-                          value={m.description} onChange={(e) => updateMilestone(i, 'description', e.target.value)}
-                          placeholder="What needs to be delivered?" 
-                          className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all" 
-                          style={inputStyle}
-                        />
                       </div>
                     </div>
                   ))}

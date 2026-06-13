@@ -5,6 +5,7 @@ export function createProfileRecord(userId, input) {
   return {
     user_id: userId,
     name: input.name || '',
+    email: input.email || '',
     bio: input.bio || '',
     website_url: input.website_url || null,
     location: input.location || null,

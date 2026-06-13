@@ -13,5 +13,10 @@ export function createProfileRoutes(service = new ProfileService()) {
     async getReputation(walletAddress: string) {
       return { statusCode: 200, body: await service.getReputation(walletAddress) };
     },
+
+    // Public profile — no auth required.
+    async getPublic(userId: string) {
+      return { statusCode: 200, body: await service.getPublicProfile(userId) };
+    },
   };
 }

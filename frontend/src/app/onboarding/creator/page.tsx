@@ -23,6 +23,7 @@ export default function CreatorOnboarding() {
   const [loading, setLoading] = useState(false);
 
   const [name, setName] = useState('');
+  const [email, setEmail] = useState(user?.email || '');
   const [bio, setBio] = useState('');
   const [selectedNiches, setSelectedNiches] = useState<string[]>([]);
   const [instagram, setInstagram] = useState('');
@@ -38,7 +39,7 @@ export default function CreatorOnboarding() {
     setLoading(true);
     try {
       await profileAPI.updateMe({
-        name, bio,
+        name, bio, email,
         niche_tags: selectedNiches,
         instagram: instagram || null,
         twitter: twitter || null,
@@ -153,13 +154,22 @@ export default function CreatorOnboarding() {
                        className="w-full bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-2.5" required />
               </div>
               <div>
+                <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">Email Address *</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                       placeholder="you@example.com" 
+                       className="w-full bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-2.5" required />
+                {user?.email && email === user.email && (
+                  <p className="text-[10px] text-[#22c55e] mt-1">Auto-filled from your login</p>
+                )}
+              </div>
+              <div>
                 <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">Bio</label>
                 <textarea value={bio} onChange={(e) => setBio(e.target.value)}
                           placeholder="Tell brands what you do..." rows={4}
                           className="w-full bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-2.5 resize-none" />
                 <p className="text-xs text-[#4b5563] mt-1 text-right">{bio.length}/500</p>
               </div>
-              <button onClick={() => { if (!name) { toast.error('Enter your name'); return; } setStep(2); }}
+              <button onClick={() => { if (!name) { toast.error('Enter your name'); return; } if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error('Enter a valid email'); return; } setStep(2); }}
                       className="w-full py-3 rounded-xl text-sm font-semibold bg-white text-black hover:bg-[#f0f0f0] transition-colors flex items-center justify-center gap-2">
                 Continue <ArrowRight size={16} />
               </button>
@@ -208,44 +218,26 @@ export default function CreatorOnboarding() {
               initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.3 }}
               className="space-y-5"
             >
-              <p className="text-sm text-[#9ca3af]">Connect your social media accounts to verify your audience.</p>
+              <p className="text-sm text-[#9ca3af]">Enter your social media handles so brands can find you.</p>
               {[
-                { iconUrl: 'https://www.google.com/s2/favicons?domain=instagram.com&sz=128', label: 'Instagram',    val: instagram, set: setInstagram, domain: 'instagram.com' },
-                { iconUrl: 'https://www.google.com/s2/favicons?domain=x.com&sz=128',         label: 'Twitter / X',  val: twitter,   set: setTwitter,   domain: 'x.com' },
-                { iconUrl: 'https://www.google.com/s2/favicons?domain=youtube.com&sz=128',   label: 'YouTube',      val: youtube,   set: setYoutube,   domain: 'youtube.com' },
-                { iconUrl: 'https://www.google.com/s2/favicons?domain=tiktok.com&sz=128',    label: 'TikTok',       val: tiktok,    set: setTiktok,    domain: 'tiktok.com' },
-              ].map(({ iconUrl, label, val, set, domain }) => (
+                { iconUrl: 'https://www.google.com/s2/favicons?domain=instagram.com&sz=128', label: 'Instagram',    val: instagram, set: setInstagram, placeholder: 'your_username' },
+                { iconUrl: 'https://www.google.com/s2/favicons?domain=x.com&sz=128',         label: 'Twitter / X',  val: twitter,   set: setTwitter,   placeholder: 'your_handle' },
+                { iconUrl: 'https://www.google.com/s2/favicons?domain=youtube.com&sz=128',   label: 'YouTube',      val: youtube,   set: setYoutube,   placeholder: 'channel name or URL' },
+                { iconUrl: 'https://www.google.com/s2/favicons?domain=tiktok.com&sz=128',    label: 'TikTok',       val: tiktok,    set: setTiktok,    placeholder: 'your_handle' },
+              ].map(({ iconUrl, label, val, set, placeholder }) => (
                 <div key={label}>
                   <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">{label}</label>
                   <div className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={iconUrl} alt={label} className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 object-contain rounded-sm z-10" />
-                    
-                    {val ? (
-                      <div className="w-full bg-[#152015] border border-[#22c55e]/30 rounded-lg text-sm text-white px-4 py-2.5 pl-10 flex items-center justify-between">
-                        <span className="text-[#22c55e] font-medium">Connected as @{val}</span>
-                        <button onClick={() => set('')} className="text-xs text-red-500/70 hover:text-red-500 font-semibold transition-colors">Disconnect</button>
-                      </div>
-                    ) : (
-                      <button 
-                        onClick={() => {
-                          const mockUsername = 'creator_' + Math.floor(Math.random() * 1000);
-                          // Open in new tab to simulate real OAuth redirect
-                          window.open(`https://${domain}`, '_blank');
-                          // Simulate connection delay
-                          set('Connecting...');
-                          setTimeout(() => set(mockUsername), 1500);
-                        }}
-                        className="w-full bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white px-4 py-2.5 pl-10 flex items-center hover:bg-[#1a1a1a] transition-colors text-left"
-                      >
-                        <span className="flex-1 font-medium">{val === 'Connecting...' ? 'Connecting...' : `Connect ${label}`}</span>
-                        {val === 'Connecting...' ? (
-                          <Loader2 size={16} className="animate-spin text-[#6b7280]" />
-                        ) : (
-                          <ArrowRight size={14} className="text-[#6b7280]" />
-                        )}
-                      </button>
-                    )}
+                    <div className="absolute left-10 top-1/2 -translate-y-1/2 text-sm text-[#6b7280] font-medium">@</div>
+                    <input
+                      type="text"
+                      value={val}
+                      onChange={(e) => set(e.target.value.replace(/^@/, ''))}
+                      placeholder={placeholder}
+                      className="w-full bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-2.5 pl-[3.5rem]"
+                    />
                   </div>
                 </div>
               ))}

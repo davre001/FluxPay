@@ -45,10 +45,10 @@ const XLogo = ({ size = 16, color = 'currentColor' }: { size?: number; color?: s
 );
 
 const SOCIALS = [
-  { key: 'instagram', icon: InstagramIcon, label: 'Instagram', color: '#e1306c', placeholder: 'username (without @)', domain: 'instagram.com' },
-  { key: 'twitter',   icon: XLogo,         label: 'Twitter',   color: '#1da1f2', placeholder: 'handle (without @)', domain: 'x.com' },
-  { key: 'youtube',   icon: YoutubeIcon,   label: 'YouTube',   color: '#ff0000', placeholder: 'channel ID or URL', domain: 'youtube.com' },
-  { key: 'tiktok',    icon: TikTokIcon,    label: 'TikTok',    color: '#e2e8f0', placeholder: 'handle (without @)', domain: 'tiktok.com' },
+  { key: 'instagram', icon: InstagramIcon, label: 'Instagram', color: '#e1306c', placeholder: 'your_username' },
+  { key: 'twitter',   icon: XLogo,         label: 'Twitter',   color: '#1da1f2', placeholder: 'your_handle' },
+  { key: 'youtube',   icon: YoutubeIcon,   label: 'YouTube',   color: '#ff0000', placeholder: 'channel name or URL' },
+  { key: 'tiktok',    icon: TikTokIcon,    label: 'TikTok',    color: '#e2e8f0', placeholder: 'your_handle' },
 ] as const;
 
 /* ── Reusable section header ── */
@@ -131,6 +131,7 @@ export default function CreatorProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
 
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [bio, setBio] = useState('');
   const [picUrl, setPicUrl] = useState('');
   const [niches, setNiches] = useState<string[]>([]);
@@ -148,6 +149,7 @@ export default function CreatorProfilePage() {
     if (!user?.id) return;
     profileAPI.getMe().then(({ data }: any) => {
       setName(data?.name || '');
+      setEmail(data?.email || user?.email || '');
       setBio(data?.bio || '');
       setPicUrl(data?.profile_picture_url || '');
       setNiches(data?.niche_tags || []);
@@ -156,16 +158,18 @@ export default function CreatorProfilePage() {
       setYoutube(data?.youtube || '');
       setTiktok(data?.tiktok || '');
     }).catch(() => {});
-  }, [user?.id]);
+  }, [user?.id, user?.email]);
 
   const toggleNiche = (n: string) =>
     setNiches((prev) => prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]);
 
   const handleSave = async () => {
+    if (!name) { toast.error('Name is required'); return; }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error('Enter a valid email address'); return; }
     setSaving(true);
     try {
       await profileAPI.updateMe({
-        name, bio, profile_picture_url: picUrl || null,
+        name, email, bio, profile_picture_url: picUrl || null,
         niche_tags: niches, instagram: instagram || null,
         twitter: twitter || null, youtube: youtube || null, tiktok: tiktok || null,
       });
@@ -285,7 +289,7 @@ export default function CreatorProfilePage() {
                 <div className="flex items-center justify-center gap-1.5 mb-1">
                   <p className="font-bold text-lg text-white leading-tight">{name || 'Your Name'}</p>
                 </div>
-                <p className="text-xs text-[#4b5563] truncate">{user?.email}</p>
+                <p className="text-xs text-[#4b5563] truncate">{email || user?.email}</p>
               </div>
             </div>
 
@@ -294,8 +298,7 @@ export default function CreatorProfilePage() {
               <p className="text-[10px] font-semibold uppercase tracking-widest text-[#4b5563]">Performance</p>
               <div className="space-y-3">
                 {[
-                  { icon: TrendingUp, label: 'Escrow Success', value: '100%', color: '#22c55e' },
-                  { icon: Star, label: 'Reputation Score', value: '4.8 / 5', color: '#f59e0b' },
+                  { icon: Star, label: 'Reputation', value: '— / 100', color: '#f59e0b' },
                   { icon: Shield, label: 'Verified Status', value: 'Verified', color: '#60a5fa' },
                 ].map(({ icon: Icon, label, value, color }) => (
                   <div key={label} className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid #161616' }}>
@@ -309,6 +312,7 @@ export default function CreatorProfilePage() {
                   </div>
                 ))}
               </div>
+              <p className="text-[10px] text-[#4b5563]">View the Reputation page for your full score breakdown.</p>
             </div>
           </div>
 
@@ -325,6 +329,13 @@ export default function CreatorProfilePage() {
                   value={name}
                   onChange={setName}
                   placeholder="Your professional name"
+                  isEditing={isEditing}
+                />
+                <PremiumInput
+                  label="Email Address"
+                  value={email}
+                  onChange={setEmail}
+                  placeholder="you@example.com"
                   isEditing={isEditing}
                 />
                 <PremiumInput
@@ -371,9 +382,9 @@ export default function CreatorProfilePage() {
 
             {/* Socials */}
             <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
-              <SectionHeader title="Social Channels" subtitle="Connect your social media accounts" />
+              <SectionHeader title="Social Channels" subtitle="Enter your social media handles" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {SOCIALS.map(({ key, icon: Icon, label, color, domain }) => {
+                {SOCIALS.map(({ key, icon: Icon, label, color, placeholder }) => {
                   const value = socials[key];
                   if (!isEditing && !value) return null;
                   return (
@@ -384,36 +395,21 @@ export default function CreatorProfilePage() {
                       {!isEditing ? (
                         <div className="text-sm text-white py-2 flex items-center">
                           <Icon size={16} color={color} />
-                          <span className="ml-3 font-medium">{value}</span>
+                          <span className="ml-3 font-medium">@{value}</span>
                         </div>
                       ) : (
                         <div className="relative">
                           <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 flex justify-center z-10">
                             <Icon size={16} color={color} />
                           </div>
-                          {value && value !== 'Connecting...' ? (
-                            <div className="w-full bg-[#152015] border border-[#22c55e]/30 rounded-lg text-sm text-white px-4 py-3 pl-11 flex items-center justify-between">
-                              <span className="text-[#22c55e] font-medium truncate pr-2">Connected as @{value}</span>
-                              <button onClick={() => socialSetters[key]('')} className="text-xs text-red-500/70 hover:text-red-500 font-semibold transition-colors shrink-0">Disconnect</button>
-                            </div>
-                          ) : (
-                            <button 
-                              onClick={() => {
-                                const mockUsername = 'creator_' + Math.floor(Math.random() * 1000);
-                                window.open(`https://${domain}`, '_blank');
-                                socialSetters[key]('Connecting...');
-                                setTimeout(() => socialSetters[key](mockUsername), 1500);
-                              }}
-                              className="w-full bg-[#0f0f0f] border border-[#1f1f1f] rounded-lg text-sm text-white px-4 py-3 pl-11 flex items-center justify-between hover:bg-[#1a1a1a] transition-colors"
-                            >
-                              <span className="font-medium">{value === 'Connecting...' ? 'Connecting...' : `Connect ${label}`}</span>
-                              {value === 'Connecting...' ? (
-                                <Loader2 size={16} className="animate-spin text-[#6b7280]" />
-                              ) : (
-                                <ArrowRight size={14} className="text-[#6b7280]" />
-                              )}
-                            </button>
-                          )}
+                          <div className="absolute left-10 top-1/2 -translate-y-1/2 text-sm text-[#6b7280] font-medium">@</div>
+                          <input
+                            type="text"
+                            value={value}
+                            onChange={(e) => socialSetters[key](e.target.value.replace(/^@/, ''))}
+                            placeholder={placeholder}
+                            className="w-full bg-[#0f0f0f] border border-[#1f1f1f] rounded-lg text-sm text-white placeholder-[#3d3d3d] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-3 pl-[3.5rem]"
+                          />
                         </div>
                       )}
                     </div>
@@ -489,10 +485,10 @@ export default function CreatorProfilePage() {
                       <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#161616' }}>
                         <Star size={13} className="text-[#f59e0b] fill-[#f59e0b]" />
                       </div>
-                      <p className="text-xs font-semibold text-[#9ca3af]">On-Chain Reputation</p>
+                      <p className="text-xs font-semibold text-[#9ca3af]">Reputation Score</p>
                     </div>
-                    <p className="text-3xl font-black text-white">4.8 <span className="text-[#f59e0b] text-2xl">★</span></p>
-                    <p className="text-xs text-[#4b5563] mt-1.5 leading-relaxed">Silver tier rating backed by verified on-chain deal history.</p>
+                    <p className="text-3xl font-black text-white">— <span className="text-lg text-[#4b5563] font-bold">/ 100</span></p>
+                    <p className="text-xs text-[#4b5563] mt-1.5 leading-relaxed">View the Reputation page for your full score and tier breakdown.</p>
                   </div>
                 </div>
 

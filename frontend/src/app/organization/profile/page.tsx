@@ -128,6 +128,7 @@ export default function OrgProfilePage() {
   const { user } = useUserStore();
   const [saving, setSaving] = useState(false);
   const [brandName, setBrandName] = useState('');
+  const [email, setEmail] = useState('');
   const [description, setDescription] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [location, setLocation] = useState('');
@@ -149,6 +150,7 @@ export default function OrgProfilePage() {
     if (!user?.id) return;
     profileAPI.getMe().then(({ data }: any) => {
       setBrandName(data?.name || '');
+      setEmail(data?.email || user?.email || '');
       setDescription(data?.bio || '');
       setWebsiteUrl(data?.website_url || '');
       setLocation(data?.location || '');
@@ -159,16 +161,19 @@ export default function OrgProfilePage() {
       setYoutube(data?.youtube || '');
       setTiktok(data?.tiktok || '');
     }).catch(() => {});
-  }, [user?.id]);
+  }, [user?.id, user?.email]);
 
   const toggleIndustry = (i: string) =>
     setIndustries((prev) => prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]);
 
   const handleSave = async () => {
+    if (!brandName) { toast.error('Brand name is required'); return; }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error('Enter a valid email address'); return; }
     setSaving(true);
     try {
       await profileAPI.updateMe({
         name: brandName,
+        email,
         bio: description,
         website_url: websiteUrl || null,
         location: location || null,
@@ -298,7 +303,7 @@ export default function OrgProfilePage() {
 
               <div>
                 <p className="font-bold text-lg text-white leading-tight">{brandName || 'Your Brand'}</p>
-                <p className="text-xs text-[#4b5563] truncate mt-0.5">{user?.email}</p>
+                <p className="text-xs text-[#4b5563] truncate mt-0.5">{email || user?.email}</p>
               </div>
 
               <div className="flex flex-wrap justify-center gap-2">
@@ -419,6 +424,14 @@ export default function OrgProfilePage() {
                   value={brandName}
                   onChange={setBrandName}
                   placeholder="Acme Corp"
+                  isEditing={isEditing}
+                />
+
+                <PremiumInput
+                  label="Email Address"
+                  value={email}
+                  onChange={setEmail}
+                  placeholder="contact@yourbrand.com"
                   isEditing={isEditing}
                 />
 

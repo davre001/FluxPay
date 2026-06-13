@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 import { useUserStore } from '@/stores/userStore';
 import { useDeals, useMyApplications, useApplyToDeal } from '@/hooks/useDeals';
 
-const PLATFORMS = ['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'other'];
+const PLATFORMS = ['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'facebook', 'other'];
 const POST_TYPES = ['all', 'video', 'image', 'content_writing', 'other'];
 
 const PLATFORM_ICON: Record<string, any> = {

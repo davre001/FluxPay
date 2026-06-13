@@ -10,7 +10,10 @@ export function createJobRecord(input) {
     category: input.category || null,
     skills: input.skills || [],
     target_platform: input.target_platform || 'other',
+    // Custom platform name when target_platform === 'other' (e.g. Threads, Snapchat).
+    platform_other: input.platform_other || null,
     post_type: input.post_type || 'other',
+    post_type_other: input.post_type_other || null,
     required_elements: input.required_elements || {
       hashtags: [],
       mentions: [],

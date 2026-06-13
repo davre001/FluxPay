@@ -54,8 +54,9 @@ const MOCK_JOBS = [
 export default function OrgDashboard() {
   const { user } = useUserStore();
   const { jobs: myJobs } = useMyJobs();
-  // Real posted jobs when signed in; demo jobs keep the page populated otherwise.
-  const jobs = myJobs.length > 0 ? myJobs : MOCK_JOBS;
+  // Real posted jobs when signed in — a brand-new brand sees a clean, empty slate.
+  // Demo jobs only for a logged-out viewer (the page is auth-gated anyway).
+  const jobs = myJobs.length > 0 ? myJobs : (user?.id ? [] : MOCK_JOBS);
   const [profileName, setProfileName] = useState('');
   const [hideStats, setHideStats] = useState(() => {
     if (typeof window !== 'undefined') {

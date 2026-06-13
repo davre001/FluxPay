@@ -103,7 +103,7 @@ export class VerificationService {
 
     // Record as metadata only — status is untouched.
     await this.milestones.update(milestoneId, {
-      ai_verification: { ...result, model: 'venice', at: nowIso() },
+      ai_verification: { ...result, model: this.venice.providerModel, at: nowIso() },
     });
 
     return { verified: true, milestone_id: milestoneId, ...result };

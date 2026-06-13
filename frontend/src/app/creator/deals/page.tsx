@@ -71,7 +71,7 @@ export default function CreatorActiveDealsPage() {
             onChange={(e) => setPlatformFilter(e.target.value)}
             className="w-full sm:w-48 bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white focus:outline-none focus:border-[#404040] transition-colors duration-200 px-3 py-2.5"
           >
-            {['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'other'].map((p) => (
+            {['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'facebook', 'other'].map((p) => (
               <option key={p} value={p}>
                 {p === 'all' ? 'All Platforms' : p.charAt(0).toUpperCase() + p.slice(1)}
               </option>

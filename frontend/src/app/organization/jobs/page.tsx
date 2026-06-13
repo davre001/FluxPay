@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Plus, Search, ArrowRight, Briefcase, Users, LayoutList } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useUserStore } from '@/stores/userStore';
 import { useMyJobs } from '@/hooks/useDeals';
 
 const containerVariants = {
@@ -27,9 +28,11 @@ const MOCK_JOBS = [
 ];
 
 export default function OrgJobsListPage() {
+  const { user } = useUserStore();
   const { jobs: myJobs } = useMyJobs();
-  // Real posted jobs when signed in; demo jobs keep the page populated otherwise.
-  const jobs = myJobs.length > 0 ? myJobs : MOCK_JOBS;
+  // Real posted jobs when signed in — a brand-new brand sees a clean, empty slate.
+  // Demo jobs only for a logged-out viewer (the page is auth-gated anyway).
+  const jobs = myJobs.length > 0 ? myJobs : (user?.id ? [] : MOCK_JOBS);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
 
