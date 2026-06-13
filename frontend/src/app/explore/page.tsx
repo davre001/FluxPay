@@ -24,6 +24,10 @@ const MOCK_JOBS = [
   { id: 'm1', title: 'Summer Fashion Campaign', description: 'Looking for creators to showcase our new summer collection.', target_platform: 'instagram', post_type: 'video', total_budget: 1500, status: 'open', organization: { brand_name: 'StyleBrand' }, milestones: [1,2] },
   { id: 'm2', title: 'Tech Review - New Wireless Earbuds', description: 'Seeking tech reviewers for an honest unboxing and review.', target_platform: 'youtube', post_type: 'video', total_budget: 3000, status: 'open', organization: { brand_name: 'AudioTech' }, milestones: [1,2,3] },
   { id: 'm3', title: 'Viral Dance Challenge', description: 'Join our viral hashtag challenge and create a short dance video.', target_platform: 'tiktok', post_type: 'video', total_budget: 800, status: 'open', organization: { brand_name: 'GrooveApp' }, milestones: [1] },
+  { id: 'm4', title: 'B2B SaaS Content Writing Specialist', description: 'Write a high-quality blog post about our Web3 developer tools.', target_platform: 'other', post_type: 'content_writing', total_budget: 1200, status: 'open', organization: { brand_name: 'SaaSPro' }, milestones: [1] },
+  { id: 'm5', title: 'Professional Video Editing for YouTube', description: 'Edit a 10-minute high-production vlog with custom sound design and motion graphics.', target_platform: 'youtube', post_type: 'video', total_budget: 2500, status: 'open', organization: { brand_name: 'VlogStars' }, milestones: [1,2] },
+  { id: 'm6', title: 'UGC Creator for Skincare Line', description: 'Produce 3 authentic short-form videos demonstrating our new organic skincare collection.', target_platform: 'tiktok', post_type: 'video', total_budget: 950, status: 'open', organization: { brand_name: 'GlowBeauty' }, milestones: [1] },
+  { id: 'm7', title: 'Long-term Brand Ambassador', description: 'Represent our premium fitness apparel brand across your socials for the next 3 months.', target_platform: 'instagram', post_type: 'image', total_budget: 5000, status: 'open', organization: { brand_name: 'FitLife' }, milestones: [1,2,3] },
 ];
 
 const MOCK_CREATORS = [
