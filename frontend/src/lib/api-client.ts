@@ -101,6 +101,10 @@ export const reputationAPI = {
 export const applicationAPI = {
   listMine: (params?: { status?: string }) =>
     request<Application[]>('GET', '/api/applications/mine', undefined, params as Record<string, unknown>),
+  // Creator withdraws their own pending application.
+  withdraw: (applicationId: string) => request<Application>('POST', `/api/applications/${applicationId}/withdraw`),
+  // Brand inbox: applications across the org's own jobs.
+  listIncoming: () => request<Application[]>('GET', '/api/applications/incoming'),
 }
 
 // ─── Permissions (ERC-7715) ───────────────────────────────────────────────────

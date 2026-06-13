@@ -2,8 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Check, X, User, ExternalLink, Zap, ShieldCheck } from 'lucide-react';
+import { Check, X, User, ExternalLink, Zap, ShieldCheck, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
+import { jobAPI } from '@/lib/api-client';
+import { useUserStore } from '@/stores/userStore';
+import { useIncomingApplications } from '@/hooks/useDeals';
+import { useQueryClient } from '@tanstack/react-query';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -22,17 +27,49 @@ const MOCK_APPS = [
 ];
 
 export default function ApprovalsPage() {
-  // NOTE (Phase 2): real per-job approval (select creator) happens on the job
-  // detail page (/organization/jobs/[jobId]). This inbox stays a mock summary
-  // until there's a cross-job "incoming applications" aggregation endpoint.
-  const [applications, setApplications] = useState<any[]>(MOCK_APPS);
+  const { user } = useUserStore();
+  const { applications: incoming, isLoading } = useIncomingApplications();
+  const qc = useQueryClient();
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
+  const [acting, setActing] = useState<string | null>(null);
 
-  const handleApprove = (id: string) => {
-    setApplications(apps => apps.filter(app => app.id !== id));
+  // Normalize real incoming applications into the card shape; mock keeps the
+  // inbox populated for a logged-out demo.
+  const source = incoming.length > 0
+    ? incoming.map((a: any) => ({
+        id: a.id,
+        job_id: a.job_id,
+        creator_id: a.creator_id,
+        creatorName: a.creator_name || a.creator_id,
+        creatorAvatar: String(a.creator_name || a.creator_id || '?')[0].toUpperCase(),
+        reputation: a.creator_reputation ?? '—',
+        jobTitle: a.job_title || 'Deal',
+        status: a.status,
+        coverNote: a.cover_note,
+        platform: a.job_target_platform || 'other',
+      }))
+    : (user?.id ? [] : MOCK_APPS);
+  const applications = source.filter((a: any) => !removedIds.has(a.id));
+
+  // Hire the applicant (real). The ERC-7715 release grant is done on the deal page.
+  const handleApprove = async (app: any) => {
+    setActing(app.id);
+    try {
+      if (app.job_id && app.creator_id) {
+        await jobAPI.selectCreator(app.job_id, app.creator_id);
+        qc.invalidateQueries({ queryKey: ['incoming-applications'] });
+      }
+      toast.success('Creator hired — grant the release permission on the deal page.');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to hire creator');
+    }
+    setRemovedIds(prev => new Set([...prev, app.id]));
+    setActing(null);
   };
 
-  const handleReject = (id: string) => {
-    setApplications(apps => apps.filter(app => app.id !== id));
+  const handleReject = (app: any) => {
+    setRemovedIds(prev => new Set([...prev, app.id]));   // local only (no reject endpoint)
+    toast.success('Application dismissed.');
   };
 
   return (
@@ -51,7 +88,13 @@ export default function ApprovalsPage() {
 
       <div className="max-w-4xl mx-auto px-6 py-10">
         <AnimatePresence mode="wait">
-          {applications.length === 0 ? (
+          {isLoading ? (
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="rounded-2xl p-16 text-center" style={{ background: '#111111', border: '1px dashed #222222' }}>
+              <Loader2 size={36} className="text-[#333333] mx-auto mb-4 animate-spin" />
+              <p className="text-sm font-semibold text-[#6b7280]">Loading applications…</p>
+            </motion.div>
+          ) : applications.length === 0 ? (
             <motion.div 
               key="empty"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -108,14 +151,15 @@ export default function ApprovalsPage() {
 
                     {/* Actions */}
                     <div className="flex flex-row md:flex-col gap-3 justify-end md:w-40 border-t md:border-t-0 md:border-l border-[#1a1a1a] pt-4 md:pt-0 md:pl-6">
-                      <button 
-                        onClick={() => handleApprove(app.id)}
-                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold bg-[#22c55e] text-black hover:bg-[#1ea852] transition-colors"
+                      <button
+                        onClick={() => handleApprove(app)}
+                        disabled={acting === app.id}
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold bg-[#22c55e] text-black hover:bg-[#1ea852] transition-colors disabled:opacity-50"
                       >
-                        <Check size={16} /> Approve
+                        {acting === app.id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Approve
                       </button>
-                      <button 
-                        onClick={() => handleReject(app.id)}
+                      <button
+                        onClick={() => handleReject(app)}
                         className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold bg-[#1a1a1a] text-white hover:bg-[#ef4444] hover:border-[#ef4444] border border-[#333333] transition-colors"
                       >
                         <X size={16} /> Decline

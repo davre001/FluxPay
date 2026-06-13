@@ -94,6 +94,26 @@ export function useMyApplications() {
   };
 }
 
+// Brand inbox: applications across the org's own jobs (user-specific, no fallback).
+export function useIncomingApplications() {
+  const { user } = useUserStore();
+  const query = useQuery({
+    queryKey: ['incoming-applications', user?.id],
+    enabled: Boolean(user?.id),
+    staleTime: 15_000,
+    queryFn: async () => {
+      const { data } = await applicationAPI.listIncoming();
+      return (data as any[]) ?? [];
+    },
+  });
+  return {
+    applications: query.data ?? [],
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error as Error | null,
+  };
+}
+
 // Apply to a deal, then refresh the caller's application list so the card flips
 // to "Applied" without a manual refetch.
 export function useApplyToDeal() {

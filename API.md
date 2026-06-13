@@ -98,9 +98,14 @@ that do **not** require it are `POST /api/auth/session` and the `payments` slice
 
 ## Applications
 
-| Method | Path | Query |
-|---|---|---|
-| GET | `/api/applications/mine` | `?status` |
+| Method | Path | Query / Notes | Auth |
+|---|---|---|---|
+| GET | `/api/applications/mine` | `?status` — the creator's own applications | yes |
+| GET | `/api/applications/incoming` | applications across the brand's own jobs (approvals inbox), enriched with job + applicant name | yes |
+| POST | `/api/applications/:id/withdraw` | creator withdraws their own **pending** application (soft delete) | yes |
+
+> Milestone `submit` auto-kicks the autonomous settlement loop (Venice verify →
+> score → release) server-side — no separate `/api/settle` call needed from the UI.
 
 ## Reputation
 

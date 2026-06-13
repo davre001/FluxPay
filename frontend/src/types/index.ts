@@ -11,7 +11,7 @@ export type PayoutType = 'milestone' | 'full';
 export type DealStatus = 'open' | 'in_progress' | 'completed' | 'draft' | 'cancelled' | 'expired';
 export type FundingStatus = 'unfunded' | 'funded' | 'partially_released' | 'released';
 export type MilestoneStatus = 'pending' | 'submitted' | 'approved' | 'disputed';
-export type ApplicationStatus = 'pending' | 'accepted' | 'rejected';
+export type ApplicationStatus = 'pending' | 'accepted' | 'rejected' | 'withdrawn';
 export type ProfileType = 'creator' | 'organization';
 
 export interface OrganizationRef {
@@ -102,6 +102,7 @@ export interface Application {
   job_total_budget?: number;
   job_target_platform?: TargetPlatform | string;
   organization?: OrganizationRef;
+  creator_name?: string; // applicant display name (incoming-applications inbox)
 }
 
 export interface AuthUser {

@@ -204,7 +204,7 @@ export function createApp(options: any = {}) {
         response = await dispatchJobRoute(req, parts, url.searchParams, jobRoutes, user);
       } else if (parts[0] === 'milestones') {
         const user = await requireAuth(req, authService, skipAuth, mockUser);
-        response = await dispatchMilestoneRoute(req, parts, jobRoutes, user);
+        response = await dispatchMilestoneRoute(req, parts, jobRoutes, user, settlementService);
       } else if (parts[0] === 'profile') {
         const user = await requireAuth(req, authService, skipAuth, mockUser);
         response = await dispatchProfileRoute(req, parts, profileRoutes, user);
@@ -346,12 +346,21 @@ async function dispatchJobRoute(req, parts, query, routes, user) {
 
 // ─── Milestone dispatch (flat action routes) ──────────────────────────────────
 
-async function dispatchMilestoneRoute(req, parts, routes, _user) {
+async function dispatchMilestoneRoute(req, parts, routes, _user, settlement?: any) {
   const milestoneId = parts[1] ? decodeURIComponent(parts[1]) : '';
 
   // POST /api/milestones/:id/submit
   if (req.method === 'POST' && parts[2] === 'submit') {
-    return routes.submitMilestone(milestoneId, await readJsonBody(req));
+    const result = await routes.submitMilestone(milestoneId, await readJsonBody(req));
+    // Auto-kick the autonomous settlement loop (Venice verify → score → release).
+    // Fire-and-forget: never block or fail the submit on settlement, and it
+    // no-ops gracefully when Venice / agent keys aren't configured.
+    if (settlement && result?.statusCode === 200) {
+      Promise.resolve(settlement.settleMilestone(milestoneId))
+        .then((r: any) => console.log('[auto-settle]', milestoneId, r?.settled ? 'released' : (r?.stage || 'skipped')))
+        .catch((e: any) => console.error('[auto-settle] failed', milestoneId, e?.message || e));
+    }
+    return result;
   }
   // POST /api/milestones/:id/approve
   if (req.method === 'POST' && parts[2] === 'approve') {
@@ -406,6 +415,14 @@ async function dispatchWalletRoute(req, parts, query, routes, user) {
 async function dispatchApplicationRoute(req, parts, routes, user) {
   if (req.method === 'GET' && parts[1] === 'mine') {
     return routes.listMyApplications(user);
+  }
+  // GET /api/applications/incoming — applications across the org's own jobs
+  if (req.method === 'GET' && parts[1] === 'incoming') {
+    return routes.listIncomingApplications(user);
+  }
+  // POST /api/applications/:id/withdraw — creator withdraws their application
+  if (req.method === 'POST' && parts[2] === 'withdraw') {
+    return routes.withdrawApplication(user, decodeURIComponent(parts[1]));
   }
   throw new NotFoundError('Route not found');
 }

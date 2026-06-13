@@ -160,7 +160,8 @@ export class JobService {
   }
 
   async getMyApplications(creatorId: string) {
-    const apps = await this.applications.findMany({ creator_id: creatorId });
+    const apps = (await this.applications.findMany({ creator_id: creatorId }))
+      .filter((a: any) => a.status !== 'withdrawn');
     return Promise.all(apps.map(async (app: any) => {
       const job = await this.jobs.findById(app.job_id);
       return {
@@ -171,6 +172,42 @@ export class JobService {
         organization: job?.organization || {},
       };
     }));
+  }
+
+  // Creator withdraws their own pending application (soft delete).
+  async withdrawApplication(applicationId: string, creatorId: string) {
+    const application = await this.applications.findById(applicationId);
+    if (!application) throw new NotFoundError('Application not found');
+    if (application.creator_id !== creatorId) throw new ValidationError('Not your application');
+    if (application.status !== 'pending') {
+      throw new ValidationError(`Cannot withdraw a ${application.status} application`);
+    }
+    return this.applications.update(applicationId, { status: 'withdrawn' });
+  }
+
+  // All applications across the org's own jobs, enriched with job + applicant
+  // context — powers the brand's approvals inbox.
+  async getIncomingApplications(orgUserId: string) {
+    const jobs = await this.jobs.findMany({ organization_id: orgUserId });
+    const grouped = await Promise.all(jobs.map(async (job: any) => {
+      const apps = await this.applications.findMany({ job_id: job.id });
+      return Promise.all(
+        apps
+          .filter((a: any) => a.status !== 'withdrawn')
+          .map(async (app: any) => {
+            const profile = await this.profiles.findByUserId(app.creator_id).catch(() => null);
+            return {
+              ...app,
+              job_id: job.id,
+              job_title: job.title,
+              job_target_platform: job.target_platform,
+              job_total_budget: job.total_budget,
+              creator_name: (profile as any)?.name || app.creator_id,
+            };
+          }),
+      );
+    }));
+    return grouped.flat();
   }
 
   async disputeMilestone(milestoneId: string, data: any) {

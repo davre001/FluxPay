@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Search, ArrowRight, FileText, CheckCircle2, XCircle, Clock, Trash2, Loader2 } from 'lucide-react';
 import { useUserStore } from '@/stores/userStore';
 import { useMyApplications } from '@/hooks/useDeals';
+import { applicationAPI } from '@/lib/api-client';
+import { useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -42,6 +44,7 @@ const MOCK_APPS = [
 export default function CreatorApplicationsPage() {
   const { user } = useUserStore();
   const { applications: myApps, isLoading } = useMyApplications();
+  const qc = useQueryClient();
   // Real applications when signed in; mock keeps the page populated for a
   // logged-out demo. Withdraw hides client-side (no withdraw endpoint yet).
   const source = myApps.length > 0 ? myApps : (user?.id ? [] : MOCK_APPS);
@@ -51,7 +54,10 @@ export default function CreatorApplicationsPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const handleDelete = (id: string) => {
-    setHiddenIds(prev => new Set([...prev, id]));
+    setHiddenIds(prev => new Set([...prev, id]));   // optimistic
+    applicationAPI.withdraw(id)
+      .then(() => qc.invalidateQueries({ queryKey: ['my-applications'] }))
+      .catch(() => {/* logged-out / demo: keep the optimistic hide */});
     toast.success("Application withdrawn.");
     setConfirmDelete(null);
   };

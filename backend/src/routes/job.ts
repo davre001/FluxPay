@@ -75,5 +75,13 @@ export function createJobRoutes(service = new JobService()) {
     async listMyApplications(user: any) {
       return { statusCode: 200, body: await service.getMyApplications(user.id) };
     },
+
+    async withdrawApplication(user: any, applicationId: string) {
+      return { statusCode: 200, body: await service.withdrawApplication(applicationId, user.id) };
+    },
+
+    async listIncomingApplications(user: any) {
+      return { statusCode: 200, body: await service.getIncomingApplications(user.id) };
+    },
   };
 }
