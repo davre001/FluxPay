@@ -9,9 +9,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { EXTRA_MOCK_JOBS } from '@/lib/mock-jobs';
-import { jobAPI, applicationAPI, profileAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
+import { useDeals, useMyApplications, useApplyToDeal } from '@/hooks/useDeals';
 import { cn } from '@/lib/utils';
 
 const PLATFORMS = ['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'other'];
@@ -31,57 +30,6 @@ const PLATFORM_COLOR: Record<string, string> = {
   instagram: '#e1306c', twitter: '#1da1f2', youtube: '#ff0000',
   tiktok: '#e2e8f0', other: '#d1d5db',
 };
-
-const MOCK_JOBS = [
-  {
-    id: 'job-1',
-    title: 'Instagram Reel for New Sneaker Launch',
-    organization: { brand_name: 'Nike', logo_url: 'https://www.google.com/s2/favicons?domain=nike.com&sz=128' },
-    description: 'We need a 30-second high-energy Instagram reel showcasing our new AirMax series.',
-    target_platform: 'instagram',
-    post_type: 'video',
-    payout_type: 'full',
-    total_budget: 1500,
-    milestones: [],
-    deadline: new Date(Date.now() + 864000000).toISOString(),
-  },
-  {
-    id: 'job-2',
-    title: 'YouTube Tech Review: SuperHeadphones Pro',
-    organization: { brand_name: 'Sony', logo_url: 'https://www.google.com/s2/favicons?domain=sony.com&sz=128' },
-    description: 'Looking for a detailed unboxing and review of our latest noise-canceling headphones.',
-    target_platform: 'youtube',
-    post_type: 'video',
-    payout_type: 'milestone',
-    total_budget: 3500,
-    milestones: [1, 2, 3],
-    deadline: new Date(Date.now() + 1500000000).toISOString(),
-  },
-  {
-    id: 'job-3',
-    title: 'Twitter Thread on Web3 Payments',
-    organization: { brand_name: 'Flux Protocol', logo_url: 'https://ui-avatars.com/api/?name=Flux+Protocol&background=1a1a1a&color=fff' },
-    description: 'Write an engaging 10-tweet thread explaining the benefits of crypto escrow for freelancers.',
-    target_platform: 'twitter',
-    post_type: 'content_writing',
-    payout_type: 'full',
-    total_budget: 500,
-    milestones: [],
-    deadline: new Date(Date.now() + 500000000).toISOString(),
-  },
-  {
-    id: 'job-4',
-    title: 'TikTok Viral Challenge Dance',
-    organization: { brand_name: 'Red Bull', logo_url: 'https://www.google.com/s2/favicons?domain=redbull.com&sz=128' },
-    description: 'Participate in the #GivesYouWings dance challenge using our official sound.',
-    target_platform: 'tiktok',
-    post_type: 'video',
-    payout_type: 'full',
-    total_budget: 1200,
-    milestones: [],
-    deadline: new Date(Date.now() + 1000000000).toISOString(),
-  }
-];
 
 const MOCK_APPS = [
   {
@@ -139,9 +87,11 @@ const itemVariants = {
 
 export default function CreatorDashboard() {
   const { user } = useUserStore();
-  const [profileName, setProfileName] = useState('');
-  const [myApplications, setMyApplications] = useState<any[]>(MOCK_APPS);
-  const [openJobs, setOpenJobs] = useState<any[]>([...MOCK_JOBS, ...EXTRA_MOCK_JOBS]);
+  const { deals: openJobs, isLoading } = useDeals({ status: 'open' });
+  const { applications: myApps, appliedJobIds: appliedIds } = useMyApplications();
+  // Real applications when signed in; mock keeps the stats populated logged out.
+  const myApplications = myApps.length > 0 ? myApps : (user?.id ? [] : MOCK_APPS);
+  const applyMutation = useApplyToDeal();
   const [search, setSearch] = useState('');
   const [platform, setPlatform] = useState('all');
   const [postType, setPostType] = useState('all');
@@ -149,8 +99,6 @@ export default function CreatorDashboard() {
   const [maxBudget, setMaxBudget] = useState('');
   const [showModal, setShowModal] = useState<string | null>(null);
   const [coverNote, setCoverNote] = useState('');
-  const [applying, setApplying] = useState(false);
-  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
   const [hideStats, setHideStats] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('fluxpay_dashboard_stats');
@@ -172,35 +120,19 @@ export default function CreatorDashboard() {
     return () => clearInterval(interval);
   }, [fullText]);
 
-  useEffect(() => {
-    if (!user?.id) return;
-    profileAPI.getMe().then(({ data }: any) => setProfileName(data?.name || '')).catch(() => {});
-    applicationAPI.listMine().then(({ data }) => {
-      const apps = data as any[];
-      if (apps.length > 0) {
-        setMyApplications(apps);
-      }
-      setAppliedIds(new Set(apps.map((a) => a.job_id)));
-    }).catch(() => {});
-  }, [user?.id]);
-
   const handleApply = async () => {
     if (!showModal || !user?.id) return;
-    setApplying(true);
     try {
-      await jobAPI.apply(showModal, { cover_note: coverNote });
-      setAppliedIds((prev) => new Set([...prev, showModal]));
+      await applyMutation.mutateAsync({ jobId: showModal, coverNote });
       toast.success('Application submitted!');
       setShowModal(null);
       setCoverNote('');
-      applicationAPI.listMine().then(({ data }) => setMyApplications(data as any[])).catch(() => {});
     } catch (e: any) {
       toast.error(e?.message || 'Failed to apply');
     }
-    setApplying(false);
   };
 
-  const active = myApplications.filter((a) => a.status === 'accepted').length;
+  const active = myApplications.filter((a: any) => a.status === 'accepted').length;
 
   const filteredJobs = openJobs.filter((j) => {
     if (platform !== 'all' && j.target_platform !== platform) return false;
@@ -338,7 +270,12 @@ export default function CreatorDashboard() {
           </div>
 
           {/* Job Cards */}
-          {filteredJobs.length === 0 ? (
+          {isLoading ? (
+            <div className="rounded-xl p-10 text-center" style={{ background: '#111111', border: '1px dashed #222222' }}>
+              <Loader2 size={28} className="text-[#4b5563] mx-auto mb-3 animate-spin" />
+              <p className="text-sm font-semibold text-white">Loading open jobs…</p>
+            </div>
+          ) : filteredJobs.length === 0 ? (
             <div className="rounded-xl p-10 text-center" style={{ background: '#111111', border: '1px dashed #222222' }}>
               <Briefcase size={32} className="text-[#4b5563] mx-auto mb-3" />
               <p className="text-sm font-semibold text-white">No open jobs found</p>
@@ -472,12 +409,12 @@ export default function CreatorDashboard() {
                   Cancel
                 </button>
                 <button 
-                  onClick={handleApply} 
-                  disabled={applying} 
+                  onClick={handleApply}
+                  disabled={applyMutation.isPending}
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold bg-white text-black hover:bg-[#f0f0f0] rounded-lg transition-colors disabled:opacity-50"
                 >
-                  {applying ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} />}
-                  {applying ? 'Submitting...' : 'Submit Application'}
+                  {applyMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} />}
+                  {applyMutation.isPending ? 'Submitting...' : 'Submit Application'}
                 </button>
               </div>
             </div>

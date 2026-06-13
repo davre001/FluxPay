@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { 
-  ArrowLeft, Clock, CheckCircle, AlertCircle, Upload, 
+import { useState } from 'react';
+import {
+  ArrowLeft, Clock, CheckCircle, AlertCircle, Upload,
   ExternalLink, ChevronDown, ChevronUp, Loader2, X, FileText, Globe, Star, Zap, Trash2,
   Instagram, Youtube, Music2
 } from 'lucide-react';
@@ -10,7 +10,9 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQueryClient } from '@tanstack/react-query';
 import { jobAPI, milestoneAPI } from '@/lib/api-client';
+import { useDeal } from '@/hooks/useDeals';
 
 const XLogo = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
@@ -194,18 +196,14 @@ function MilestoneCard({ milestone, onRefresh }: { milestone: any; onRefresh: ()
 export default function CreatorDealPage() {
   const { dealId } = useParams<{ dealId: string }>();
   const router = useRouter();
-  const [deal, setDeal] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
+  const { deal: fetchedDeal, isLoading: loading } = useDeal(dealId);
+  // Real deal from the API (or the shared mock fallback); fall back to this
+  // page's richer demo deals for the logged-out walkthrough.
+  const deal = fetchedDeal ?? MOCK_DEALS[dealId] ?? null;
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
 
-  const reload = async () => {
-    if (MOCK_DEALS[dealId]) {
-      setDeal(MOCK_DEALS[dealId]);
-    } else {
-      setDeal(null);
-    }
-    setLoading(false);
-  };
+  const refresh = () => qc.invalidateQueries({ queryKey: ['deal', dealId] });
 
   const handleWithdraw = async () => {
     try {
@@ -219,8 +217,6 @@ export default function CreatorDealPage() {
       router.push('/creator/dashboard');
     }
   };
-
-  useEffect(() => { reload(); }, [dealId]);
 
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: '#0a0a0a' }}>
@@ -322,7 +318,7 @@ export default function CreatorDealPage() {
               className="space-y-4"
             >
               {milestones.map((m: any) => (
-                <MilestoneCard key={m.id} milestone={m} onRefresh={reload} />
+                <MilestoneCard key={m.id} milestone={m} onRefresh={refresh} />
               ))}
             </motion.div>
           )}

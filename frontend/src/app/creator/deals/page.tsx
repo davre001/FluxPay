@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { Search, Briefcase, ArrowRight, Zap, CheckCircle2 } from 'lucide-react';
-import { applicationAPI } from '@/lib/api-client';
+import { Search, Briefcase, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
 import { useUserStore } from '@/stores/userStore';
+import { useMyApplications } from '@/hooks/useDeals';
 
 const MOCK_APPS = [
   {
@@ -20,16 +20,12 @@ const MOCK_APPS = [
 
 export default function CreatorActiveDealsPage() {
   const { user } = useUserStore();
-  const [activeDeals, setActiveDeals] = useState<any[]>(MOCK_APPS);
+  const { applications, isLoading } = useMyApplications();
+  const accepted = applications.filter((a: any) => a.status === 'accepted');
+  // Real accepted deals when signed in; mock keeps the page populated logged out.
+  const activeDeals = accepted.length > 0 ? accepted : (user?.id ? [] : MOCK_APPS);
   const [search, setSearch] = useState('');
   const [platformFilter, setPlatformFilter] = useState('all');
-
-  useEffect(() => {
-    if (!user?.id) return;
-    applicationAPI.listMine({ status: 'accepted' }).then(({ data }) => {
-      if (data && (data as any[]).length > 0) setActiveDeals(data as any[]);
-    }).catch(() => {});
-  }, [user?.id]);
 
   const filtered = activeDeals.filter((deal) => {
     if (platformFilter !== 'all' && deal.job_target_platform !== platformFilter) return false;
@@ -84,7 +80,12 @@ export default function CreatorActiveDealsPage() {
         </div>
 
         {/* ── Deals List ── */}
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="rounded-xl p-10 text-center" style={{ background: '#111111', border: '1px dashed #222222' }}>
+            <Loader2 size={28} className="text-[#4b5563] mx-auto mb-3 animate-spin" />
+            <p className="text-sm font-semibold text-white">Loading your deals…</p>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="rounded-xl p-10 text-center" style={{ background: '#111111', border: '1px dashed #222222' }}>
             <Briefcase size={32} className="text-[#4b5563] mx-auto mb-3" />
             <p className="text-sm font-semibold text-white">

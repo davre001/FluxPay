@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, CheckCircle, Clock, Upload, Loader2, Send,
@@ -9,9 +9,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { EXTRA_MOCK_JOBS } from '@/lib/mock-jobs';
-import { jobAPI, applicationAPI } from '@/lib/api-client';
-import { useUserStore } from '@/stores/userStore';
+import { useDeal, useMyApplications, useApplyToDeal } from '@/hooks/useDeals';
 
 const XLogo = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
@@ -85,15 +83,16 @@ const MOCK_JOBS: Record<string, any> = {
 
 export default function JobDetailsPage() {
   const { jobId } = useParams<{ jobId: string }>();
-  const router = useRouter();
-  const { user } = useUserStore();
-  
-  const [job, setJob] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
-  
+  const { deal: fetchedJob, isLoading: loading } = useDeal(jobId);
+  // Real job from the API (or shared mock fallback); fall back to this page's
+  // demo jobs for the logged-out walkthrough.
+  const job = fetchedJob ?? MOCK_JOBS[jobId] ?? null;
+  const { appliedJobIds } = useMyApplications();
+  const applyMutation = useApplyToDeal();
+
   const [pitch, setPitch] = useState('');
-  const [applying, setApplying] = useState(false);
-  const [hasApplied, setHasApplied] = useState(false); // mock applied state
+  const [justApplied, setJustApplied] = useState(false);
+  const hasApplied = justApplied || appliedJobIds.has(jobId);
 
   // Deliverable Submission State
   const [deliverableUrl, setDeliverableUrl] = useState('');
@@ -101,41 +100,18 @@ export default function JobDetailsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submittedStatus, setSubmittedStatus] = useState<'none'|'success'|'failed'>('none');
 
-  useEffect(() => {
-    const fetchJob = async () => {
-      // try {
-      //   const { data } = await jobAPI.detail(jobId);
-      //   setJob(data as any);
-      // } catch {
-        const ALL_MOCKS = { ...MOCK_JOBS, ...EXTRA_MOCK_JOBS.reduce((acc, j) => ({ ...acc, [j.id]: j }), {} as any) };
-        if (ALL_MOCKS[jobId]) {
-          setJob(ALL_MOCKS[jobId]);
-          // Check if mock pending app-2 exists (it's job-3)
-          if (jobId === 'job-3') setHasApplied(true);
-        } else {
-          setJob(null);
-        }
-      // }
-      setLoading(false);
-    };
-    fetchJob();
-  }, [jobId]);
-
   const handleApply = async () => {
     if (!pitch) {
       toast.error('Please write a short pitch to the brand.');
       return;
     }
-    setApplying(true);
     try {
-      await jobAPI.apply(jobId, { cover_note: pitch });
+      await applyMutation.mutateAsync({ jobId, coverNote: pitch });
       toast.success('Application submitted successfully!');
-      setHasApplied(true);
+      setJustApplied(true);
     } catch (e: any) {
-      toast.success('Application submitted successfully! (Mock Mode)');
-      setHasApplied(true);
+      toast.error(e?.message || 'Failed to submit application');
     }
-    setApplying(false);
   };
 
   const handleSubmitDeliverable = async (milestoneId: string) => {
@@ -359,12 +335,12 @@ export default function JobDetailsPage() {
                       />
                     </div>
                     <button 
-                      onClick={handleApply} 
-                      disabled={applying || !pitch.trim()} 
+                      onClick={handleApply}
+                      disabled={applyMutation.isPending || !pitch.trim()}
                       className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold bg-white text-black hover:bg-[#f0f0f0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {applying ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                      {applying ? 'Sending Pitch...' : 'Send Pitch'}
+                      {applyMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                      {applyMutation.isPending ? 'Sending Pitch...' : 'Send Pitch'}
                     </button>
                   </div>
                 )}
