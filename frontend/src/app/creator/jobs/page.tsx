@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   Search, ArrowRight, Zap, X, Loader2,
   Instagram, Twitter, Youtube, Music2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { jobAPI, applicationAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
+import { useDeals, useMyApplications, useApplyToDeal } from '@/hooks/useDeals';
 
 const PLATFORMS = ['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'other'];
 const POST_TYPES = ['all', 'video', 'image', 'content_writing', 'other'];
@@ -24,7 +24,9 @@ const PLATFORM_COLOR: Record<string, string> = {
 
 export default function CreatorJobsPage() {
   const { user } = useUserStore();
-  const [jobs, setJobs] = useState<any[]>([]);
+  const { deals, isLoading } = useDeals({ status: 'open' });
+  const { appliedJobIds } = useMyApplications();
+  const applyMutation = useApplyToDeal();
   const [search, setSearch] = useState('');
   const [platform, setPlatform] = useState('all');
   const [postType, setPostType] = useState('all');
@@ -32,19 +34,8 @@ export default function CreatorJobsPage() {
   const [maxBudget, setMaxBudget] = useState('');
   const [showModal, setShowModal] = useState<string | null>(null);
   const [coverNote, setCoverNote] = useState('');
-  const [applying, setApplying] = useState(false);
-  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    jobAPI.list({ status: 'open' }).then(({ data }) => setJobs(data as any[])).catch(() => {});
-    if (user?.id) {
-      applicationAPI.listMine().then(({ data }) => {
-        setAppliedIds(new Set((data as any[]).map((a) => a.job_id)));
-      }).catch(() => {});
-    }
-  }, [user?.id]);
-
-  const filtered = jobs.filter((j) => {
+  const filtered = deals.filter((j) => {
     if (platform !== 'all' && j.target_platform !== platform) return false;
     if (postType !== 'all' && j.post_type !== postType) return false;
     if (minBudget && j.total_budget < Number(minBudget)) return false;
@@ -56,17 +47,14 @@ export default function CreatorJobsPage() {
 
   const handleApply = async () => {
     if (!showModal || !user?.id) return;
-    setApplying(true);
     try {
-      await jobAPI.apply(showModal, { cover_note: coverNote });
-      setAppliedIds((prev) => new Set([...prev, showModal]));
+      await applyMutation.mutateAsync({ jobId: showModal, coverNote });
       toast.success('Application submitted!');
       setShowModal(null);
       setCoverNote('');
     } catch (e: any) {
       toast.error(e?.message || 'Failed to apply');
     }
-    setApplying(false);
   };
 
   return (
@@ -75,7 +63,7 @@ export default function CreatorJobsPage() {
       <div className="mb-8 fade-in">
         <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Opportunities</p>
         <h1 className="text-3xl font-black text-white">Browse <span className="gradient-text">Jobs</span></h1>
-        <p className="text-slate-400 text-sm mt-1">{jobs.length} open brand deals available</p>
+        <p className="text-slate-400 text-sm mt-1">{deals.length} open brand deals available</p>
       </div>
 
       {/* Filters */}
@@ -120,7 +108,12 @@ export default function CreatorJobsPage() {
       <p className="text-xs text-slate-500 mb-4 font-semibold">{filtered.length} job{filtered.length !== 1 ? 's' : ''} found</p>
 
       {/* Job cards */}
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+          <Loader2 size={28} className="animate-spin mb-3" />
+          <p className="text-sm font-semibold">Loading deals…</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="text-center py-20">
           <Zap size={36} className="text-slate-600 mx-auto mb-3" />
           <p className="text-slate-400 font-semibold">No jobs match your filters</p>
@@ -132,7 +125,7 @@ export default function CreatorJobsPage() {
           {filtered.map((job) => {
             const PlatformIcon = PLATFORM_ICON[job.target_platform] ?? Zap;
             const platColor = PLATFORM_COLOR[job.target_platform] ?? '#8b5cf6';
-            const alreadyApplied = appliedIds.has(job.id);
+            const alreadyApplied = appliedJobIds.has(job.id);
             return (
               <div key={job.id} className="card fade-in flex flex-col">
                 {/* Brand row */}
@@ -218,9 +211,9 @@ export default function CreatorJobsPage() {
                       rows={4} className="input resize-none mb-4" />
             <div className="flex gap-3">
               <button onClick={() => setShowModal(null)} className="btn-secondary flex-1">Cancel</button>
-              <button onClick={handleApply} disabled={applying} className="btn-primary flex-1 btn-shimmer">
-                {applying ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
-                {applying ? 'Submitting...' : 'Submit Application'}
+              <button onClick={handleApply} disabled={applyMutation.isPending} className="btn-primary flex-1 btn-shimmer">
+                {applyMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+                {applyMutation.isPending ? 'Submitting...' : 'Submit Application'}
               </button>
             </div>
           </div>

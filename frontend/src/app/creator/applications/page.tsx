@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { Search, ArrowRight, FileText, CheckCircle2, XCircle, Clock, Trash2 } from 'lucide-react';
-import { applicationAPI } from '@/lib/api-client';
+import { Search, ArrowRight, FileText, CheckCircle2, XCircle, Clock, Trash2, Loader2 } from 'lucide-react';
 import { useUserStore } from '@/stores/userStore';
+import { useMyApplications } from '@/hooks/useDeals';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -41,13 +41,17 @@ const MOCK_APPS = [
 
 export default function CreatorApplicationsPage() {
   const { user } = useUserStore();
-  const [applications, setApplications] = useState<any[]>(MOCK_APPS);
+  const { applications: myApps, isLoading } = useMyApplications();
+  // Real applications when signed in; mock keeps the page populated for a
+  // logged-out demo. Withdraw hides client-side (no withdraw endpoint yet).
+  const source = myApps.length > 0 ? myApps : (user?.id ? [] : MOCK_APPS);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const handleDelete = (id: string) => {
-    setApplications(prev => prev.filter(app => app.id !== id));
+    setHiddenIds(prev => new Set([...prev, id]));
     toast.success("Application withdrawn.");
     setConfirmDelete(null);
   };
@@ -55,14 +59,8 @@ export default function CreatorApplicationsPage() {
     setConfirmDelete(id);
   };
 
-  useEffect(() => {
-    if (!user?.id) return;
-    // applicationAPI.listMine().then(({ data }) => {
-    //   if (data && (data as any[]).length > 0) setApplications(data as any[]);
-    // }).catch(() => {});
-  }, [user?.id]);
-
-  const filtered = applications.filter((app) => {
+  const visibleApps = source.filter((app) => !hiddenIds.has(app.id));
+  const filtered = visibleApps.filter((app) => {
     const matchesSearch =
       app.job_title.toLowerCase().includes(search.toLowerCase()) ||
       (app.organization?.brand_name ?? '').toLowerCase().includes(search.toLowerCase());
@@ -84,7 +82,7 @@ export default function CreatorApplicationsPage() {
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: '#111111', border: '1px solid #1a1a1a', color: '#d1d5db' }}>
               <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]"></span>
-              {applications.length} Total Sent
+              {visibleApps.length} Total Sent
             </span>
           </div>
         </div>
@@ -117,16 +115,21 @@ export default function CreatorApplicationsPage() {
         </div>
 
         {/* ── Applications List ── */}
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="rounded-xl p-10 text-center" style={{ background: '#111111', border: '1px dashed #222222' }}>
+            <Loader2 size={28} className="text-[#4b5563] mx-auto mb-3 animate-spin" />
+            <p className="text-sm font-semibold text-white">Loading your applications…</p>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="rounded-xl p-10 text-center" style={{ background: '#111111', border: '1px dashed #222222' }}>
             <FileText size={32} className="text-[#4b5563] mx-auto mb-3" />
             <p className="text-sm font-semibold text-white">
-              {applications.length === 0 ? 'No applications submitted yet' : 'No applications match filters'}
+              {visibleApps.length === 0 ? 'No applications submitted yet' : 'No applications match filters'}
             </p>
             <p className="text-xs text-[#6b7280] mt-1 max-w-sm mx-auto">
               Browse open jobs and pitch to brands to kick off deals.
             </p>
-            {applications.length === 0 && (
+            {visibleApps.length === 0 && (
               <Link href="/creator/dashboard" className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-black bg-white hover:bg-[#f0f0f0] rounded-lg transition-all duration-150">
                 Browse Jobs <ArrowRight size={14} />
               </Link>

@@ -6,8 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Search, ArrowRight, Zap, Instagram, Twitter, Youtube, Music2, Star, CheckCircle, User
 } from 'lucide-react';
-import { jobAPI } from '@/lib/api-client';
-import { EXTRA_MOCK_JOBS as MOCK_JOBS } from '@/lib/mock-jobs';
+import { useDeals } from '@/hooks/useDeals';
 
 const PLATFORMS = ['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'other'];
 const POST_TYPES = ['all', 'video', 'image', 'content_writing', 'other'];
@@ -49,26 +48,11 @@ function ExploreContent() {
   const initialQuery = searchParams.get('q') || '';
   const role = searchParams.get('role') || 'creator'; // 'creator' looks for jobs, 'brand' looks for creators
 
-  const [jobs, setJobs] = useState<any[]>([]);
+  const { deals: jobs } = useDeals({ status: 'open' });
   const [creators] = useState<any[]>(MOCK_CREATORS);
   const [search, setSearch] = useState(initialQuery);
   const [platform, setPlatform] = useState('all');
   const [postType, setPostType] = useState('all');
-
-  useEffect(() => {
-    // Try to fetch real jobs, fallback to mock data if API fails or returns unauthorized
-    jobAPI.list({ status: 'open' })
-      .then(({ data }) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setJobs(data);
-        } else {
-          setJobs(MOCK_JOBS);
-        }
-      })
-      .catch(() => {
-        setJobs(MOCK_JOBS);
-      });
-  }, []);
 
   // Update URL on search
   useEffect(() => {
