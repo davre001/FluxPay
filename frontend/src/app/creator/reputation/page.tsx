@@ -64,7 +64,7 @@ function ScoreRing({ score, max = 100 }: { score: number; max?: number }) {
   );
 }
 
-export { ScoreRing };
+
 
 export default function CreatorReputationPage() {
   const { user } = useUserStore();
