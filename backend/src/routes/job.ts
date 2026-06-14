@@ -64,6 +64,14 @@ export function createJobRoutes(service = new JobService()) {
       return { statusCode: 200, body: await service.submitMilestone(milestoneId, body) };
     },
 
+    async submitDealDeliverable(jobId: string, user: any, body: any, settlement?: any) {
+      return { statusCode: 200, body: await service.submitDealDeliverable(jobId, user.id, body, settlement) };
+    },
+
+    async recheckMilestone(milestoneId: string, body: any, settlement?: any) {
+      return { statusCode: 200, body: await service.recheckMilestone(milestoneId, body, settlement) };
+    },
+
     async approveMilestone(milestoneId: string) {
       return { statusCode: 200, body: await service.approveMilestone(milestoneId) };
     },

@@ -361,12 +361,24 @@ export default function OrgJobDetailPage() {
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <h3 className="font-black text-white text-lg">{app.creator_name || app.creator_id}</h3>
-                            <div className="flex items-center gap-3 mt-1">
+                            <div className="flex flex-wrap items-center gap-3 mt-1">
                               <span className="flex items-center gap-1 text-[10px] font-bold text-[#22c55e] uppercase tracking-widest bg-[rgba(34,197,94,0.1)] px-2 py-0.5 rounded border border-[rgba(34,197,94,0.2)]">
                                 <Zap size={10} fill="currentColor" /> {app.creator_reputation ?? 0} / 100 Rep
                               </span>
+                              {app.qualified !== undefined && (
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest ${app.qualified ? 'text-[#22c55e] bg-[rgba(34,197,94,0.1)] border border-[rgba(34,197,94,0.2)]' : 'text-[#ef4444] bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)]'}`}>
+                                  {app.qualified ? 'Qualified' : 'Not qualified'}
+                                </span>
+                              )}
                               <span className="text-xs font-semibold text-[#6b7280]">Applied {new Date(app.applied_at ?? app.created_at).toLocaleDateString()}</span>
                             </div>
+                            {app.qualification_reasons?.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {app.qualification_reasons.map((r: string, i: number) => (
+                                  <span key={i} className="text-[10px] font-semibold text-[#9ca3af] px-2 py-0.5 rounded" style={{ background: '#0f0f0f', border: '1px solid #1a1a1a' }}>{r}</span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                           {job.status === 'open' && app.status === 'pending' && (
                             <button 

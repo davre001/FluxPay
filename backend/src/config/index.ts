@@ -24,6 +24,26 @@ export const config = {
     enabledForChain: isTestnetMode(), // never drip free USDC on mainnet
   },
 
+  // Social OAuth — creators "Connect" a YouTube/X account so we can snapshot the
+  // real handle + follower count + verified flag + account age (no screenshots).
+  // Instagram/TikTok are deferred (link-only). Each provider is enabled only when
+  // its client id/secret are set; otherwise connect returns a clear "not configured".
+  // OAUTH_CALLBACK_URL is the frontend page that receives ?code&state and POSTs
+  // them back to /api/profile/socials/:platform/callback.
+  oauth: {
+    callbackUrl: process.env.OAUTH_CALLBACK_URL || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/social/callback`,
+    youtube: {
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    },
+    // X / Twitter: must be the **OAuth 2.0 Client ID / Client Secret** (NOT the
+    // OAuth 1.0a API Key/Secret). Accepts several env names for convenience.
+    twitter: {
+      clientId: process.env.TWITTER_CLIENT_ID || process.env.X_CLIENT_ID || process.env.X_API_KEY || '',
+      clientSecret: process.env.TWITTER_CLIENT_SECRET || process.env.X_CLIENT_SECRET || process.env.X_API_SECRET || '',
+    },
+  },
+
   // The on-chain "agent" that redeems brand-granted ERC-7715 permissions to pay
   // creators (ERC-7710). Same wallet as the faucet by default — set a separate
   // AGENT_PRIVATE_KEY only if you split the roles. Chain-driven. No-op when unset.

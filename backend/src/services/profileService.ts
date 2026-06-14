@@ -4,6 +4,7 @@ import { InMemoryJobRepository } from '../models/job.ts';
 import { InMemoryMilestoneRepository } from '../models/milestone.ts';
 import { NotFoundError } from '../utils/errors.ts';
 import { parseProfileInput } from '../utils/validators.ts';
+import { SocialOAuthService } from './socialOAuthService.ts';
 
 // Every new user gets a small signup bonus to their reputation.
 const SIGNUP_BONUS = 5;
@@ -13,17 +14,52 @@ export class ProfileService {
   private users: InMemoryUserRepository;
   private jobs: InMemoryJobRepository;
   private milestones: InMemoryMilestoneRepository;
+  private oauth: SocialOAuthService;
 
   constructor(
     profiles = new InMemoryProfileRepository(),
     users = new InMemoryUserRepository(),
     jobs = new InMemoryJobRepository(),
-    milestones = new InMemoryMilestoneRepository()
+    milestones = new InMemoryMilestoneRepository(),
+    oauth = new SocialOAuthService()
   ) {
     this.profiles = profiles;
     this.users = users;
     this.jobs = jobs;
     this.milestones = milestones;
+    this.oauth = oauth;
+  }
+
+  // ── Social connect (OAuth) ────────────────────────────────────────────────
+
+  async getSocialConnectUrl(userId: string, platform: string) {
+    return this.oauth.buildAuthorizeUrl(platform, userId);
+  }
+
+  // Exchange the OAuth code, snapshot the account, and store it on the profile.
+  // Also sets the plain social handle field so the existing socials UI shows it.
+  async connectSocial(userId: string, platform: string, code: string, state: string) {
+    const record = await this.oauth.completeConnect(platform, code, state, userId);
+    const profile = await this.profiles.findByUserId(userId);
+    const connected = { ...((profile as any)?.connected_socials || {}), [platform]: record };
+    const updated = await this.profiles.upsert(userId, {
+      connected_socials: connected,
+      [platform]: record.handle,
+    });
+    return { platform, ...record, profile: updated };
+  }
+
+  async disconnectSocial(userId: string, platform: string) {
+    const profile = await this.profiles.findByUserId(userId);
+    const connected = { ...((profile as any)?.connected_socials || {}) };
+    delete connected[platform];
+    return this.profiles.upsert(userId, { connected_socials: connected });
+  }
+
+  // Count of OAuth-verified socials (drives the +5-per-social reputation bonus).
+  private async verifiedSocialCount(userId: string): Promise<number> {
+    const profile = await this.profiles.findByUserId(userId).catch(() => null);
+    return Object.keys((profile as any)?.connected_socials || {}).length;
   }
 
   async getMyProfile(userId: string) {
@@ -102,7 +138,8 @@ export class ProfileService {
       }
     }
 
-    const raw = SIGNUP_BONUS + (approvedMilestones * 5) + (completedDeals * 10) - (disputes * 3);
+    const socialBonus = Math.min(20, (await this.verifiedSocialCount(userId)) * 5);
+    const raw = SIGNUP_BONUS + (approvedMilestones * 5) + (completedDeals * 10) - (disputes * 3) + socialBonus;
     return Math.max(0, Math.min(100, raw));
   }
 
@@ -130,7 +167,8 @@ export class ProfileService {
       }
     }
 
-    const raw = SIGNUP_BONUS + (completedDeals * 10) + (approvedMilestones * 3) - (cancellations * 8) - (disputesLost * 5);
+    const socialBonus = Math.min(20, (await this.verifiedSocialCount(orgUserId)) * 5);
+    const raw = SIGNUP_BONUS + (completedDeals * 10) + (approvedMilestones * 3) - (cancellations * 8) - (disputesLost * 5) + socialBonus;
     return Math.max(0, Math.min(100, raw));
   }
 

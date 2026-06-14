@@ -135,6 +135,27 @@ export default function OrgProfilePage() {
   const [picUrl, setPicUrl] = useState('');
   const [industries, setIndustries] = useState<string[]>([]);
   const [rep, setRep] = useState<number | null>(null);
+  const [connected, setConnected] = useState<Record<string, any>>({});
+
+  const connectSocial = async (platform: string) => {
+    try {
+      const { data }: any = await profileAPI.socialConnect(platform);
+      sessionStorage.setItem('oauth_platform', platform);
+      sessionStorage.setItem('oauth_return', '/organization/profile');
+      window.location.href = data.authorize_url;
+    } catch (e: any) {
+      toast.error(e?.message || `${platform} connect is not configured`);
+    }
+  };
+  const disconnectSocial = async (platform: string) => {
+    try {
+      await profileAPI.socialDisconnect(platform);
+      setConnected((prev) => { const next = { ...prev }; delete next[platform]; return next; });
+      toast.success(`Disconnected ${platform}`);
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to disconnect');
+    }
+  };
   const [instagram, setInstagram] = useState('');
   const [twitter, setTwitter] = useState('');
   const [youtube, setYoutube] = useState('');
@@ -161,6 +182,7 @@ export default function OrgProfilePage() {
       setTwitter(data?.twitter || data?.x || '');
       setYoutube(data?.youtube || '');
       setTiktok(data?.tiktok || '');
+      setConnected(data?.connected_socials || {});
     }).catch(() => {});
     // Real reputation by user id (no walletAddress dependency).
     profileAPI.getPublic(user.id)
@@ -497,6 +519,46 @@ export default function OrgProfilePage() {
                       {active && <Check size={11} />}
                       {ind}
                     </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Connected Accounts (OAuth-verified) */}
+            <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+              <SectionHeader title="Connected Accounts" subtitle="Verify ownership to earn +5 reputation each" />
+              <div className="space-y-3">
+                {[
+                  { key: 'youtube', label: 'YouTube', Icon: YoutubeIcon, color: '#ff0000', oauth: true },
+                  { key: 'twitter', label: 'X (Twitter)', Icon: XLogo, color: '#e2e8f0', oauth: true },
+                  { key: 'instagram', label: 'Instagram', Icon: InstagramIcon, color: '#e1306c', oauth: false },
+                  { key: 'tiktok', label: 'TikTok', Icon: TikTokIcon, color: '#e2e8f0', oauth: false },
+                ].map(({ key, label, Icon, color, oauth }) => {
+                  const acct = connected[key];
+                  return (
+                    <div key={key} className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg" style={{ background: '#0f0f0f', border: '1px solid #1a1a1a' }}>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Icon size={16} color={color} />
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-white">{label}</p>
+                          {acct ? (
+                            <p className="text-[11px] text-[#6b7280] truncate">@{acct.handle} · {(acct.followers ?? 0).toLocaleString()} followers{acct.verified ? ' · Verified' : ''}</p>
+                          ) : (
+                            <p className="text-[11px] text-[#4b5563]">{oauth ? 'Not connected' : 'Coming soon'}</p>
+                          )}
+                        </div>
+                      </div>
+                      {acct ? (
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#22c55e] uppercase tracking-widest"><Check size={11} /> Verified</span>
+                          <button onClick={() => disconnectSocial(key)} className="text-[11px] font-semibold text-[#6b7280] hover:text-[#ef4444]">Disconnect</button>
+                        </div>
+                      ) : oauth ? (
+                        <button onClick={() => connectSocial(key)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-black hover:bg-[#f0f0f0] flex-shrink-0">Connect</button>
+                      ) : (
+                        <span className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#4b5563]" style={{ background: '#1a1a1a', border: '1px solid #252525' }}>Soon</span>
+                      )}
+                    </div>
                   );
                 })}
               </div>

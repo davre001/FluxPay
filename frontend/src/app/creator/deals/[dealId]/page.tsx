@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import { jobAPI, milestoneAPI, profileAPI } from '@/lib/api-client';
-import { validateDeliverableUrl } from '@/lib/deliverable';
+import { validateDeliverableUrl, placeholderForPlatform } from '@/lib/deliverable';
 import { useDeal } from '@/hooks/useDeals';
 
 const XLogo = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
@@ -80,24 +80,25 @@ const MOCK_DEALS: Record<string, any> = {
 function MilestoneCard({ milestone, platform, onRefresh }: { milestone: any; platform?: string; onRefresh: () => void; }) {
   const [open, setOpen] = useState(milestone.status === 'pending' || milestone.status === 'disputed' || milestone.status === 'submitted');
   const [url, setUrl] = useState('');
-  const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const s = MILESTONE_STATUS[milestone.status] ?? MILESTONE_STATUS.pending;
   const Icon = s.icon;
 
-  const handleSubmit = async () => {
-    const urlError = validateDeliverableUrl(url, platform);
-    if (urlError) { toast.error(urlError); return; }
+  // Re-run AI verification on this stage. Optionally override the link; blank
+  // re-uses whatever link was submitted at the deal level.
+  const handleRecheck = async () => {
+    const override = url.trim();
+    if (override) {
+      const urlError = validateDeliverableUrl(override, platform);
+      if (urlError) { toast.error(urlError); return; }
+    }
     setSubmitting(true);
     try {
-      await milestoneAPI.submit(milestone.id, { deliverable_url: url, deliverable_note: note });
-      toast.success('Deliverable submitted! Waiting for brand review.');
+      const { data }: any = await milestoneAPI.recheck(milestone.id, override ? { deliverable_url: override } : {});
+      toast.success(data?.settled ? 'Detected — milestone approved & released!' : 'Re-checked — not detected yet.');
       onRefresh();
     } catch (e: any) {
-      toast.error(e?.message || 'Submission failed. Using mock state now.');
-      milestone.status = 'submitted';
-      milestone.deliverable_url = url;
-      milestone.deliverable_note = note;
+      toast.error(e?.message || 'Re-check failed');
     }
     setSubmitting(false);
   };
@@ -154,31 +155,45 @@ function MilestoneCard({ milestone, platform, onRefresh }: { milestone: any; pla
             </div>
           )}
 
-          {(milestone.status === 'pending' || milestone.status === 'disputed') && (
-            <div className="space-y-3 pt-2">
-              <div>
-                <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">Deliverable URL</label>
-                <input value={url} onChange={(e) => setUrl(e.target.value)}
-                       placeholder="https://instagram.com/p/..." 
-                       className="w-full bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-2.5" />
-              </div>
-              <div>
-                <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">Note to Brand (Optional)</label>
-                <textarea value={note} onChange={(e) => setNote(e.target.value)}
-                          placeholder="Optional note to the brand..." rows={2} 
-                          className="w-full bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-2.5 resize-none" />
-              </div>
-              <button onClick={handleSubmit} disabled={submitting} 
-                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold bg-white text-black hover:bg-[#f0f0f0] transition-colors disabled:opacity-50">
-                {submitting ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                {submitting ? 'Submitting...' : 'Submit for Review'}
-              </button>
+          {/* AI detection result for a submitted-but-not-yet-approved stage */}
+          {milestone.ai_verification && milestone.status !== 'approved' && (
+            <div className="p-3 rounded-lg" style={{ background: '#1a1305', border: '1px solid #33250a' }}>
+              <p className="text-sm font-semibold text-[#f59e0b] flex items-center gap-2">
+                <AlertCircle size={14} /> Not detected yet
+              </p>
+              {milestone.ai_verification.reasoning && (
+                <p className="text-xs text-[#9ca3af] italic mt-1">"{milestone.ai_verification.reasoning}"</p>
+              )}
+            </div>
+          )}
+
+          {milestone.status === 'pending' && (
+            <div className="flex items-center gap-2 text-sm font-medium text-[#9ca3af] bg-[#0f0f0f] p-3 rounded-lg border border-[#1a1a1a]">
+              <Clock size={14} /> Submit your deliverable link above — the AI checks this stage automatically.
+            </div>
+          )}
+
+          {milestone.status === 'disputed' && (
+            <div className="flex items-center gap-2 text-sm font-medium text-[#ef4444] bg-[#1a0a0a] p-3 rounded-lg border border-[#331111]">
+              <AlertCircle size={14} /> Disputed{milestone.dispute_reason ? `: ${milestone.dispute_reason}` : ''}. Re-submit the deal link above to address it.
             </div>
           )}
 
           {milestone.status === 'submitted' && (
-            <div className="flex items-center gap-2 text-sm font-semibold text-[#f59e0b] bg-[#1a1305] p-3 rounded-lg border border-[#33250a]">
-              <Clock size={14} /> Waiting for brand to review and approve your submission.
+            <div className="space-y-3 pt-1">
+              <div>
+                <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">
+                  Re-check link <span className="text-[#4b5563] normal-case">(optional — blank re-uses your submitted link)</span>
+                </label>
+                <input value={url} onChange={(e) => setUrl(e.target.value)}
+                       placeholder={placeholderForPlatform(platform)}
+                       className="w-full bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-2.5" />
+              </div>
+              <button onClick={handleRecheck} disabled={submitting}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold bg-white text-black hover:bg-[#f0f0f0] transition-colors disabled:opacity-50">
+                {submitting ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                {submitting ? 'Re-checking…' : 'Re-check with AI'}
+              </button>
             </div>
           )}
 
@@ -202,6 +217,9 @@ export default function CreatorDealPage() {
   // page's richer demo deals for the logged-out walkthrough.
   const deal = fetchedDeal ?? MOCK_DEALS[dealId] ?? null;
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [dealUrl, setDealUrl] = useState('');
+  const [dealNote, setDealNote] = useState('');
+  const [dealSubmitting, setDealSubmitting] = useState(false);
 
   // Real brand reputation (0–100) — from the brand's public profile.
   const [brandRep, setBrandRep] = useState<number | null>(null);
@@ -214,6 +232,25 @@ export default function CreatorDealPage() {
   }, [orgId]);
 
   const refresh = () => qc.invalidateQueries({ queryKey: ['deal', dealId] });
+
+  // One link for the whole deal — the AI checks every open milestone against it.
+  const handleDealSubmit = async () => {
+    const urlError = validateDeliverableUrl(dealUrl, deal?.target_platform);
+    if (urlError) { toast.error(urlError); return; }
+    setDealSubmitting(true);
+    try {
+      const { data }: any = await jobAPI.submitDeliverable(dealId as string, { deliverable_url: dealUrl, deliverable_note: dealNote || undefined });
+      const releasedCount = Array.isArray(data?.results) ? data.results.filter((r: any) => r?.settled).length : 0;
+      toast.success(releasedCount > 0
+        ? `Submitted — AI approved & released ${releasedCount} milestone${releasedCount > 1 ? 's' : ''}!`
+        : 'Submitted — AI is reviewing each milestone.');
+      setDealUrl(''); setDealNote('');
+      refresh();
+    } catch (e: any) {
+      toast.error(e?.message || 'Submission failed');
+    }
+    setDealSubmitting(false);
+  };
 
   const handleWithdraw = async () => {
     try {
@@ -310,8 +347,31 @@ export default function CreatorDealPage() {
 
           <div className="mb-6 pb-6" style={{ borderBottom: '1px solid #1a1a1a' }}>
             <h2 className="text-sm font-bold text-white mb-2">Milestones</h2>
-            <p className="text-xs text-[#6b7280] leading-relaxed">Submit your deliverables for each milestone. Funds will be released once the brand approves your submission.</p>
+            <p className="text-xs text-[#6b7280] leading-relaxed">Submit one deliverable link and the AI checks it against every milestone automatically — each met stage is released on its own.</p>
           </div>
+
+          {/* Deal-level single-link submission */}
+          {milestones.some((m: any) => m.status === 'pending' || m.status === 'disputed') && (
+            <div className="rounded-xl p-5 mb-6 space-y-3" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+              <div>
+                <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">Deliverable Link</label>
+                <input value={dealUrl} onChange={(e) => setDealUrl(e.target.value)}
+                       placeholder={placeholderForPlatform(deal.target_platform)}
+                       className="w-full bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-2.5" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">Note to Brand (Optional)</label>
+                <textarea value={dealNote} onChange={(e) => setDealNote(e.target.value)}
+                          placeholder="Optional note to the brand / AI…" rows={2}
+                          className="w-full bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-2.5 resize-none" />
+              </div>
+              <button onClick={handleDealSubmit} disabled={dealSubmitting || !dealUrl.trim()}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold bg-white text-black hover:bg-[#f0f0f0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                {dealSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                {dealSubmitting ? 'Submitting & verifying…' : 'Submit & Auto-Check Milestones'}
+              </button>
+            </div>
+          )}
 
           {milestones.length === 0 ? (
             <div className="text-center py-10 rounded-xl" style={{ background: '#111111', border: '1px dashed #222222' }}>

@@ -201,13 +201,14 @@ export function createApp(options: any = {}) {
           user = await requireAuth(req, authService, skipAuth, mockUser);
         }
         
-        response = await dispatchJobRoute(req, parts, url.searchParams, jobRoutes, user);
+        response = await dispatchJobRoute(req, parts, url.searchParams, jobRoutes, user, settlementService);
       } else if (parts[0] === 'milestones') {
         const user = await requireAuth(req, authService, skipAuth, mockUser);
         response = await dispatchMilestoneRoute(req, parts, jobRoutes, user, settlementService);
       } else if (parts[0] === 'profile') {
-        // GET /api/profile/:userId (public, no auth) — must check before auth
-        if (req.method === 'GET' && parts[1] && parts[1] !== 'me' && parts[1] !== 'reputation') {
+        // GET /api/profile/:userId (public, no auth) — bare userId only, never the
+        // /me, /reputation or /socials sub-routes (those require auth).
+        if (req.method === 'GET' && parts.length === 2 && parts[1] !== 'me' && parts[1] !== 'reputation' && parts[1] !== 'socials') {
           response = await dispatchProfileRoute(req, parts, profileRoutes, null);
         } else {
           const user = await requireAuth(req, authService, skipAuth, mockUser);
@@ -297,7 +298,7 @@ async function dispatchPaymentRoute(req, parts, query, routes) {
 
 // ─── Job dispatch ─────────────────────────────────────────────────────────────
 
-async function dispatchJobRoute(req, parts, query, routes, user) {
+async function dispatchJobRoute(req, parts, query, routes, user, settlement?: any) {
   // POST /api/jobs
   if (req.method === 'POST' && parts.length === 1) {
     return routes.create(user, await readJsonBody(req));
@@ -341,6 +342,10 @@ async function dispatchJobRoute(req, parts, query, routes, user) {
   if (req.method === 'POST' && parts[2] === 'confirm-funding') {
     return routes.confirmFunding(jobId, await readJsonBody(req));
   }
+  // POST /api/jobs/:id/submit-deliverable — one link, AI checks every milestone
+  if (req.method === 'POST' && parts[2] === 'submit-deliverable') {
+    return routes.submitDealDeliverable(jobId, user, await readJsonBody(req), settlement);
+  }
   // GET /api/jobs/:id/milestones
   if (req.method === 'GET' && parts[2] === 'milestones') {
     return routes.listMilestones(jobId);
@@ -366,6 +371,10 @@ async function dispatchMilestoneRoute(req, parts, routes, _user, settlement?: an
         .catch((e: any) => console.error('[auto-settle] failed', milestoneId, e?.message || e));
     }
     return result;
+  }
+  // POST /api/milestones/:id/recheck — re-run AI verification (optionally new link)
+  if (req.method === 'POST' && parts[2] === 'recheck') {
+    return routes.recheckMilestone(milestoneId, await readJsonBody(req), settlement);
   }
   // POST /api/milestones/:id/approve
   if (req.method === 'POST' && parts[2] === 'approve') {
@@ -394,8 +403,24 @@ async function dispatchProfileRoute(req, parts, routes, user) {
   if (req.method === 'GET' && parts[1] === 'reputation' && parts[2]) {
     return routes.getReputation(decodeURIComponent(parts[2]));
   }
+  // ── Social connect (OAuth) — all require auth ──
+  if (parts[1] === 'socials' && parts[2]) {
+    const platform = decodeURIComponent(parts[2]);
+    // GET /api/profile/socials/:platform/connect — returns the authorize URL
+    if (req.method === 'GET' && parts[3] === 'connect') {
+      return routes.socialConnect(user, platform);
+    }
+    // POST /api/profile/socials/:platform/callback — exchange code + store
+    if (req.method === 'POST' && parts[3] === 'callback') {
+      return routes.socialCallback(user, platform, await readJsonBody(req));
+    }
+    // DELETE /api/profile/socials/:platform — disconnect
+    if (req.method === 'DELETE' && !parts[3]) {
+      return routes.socialDisconnect(user, platform);
+    }
+  }
   // GET /api/profile/:userId — public creator profile (no auth required)
-  if (req.method === 'GET' && parts[1] && parts[1] !== 'me' && parts[1] !== 'reputation') {
+  if (req.method === 'GET' && parts.length === 2 && parts[1] !== 'me' && parts[1] !== 'reputation') {
     return routes.getPublic(decodeURIComponent(parts[1]));
   }
   throw new NotFoundError('Route not found');

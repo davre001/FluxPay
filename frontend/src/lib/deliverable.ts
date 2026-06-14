@@ -12,6 +12,19 @@ export const PLATFORM_DOMAINS: Record<string, string[]> = {
   other: [],
 };
 
+// Example deliverable URL shown as the input placeholder, per platform.
+const PLATFORM_PLACEHOLDERS: Record<string, string> = {
+  instagram: 'https://instagram.com/p/...',
+  twitter: 'https://x.com/user/status/...',
+  youtube: 'https://youtube.com/watch?v=...',
+  tiktok: 'https://tiktok.com/@user/video/...',
+  other: 'https://...',
+};
+
+export function placeholderForPlatform(platform?: string): string {
+  return PLATFORM_PLACEHOLDERS[platform || 'other'] ?? PLATFORM_PLACEHOLDERS.other;
+}
+
 function isValidHttpUrl(value: string): boolean {
   try {
     const u = new URL(value);

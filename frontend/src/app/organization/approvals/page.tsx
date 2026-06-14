@@ -37,6 +37,8 @@ export default function ApprovalsPage() {
     status: a.status,
     coverNote: a.cover_note,
     platform: a.job_target_platform || 'other',
+    qualified: a.qualified,
+    reasons: a.qualification_reasons || [],
   }));
   const applications = source.filter((a: any) => !removedIds.has(a.id));
 
@@ -126,12 +128,27 @@ export default function ApprovalsPage() {
                         </div>
                         <div>
                           <h3 className="text-lg font-black text-white">{app.creatorName}</h3>
-                          <div className="flex items-center gap-1 mt-0.5 text-[#22c55e] text-xs font-bold">
-                            <Zap size={12} fill="currentColor" /> {app.reputation} / 100 Rep
+                          <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                            <span className="flex items-center gap-1 text-[#22c55e] text-xs font-bold">
+                              <Zap size={12} fill="currentColor" /> {app.reputation} / 100 Rep
+                            </span>
+                            {app.qualified !== undefined && (
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest ${app.qualified ? 'text-[#22c55e] bg-[rgba(34,197,94,0.1)] border border-[rgba(34,197,94,0.2)]' : 'text-[#ef4444] bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)]'}`}>
+                                {app.qualified ? 'Qualified' : 'Not qualified'}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
-                      
+
+                      {app.reasons?.length > 0 && (
+                        <div className="mb-3 flex flex-wrap gap-1.5">
+                          {app.reasons.map((r: string, i: number) => (
+                            <span key={i} className="text-[10px] font-semibold text-[#9ca3af] px-2 py-0.5 rounded" style={{ background: '#0f0f0f', border: '1px solid #1a1a1a' }}>{r}</span>
+                          ))}
+                        </div>
+                      )}
+
                       <div className="bg-[#0a0a0a] rounded-xl p-4 border border-[#161616] relative">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-[#6b7280] mb-2">Cover Note</p>
                         <p className="text-sm text-[#d1d5db] leading-relaxed">"{app.coverNote}"</p>

@@ -10,7 +10,7 @@ import {
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { milestoneAPI, profileAPI } from '@/lib/api-client';
-import { validateDeliverableUrl } from '@/lib/deliverable';
+import { validateDeliverableUrl, placeholderForPlatform } from '@/lib/deliverable';
 import { useDeal, useMyApplications, useApplyToDeal } from '@/hooks/useDeals';
 
 const XLogo = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
@@ -276,9 +276,9 @@ export default function JobDetailsPage() {
                       <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">Deliverable URL</label>
                       <input 
                         type="url"
-                        value={deliverableUrl} 
+                        value={deliverableUrl}
                         onChange={(e) => setDeliverableUrl(e.target.value)}
-                        placeholder="https://youtube.com/watch?v=..." 
+                        placeholder={placeholderForPlatform(job?.target_platform)}
                         className="w-full bg-[#0f0f0f] border border-[#222222] rounded-xl text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-3" 
                       />
                     </div>

@@ -15,6 +15,10 @@ export function createProfileRecord(userId, input) {
     twitter: input.twitter || null,
     youtube: input.youtube || null,
     tiktok: input.tiktok || null,
+    // OAuth-verified accounts: { youtube|twitter: { handle, platform_user_id,
+    // followers, verified, joined_at, connected_at } }. Drives the verified badge,
+    // the +5 reputation bonus, and follower/age/verified eligibility checks.
+    connected_socials: input.connected_socials || {},
     created_at: timestamp,
     updated_at: timestamp,
   };

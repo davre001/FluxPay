@@ -70,13 +70,19 @@ export class VerificationService {
     const job = await this.jobs.findById(milestone.job_id);
     const brief = buildBrief(job || {});
 
+    // This milestone's measurable goal (e.g. "1000 likes"). Included so the AI
+    // judges the deliverable against THIS stage's target, not just the job brief.
+    const stageGoal = milestone.metric
+      ? `\nStage goal: ${milestone.target ?? '?'} ${milestone.metric}`
+      : '';
+
     // Build the user message. If the deliverable looks like an image, attach it
     // so a vision model can actually look at it; otherwise send the link/note.
     const text =
-      `BRIEF:\n${brief}\n\n` +
+      `BRIEF:\n${brief}${stageGoal}\n\n` +
       `DELIVERABLE:\n- URL: ${milestone.deliverable_url || '(none)'}\n` +
       `- Creator note: ${milestone.deliverable_note || '(none)'}\n\n` +
-      'Does this deliverable satisfy the brief?';
+      'Does this deliverable satisfy the brief and reach the stage goal?';
 
     const content: any[] = [{ type: 'text', text }];
     if (milestone.deliverable_url && IMAGE_RE.test(milestone.deliverable_url)) {

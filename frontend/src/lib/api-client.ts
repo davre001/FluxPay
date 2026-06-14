@@ -54,6 +54,11 @@ export const profileAPI = {
   updateMe: (data: Record<string, unknown>) => request<Profile>('PUT', '/api/profile/me', data),
   getReputation: (walletAddress: string) => request('GET', `/api/profile/reputation/${walletAddress}`),
   getPublic: (userId: string) => request('GET', `/api/profile/${userId}`),
+  // Social OAuth connect — start returns { authorize_url, state }; callback exchanges.
+  socialConnect: (platform: string) => request<{ authorize_url: string; state: string }>('GET', `/api/profile/socials/${platform}/connect`),
+  socialCallback: (platform: string, data: { code: string; state: string }) =>
+    request('POST', `/api/profile/socials/${platform}/callback`, data),
+  socialDisconnect: (platform: string) => request('DELETE', `/api/profile/socials/${platform}`),
 }
 
 // ─── Jobs (Deals) ─────────────────────────────────────────────────────────────
@@ -73,6 +78,9 @@ export const jobAPI = {
   cancel: (jobId: string) => request<Deal>('POST', `/api/jobs/${jobId}/cancel`),
   quote: (data: Record<string, unknown>) => request<JobQuote>('POST', '/api/jobs/quote', data),
   confirmFunding: (jobId: string, data: Record<string, unknown>) => request<Deal>('POST', `/api/jobs/${jobId}/confirm-funding`, data),
+  // One deal-level deliverable link; the AI checks every milestone against it.
+  submitDeliverable: (jobId: string, data: { deliverable_url: string; deliverable_note?: string }) =>
+    request('POST', `/api/jobs/${jobId}/submit-deliverable`, data),
 }
 
 // ─── Milestones ───────────────────────────────────────────────────────────────
@@ -82,6 +90,9 @@ export const milestoneAPI = {
     request<Milestone>('POST', `/api/milestones/${milestoneId}/submit`, data),
   approve: (milestoneId: string) => request<Milestone>('POST', `/api/milestones/${milestoneId}/approve`),
   dispute: (milestoneId: string, data: { reason: string }) => request<Milestone>('POST', `/api/milestones/${milestoneId}/dispute`, data),
+  // Re-run AI verification on a submitted-but-undetected milestone (optional new link).
+  recheck: (milestoneId: string, data?: { deliverable_url?: string }) =>
+    request<Milestone>('POST', `/api/milestones/${milestoneId}/recheck`, data ?? {}),
 }
 
 // ─── Wallet / Transactions ────────────────────────────────────────────────────

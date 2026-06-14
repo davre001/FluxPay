@@ -165,6 +165,27 @@ export function parseJobInput(data: any = {}) {
     }
   }
 
+  // Same-metric stages must escalate: each later milestone measuring the same
+  // metric (e.g. likes) needs a HIGHER target and a HIGHER payment than the
+  // previous stage for that metric (10 likes → 100 likes → 1000 likes).
+  const lastByMetric: Record<string, { target: number; amount: number }> = {};
+  for (const m of milestones) {
+    const metric = m?.metric ? String(m.metric).trim().toLowerCase() : '';
+    const target = Number(m?.target);
+    const amount = Number(m?.amount);
+    if (!metric || Number.isNaN(target)) continue; // metric/target optional
+    const prev = lastByMetric[metric];
+    if (prev) {
+      if (!(target > prev.target)) {
+        throw new ValidationError(`Each "${metric}" milestone must require a higher count than the previous stage (${target} is not greater than ${prev.target})`);
+      }
+      if (!Number.isNaN(amount) && !(amount > prev.amount)) {
+        throw new ValidationError(`A higher "${metric}" milestone must pay more than the previous stage (${amount} is not greater than ${prev.amount})`);
+      }
+    }
+    lastByMetric[metric] = { target, amount: Number.isNaN(amount) ? (prev?.amount ?? 0) : amount };
+  }
+
   return {
     title,
     description: String(sanitizeString(data.description || '')),
@@ -185,7 +206,18 @@ export function parseJobInput(data: any = {}) {
     },
     deadline: data.deadline || null,
     auto_cancel_on_deadline: data.auto_cancel_on_deadline ?? false,
-    eligibility: data.eligibility || {},
+    // Structured eligibility the brand can set. Follower/verified/age criteria
+    // only enforce on OAuth-connected platforms (YouTube/X); IG/TikTok can't be
+    // checked yet. `auto_hire` lets the system select the first qualified applicant.
+    eligibility: {
+      min_reputation: Number(data.eligibility?.min_reputation) || 0,
+      required_platforms: Array.isArray(data.eligibility?.required_platforms)
+        ? data.eligibility.required_platforms.map((p: any) => String(p)) : [],
+      min_followers: Number(data.eligibility?.min_followers) || 0,
+      require_verified: Boolean(data.eligibility?.require_verified),
+      min_account_age_months: Number(data.eligibility?.min_account_age_months) || 0,
+    },
+    auto_hire: Boolean(data.auto_hire),
     milestones,
   };
 }

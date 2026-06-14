@@ -28,10 +28,13 @@ export function createJobRecord(input) {
     eligibility: input.eligibility || {
       min_reputation: 0,
       required_platforms: [],
-      min_followers: null,
-      region: null,
-      invite_only: false,
+      min_followers: 0,
+      require_verified: false,
+      min_account_age_months: 0,
     },
+    // When true, the system auto-selects the first qualified applicant (the brand
+    // still grants the spending permission from the deal page).
+    auto_hire: input.auto_hire ?? false,
     status: input.status || 'open',
     // Escrow/settlement state for the deal: unfunded | funded | partially_released | released.
     funding_status: input.funding_status || 'unfunded',
