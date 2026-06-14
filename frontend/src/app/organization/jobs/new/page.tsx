@@ -53,9 +53,6 @@ export default function NewJobPage() {
   // Eligibility / screening
   const [minReputation, setMinReputation] = useState('');
   const [requiredPlatforms, setRequiredPlatforms] = useState<string[]>([]);
-  const [minFollowers, setMinFollowers] = useState('');
-  const [requireVerified, setRequireVerified] = useState(false);
-  const [minAccountAge, setMinAccountAge] = useState('');
   const [autoHire, setAutoHire] = useState(false);
   const toggleRequiredPlatform = (p: string) =>
     setRequiredPlatforms((prev) => prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]);
@@ -140,9 +137,6 @@ export default function NewJobPage() {
         eligibility: {
           min_reputation: Number(minReputation) || 0,
           required_platforms: requiredPlatforms,
-          min_followers: Number(minFollowers) || 0,
-          require_verified: requireVerified,
-          min_account_age_months: Number(minAccountAge) || 0,
         },
         auto_hire: autoHire,
         milestones: milestones.map((m) => ({
@@ -459,55 +453,36 @@ export default function NewJobPage() {
           <motion.div variants={itemVariants} className="rounded-2xl p-6 md:p-8 space-y-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
             <div>
               <h2 className="text-base font-bold text-white tracking-tight">Eligibility & Screening</h2>
-              <p className="text-xs font-semibold text-[#6b7280] mt-1">Applicants are auto-screened against these. Follower/verified/age checks apply to connected YouTube/X accounts.</p>
+              <p className="text-xs font-semibold text-[#6b7280] mt-1">Applicants are auto-screened against these criteria and shown as Qualified / Not qualified.</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-[#6b7280] mb-1.5 uppercase">Min Reputation (0–100)</label>
                 <input type="number" value={minReputation} onChange={(e) => setMinReputation(e.target.value)} placeholder="0"
                        className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-white" style={inputStyle} />
               </div>
-              <div>
-                <label className="block text-[10px] font-bold text-[#6b7280] mb-1.5 uppercase">Min Followers</label>
-                <input type="number" value={minFollowers} onChange={(e) => setMinFollowers(e.target.value)} placeholder="0"
-                       className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-white" style={inputStyle} />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-[#6b7280] mb-1.5 uppercase">Min Account Age (months)</label>
-                <input type="number" value={minAccountAge} onChange={(e) => setMinAccountAge(e.target.value)} placeholder="0"
-                       className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-white" style={inputStyle} />
-              </div>
+              <button type="button" onClick={() => setAutoHire(!autoHire)}
+                      className={cn('self-end flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all h-[42px]',
+                        autoHire ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'text-[#9ca3af] border-[#1f1f1f] bg-[#0f0f0f]')}>
+                {autoHire ? <Check size={14} /> : <Zap size={14} />} Auto-hire qualified applicants
+              </button>
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-[#6b7280] mb-2 uppercase">Required Connected Platforms</label>
+              <label className="block text-[10px] font-bold text-[#6b7280] mb-2 uppercase">Required Linked Platforms</label>
               <div className="flex flex-wrap gap-2">
                 {['youtube', 'twitter', 'instagram', 'tiktok'].map((p) => {
                   const active = requiredPlatforms.includes(p);
-                  const soon = p === 'instagram' || p === 'tiktok';
                   return (
                     <button key={p} type="button" onClick={() => toggleRequiredPlatform(p)}
                             className={cn('px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all capitalize',
                               active ? 'bg-white text-black border-white' : 'text-[#9ca3af] border-[#1f1f1f] bg-[#0f0f0f] hover:border-[#333]')}>
-                      {p === 'twitter' ? 'X' : p}{soon ? ' (soon)' : ''}
+                      {p === 'twitter' ? 'X' : p}
                     </button>
                   );
                 })}
               </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button type="button" onClick={() => setRequireVerified(!requireVerified)}
-                      className={cn('flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all flex-1',
-                        requireVerified ? 'bg-white text-black border-white' : 'text-[#9ca3af] border-[#1f1f1f] bg-[#0f0f0f]')}>
-                {requireVerified ? <Check size={14} /> : <Star size={14} />} Require verified account
-              </button>
-              <button type="button" onClick={() => setAutoHire(!autoHire)}
-                      className={cn('flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all flex-1',
-                        autoHire ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'text-[#9ca3af] border-[#1f1f1f] bg-[#0f0f0f]')}>
-                {autoHire ? <Check size={14} /> : <Zap size={14} />} Auto-hire qualified applicants
-              </button>
             </div>
             {autoHire && (
               <p className="text-[11px] text-[#6b7280]">The first qualifying applicant is selected automatically — you still fund/grant the permission from the deal page.</p>

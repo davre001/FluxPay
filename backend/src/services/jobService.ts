@@ -134,22 +134,21 @@ export class JobService {
         if (m.status === 'disputed') disputes++;
       }
     }
-    const profile = await this.profiles.findByUserId(creatorId).catch(() => null);
-    const socialBonus = Math.min(20, Object.keys((profile as any)?.connected_socials || {}).length * 5);
+    const profile = await this.profiles.findByUserId(creatorId).catch(() => null) as any;
+    const socialBonus = Math.min(20, ['instagram', 'twitter', 'youtube', 'tiktok'].filter((k) => profile?.[k]).length * 5);
     return Math.max(0, Math.min(100, 5 + approvedMs * 5 + completedDeals * 10 - disputes * 3 + socialBonus));
   }
 
   // Deterministic eligibility screening for an applicant against a job's criteria.
   // Returns qualified + human-readable reasons (shown on the brand's applicant
-  // cards). Follower/verified/age checks use OAuth-connected accounts only.
+  // cards). Manual socials for now: reputation gate + required-platform presence.
+  // (Follower/verified/age criteria need account verification — disabled for now.)
   async qualifyApplicant(job: any, creatorId: string): Promise<{ qualified: boolean; reasons: string[] }> {
     const elig = job?.eligibility || {};
     const reasons: string[] = [];
     let qualified = true;
 
-    const profile = await this.profiles.findByUserId(creatorId).catch(() => null);
-    const connected: Record<string, any> = (profile as any)?.connected_socials || {};
-    const accounts = Object.values(connected);
+    const profile = await this.profiles.findByUserId(creatorId).catch(() => null) as any;
     const rep = await this.creatorReputation(creatorId);
 
     const minRep = Number(elig.min_reputation || 0);
@@ -157,32 +156,8 @@ export class JobService {
     else if (minRep > 0) reasons.push(`Reputation ${rep} ≥ ${minRep}`);
 
     for (const p of (Array.isArray(elig.required_platforms) ? elig.required_platforms : [])) {
-      if (connected[p]) reasons.push(`${p} connected`);
-      else if (p === 'instagram' || p === 'tiktok') { qualified = false; reasons.push(`${p} can't be verified yet`); }
-      else { qualified = false; reasons.push(`${p} not connected`); }
-    }
-
-    const minFollowers = Number(elig.min_followers || 0);
-    if (minFollowers > 0) {
-      const maxF = accounts.reduce((m: number, a: any) => Math.max(m, Number(a?.followers || 0)), 0);
-      if (maxF >= minFollowers) reasons.push(`${maxF.toLocaleString()} followers ≥ ${minFollowers}`);
-      else { qualified = false; reasons.push(`Followers ${maxF.toLocaleString()} below ${minFollowers.toLocaleString()}`); }
-    }
-
-    if (elig.require_verified) {
-      if (accounts.some((a: any) => a?.verified)) reasons.push('Verified account');
-      else { qualified = false; reasons.push('A verified account is required'); }
-    }
-
-    const minAge = Number(elig.min_account_age_months || 0);
-    if (minAge > 0) {
-      const oldest = accounts.reduce((m: number, a: any) => {
-        const d = a?.joined_at ? new Date(a.joined_at).getTime() : Infinity;
-        return Math.min(m, d);
-      }, Infinity);
-      const months = oldest === Infinity ? 0 : (Date.now() - oldest) / (1000 * 60 * 60 * 24 * 30);
-      if (months >= minAge) reasons.push(`Account ≥ ${minAge} months old`);
-      else { qualified = false; reasons.push(`Account younger than ${minAge} months`); }
+      if (profile?.[p]) reasons.push(`${p} linked`);
+      else { qualified = false; reasons.push(`${p} not linked`); }
     }
 
     return { qualified, reasons };

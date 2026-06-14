@@ -56,10 +56,11 @@ export class ProfileService {
     return this.profiles.upsert(userId, { connected_socials: connected });
   }
 
-  // Count of OAuth-verified socials (drives the +5-per-social reputation bonus).
-  private async verifiedSocialCount(userId: string): Promise<number> {
-    const profile = await this.profiles.findByUserId(userId).catch(() => null);
-    return Object.keys((profile as any)?.connected_socials || {}).length;
+  // Count of linked socials (drives the +5-per-social reputation bonus). Manual
+  // entry for now — counts filled handles; re-tie to OAuth verification later.
+  private async linkedSocialCount(userId: string): Promise<number> {
+    const profile = await this.profiles.findByUserId(userId).catch(() => null) as any;
+    return ['instagram', 'twitter', 'youtube', 'tiktok'].filter((k) => profile?.[k]).length;
   }
 
   async getMyProfile(userId: string) {
@@ -138,7 +139,7 @@ export class ProfileService {
       }
     }
 
-    const socialBonus = Math.min(20, (await this.verifiedSocialCount(userId)) * 5);
+    const socialBonus = Math.min(20, (await this.linkedSocialCount(userId)) * 5);
     const raw = SIGNUP_BONUS + (approvedMilestones * 5) + (completedDeals * 10) - (disputes * 3) + socialBonus;
     return Math.max(0, Math.min(100, raw));
   }
@@ -167,7 +168,7 @@ export class ProfileService {
       }
     }
 
-    const socialBonus = Math.min(20, (await this.verifiedSocialCount(orgUserId)) * 5);
+    const socialBonus = Math.min(20, (await this.linkedSocialCount(orgUserId)) * 5);
     const raw = SIGNUP_BONUS + (completedDeals * 10) + (approvedMilestones * 3) - (cancellations * 8) - (disputesLost * 5) + socialBonus;
     return Math.max(0, Math.min(100, raw));
   }
