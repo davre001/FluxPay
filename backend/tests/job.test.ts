@@ -169,6 +169,8 @@ describe('Milestones API', () => {
       title: 'M test',
       total_budget: 100,
       payout_type: 'milestone',
+      target_platform: 'other',
+      platform_other: 'Newsletter',
       milestones: [{ title: 'Deliverable', amount: 100 }],
     });
     const job = await readJson(jobRes);

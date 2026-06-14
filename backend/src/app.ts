@@ -376,8 +376,13 @@ async function dispatchMilestoneRoute(req, parts, routes, _user, settlement?: an
   if (req.method === 'POST' && parts[2] === 'recheck') {
     return routes.recheckMilestone(milestoneId, await readJsonBody(req), settlement);
   }
-  // POST /api/milestones/:id/approve
+  // POST /api/milestones/:id/approve — brand override: approve AND release the
+  // milestone's USDC (quality-weighted if the AI already scored it, else full).
+  // Falls back to status-only approval if the settlement engine isn't wired.
   if (req.method === 'POST' && parts[2] === 'approve') {
+    if (settlement) {
+      return { statusCode: 200, body: await settlement.approveAndRelease(milestoneId) };
+    }
     return routes.approveMilestone(milestoneId);
   }
   // POST /api/milestones/:id/dispute

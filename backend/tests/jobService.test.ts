@@ -22,6 +22,8 @@ const JOB_INPUT = {
   title: 'Campaign',
   total_budget: 1000,
   payout_type: 'milestone',
+  target_platform: 'other',
+  platform_other: 'Newsletter',
   milestones: [{ title: 'M1', amount: 500 }, { title: 'M2', amount: 500 }],
 };
 
@@ -105,5 +107,18 @@ describe('JobService state machine', () => {
     const svc = buildService();
     const job = await svc.createJob(ORG_ID, JOB_INPUT);
     await assert.rejects(() => svc.applyToJob(job.id, CREATOR_ID, {}), /cover_note/);
+  });
+
+  it('enriches my applications with job status and released earnings', async () => {
+    const svc = buildService();
+    const job = await svc.createJob(ORG_ID, JOB_INPUT);
+    await svc.applyToJob(job.id, CREATOR_ID, { cover_note: 'hire me' });
+    await svc.selectCreator(job.id, CREATOR_ID);
+
+    const mine = await svc.getMyApplications(CREATOR_ID);
+    assert.equal(mine.length, 1);
+    assert.equal(mine[0].job_status, 'in_progress');
+    assert.equal(mine[0].job_released_total, 0);
+    assert.equal(mine[0].job_title, 'Campaign');
   });
 });

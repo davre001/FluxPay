@@ -36,6 +36,8 @@ const MOCK_JOBS = [
 function MilestoneRow({ milestone, onAction }: { milestone: any; onAction: () => void; }) {
   const [open, setOpen] = useState(milestone.status === 'submitted');
   const [acting, setActing] = useState<string | null>(null);
+  const [disputeOpen, setDisputeOpen] = useState(false);
+  const [reason, setReason] = useState('');
 
   const approve = async () => {
     setActing('approve');
@@ -44,31 +46,37 @@ function MilestoneRow({ milestone, onAction }: { milestone: any; onAction: () =>
       return;
     }
     try {
-      await milestoneAPI.approve(milestone.id);
-      toast.success('Milestone approved! Funds released.');
+      const { data } = await milestoneAPI.approve(milestone.id);
+      const released = (data as any)?.scored_amount;
+      const paid = (data as any)?.payout?.ok;
+      if (paid && released != null) toast.success(`Approved — $${Number(released).toFixed(2)} USDC released.`);
+      else if (paid === false) toast.success('Approved, but payout pending. Check the deal permission.');
+      else toast.success('Milestone approved! Funds released.');
       onAction();
     } catch (e: any) { toast.error(e?.message || 'Failed to approve'); }
     setActing(null);
   };
 
   const dispute = async () => {
-    const reason = window.prompt('Dispute reason:');
-    if (!reason) return;
+    const trimmed = reason.trim();
+    if (!trimmed) return;
     setActing('dispute');
+    setDisputeOpen(false);
     if (milestone.id.startsWith('m')) {
-      setTimeout(() => { toast.success('Mock dispute raised.'); setActing(null); onAction(); }, 800);
+      setTimeout(() => { toast.success('Mock dispute raised.'); setActing(null); setReason(''); onAction(); }, 800);
       return;
     }
     try {
-      await milestoneAPI.dispute(milestone.id, { reason });
+      await milestoneAPI.dispute(milestone.id, { reason: trimmed });
       toast.success('Dispute raised. Admin will review.');
+      setReason('');
       onAction();
     } catch (e: any) { toast.error(e?.message || 'Failed to dispute'); }
     setActing(null);
   };
-  
-  const payoutAmount = milestone.ai_verification?.score 
-    ? (Number(milestone.amount) * Number(milestone.ai_verification.score)).toFixed(2) 
+
+  const payoutAmount = milestone.ai_verification?.score
+    ? (Number(milestone.amount) * Number(milestone.ai_verification.score)).toFixed(2)
     : milestone.amount;
 
 
@@ -106,14 +114,52 @@ function MilestoneRow({ milestone, onAction }: { milestone: any; onAction: () =>
 
               {milestone.status === 'submitted' && (
                 <div className="flex flex-col gap-3 pt-2">
-                  <div className="rounded-xl p-4 bg-[#111111] border border-[#222222] flex items-center gap-3">
-                    <Loader2 size={18} className="animate-spin text-[#3b82f6]" />
-                    <p className="text-sm font-semibold text-[#d1d5db]">AI Verification in progress. Payout will be released autonomously once complete.</p>
+                  {milestone.ai_verification ? (
+                    // AI has reviewed but did not auto-release — show the analysis
+                    // of what the creator submitted vs the brief.
+                    <div className="rounded-xl p-5 border border-[rgba(59,130,246,0.2)] bg-[rgba(59,130,246,0.05)]">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-bold text-[#60a5fa] flex items-center gap-2">
+                          <Zap size={16} fill="currentColor" /> AI Submission Analysis
+                        </h4>
+                        <span className="px-2 py-1 rounded text-xs font-bold bg-[#111111] border border-[#222222] text-[#e5e7eb]">
+                          Score: {Math.round(milestone.ai_verification.score * 100)}%
+                        </span>
+                      </div>
+                      <p className="text-sm text-[#d1d5db] leading-relaxed italic">
+                        "{milestone.ai_verification.reasoning}"
+                      </p>
+                      {Array.isArray(milestone.ai_verification.missing) && milestone.ai_verification.missing.length > 0 && (
+                        <div className="mt-4">
+                          <p className="text-xs font-bold uppercase tracking-widest text-[#eab308] mb-2">Missing requirements</p>
+                          <ul className="space-y-1.5">
+                            {milestone.ai_verification.missing.map((m: string, i: number) => (
+                              <li key={i} className="flex items-start gap-2 text-sm text-[#d1d5db]">
+                                <AlertCircle size={14} className="text-[#eab308] mt-0.5 shrink-0" />
+                                <span>{m}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="rounded-xl p-4 bg-[#111111] border border-[#222222] flex items-center gap-3">
+                      <Loader2 size={18} className="animate-spin text-[#3b82f6]" />
+                      <p className="text-sm font-semibold text-[#d1d5db]">AI Verification in progress. Payout will be released autonomously once complete.</p>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row gap-3 pt-1">
+                    <button onClick={approve} disabled={!!acting} className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold bg-[#22c55e] text-black hover:bg-[#16a34a] transition-colors">
+                      {acting === 'approve' ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                      Approve & Release
+                    </button>
+                    <button onClick={() => setDisputeOpen(true)} disabled={!!acting} className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold bg-[#1a1a1a] text-white hover:bg-[#ef4444] hover:border-[#ef4444] transition-colors border border-[#333333]">
+                      {acting === 'dispute' ? <Loader2 size={16} className="animate-spin" /> : <AlertCircle size={16} />}
+                      Halt & Dispute
+                    </button>
                   </div>
-                  <button onClick={dispute} disabled={!!acting} className="w-full sm:w-auto self-start flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold bg-[#1a1a1a] text-white hover:bg-[#ef4444] hover:border-[#ef4444] transition-colors border border-[#333333]">
-                    {acting === 'dispute' ? <Loader2 size={16} className="animate-spin" /> : <AlertCircle size={16} />}
-                    Halt & Dispute
-                  </button>
                 </div>
               )}
 
@@ -124,12 +170,25 @@ function MilestoneRow({ milestone, onAction }: { milestone: any; onAction: () =>
                       <Zap size={16} fill="currentColor" /> AI Verified & Settled
                     </h4>
                     <span className="px-2 py-1 rounded text-xs font-bold bg-[#111111] border border-[#222222] text-[#e5e7eb]">
-                      Score: {milestone.ai_verification.score * 100}%
+                      Score: {Math.round(milestone.ai_verification.score * 100)}%
                     </span>
                   </div>
                   <p className="text-sm text-[#d1d5db] leading-relaxed mb-4 italic">
                     "{milestone.ai_verification.reasoning}"
                   </p>
+                  {Array.isArray(milestone.ai_verification.missing) && milestone.ai_verification.missing.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs font-bold uppercase tracking-widest text-[#eab308] mb-2">Noted gaps</p>
+                      <ul className="space-y-1.5">
+                        {milestone.ai_verification.missing.map((m: string, i: number) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-[#d1d5db]">
+                            <AlertCircle size={14} className="text-[#eab308] mt-0.5 shrink-0" />
+                            <span>{m}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 text-sm">
                     <span className="font-semibold text-[#6b7280]">Released Amount:</span>
                     <span className="font-black text-white">${payoutAmount} USDC</span>
@@ -137,6 +196,55 @@ function MilestoneRow({ milestone, onAction }: { milestone: any; onAction: () =>
                 </div>
               )}
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {disputeOpen && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            onClick={() => { if (!acting) setDisputeOpen(false); }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md rounded-2xl p-6 border border-[#222222]"
+              style={{ background: '#0a0a0a' }}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <AlertCircle size={18} className="text-[#ef4444]" /> Halt & Dispute
+                </h3>
+                <button onClick={() => setDisputeOpen(false)} className="text-[#6b7280] hover:text-white transition-colors">
+                  <X size={18} />
+                </button>
+              </div>
+              <p className="text-sm text-[#6b7280] mb-4">Pause the autonomous payout and tell us what's wrong with <span className="font-semibold text-[#d1d5db]">{milestone.title}</span>.</p>
+              <textarea
+                autoFocus
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="Describe the issue with this deliverable…"
+                rows={4}
+                className="w-full rounded-xl bg-[#111111] border border-[#252525] px-4 py-3 text-sm text-white placeholder:text-[#4b5563] resize-none focus:outline-none focus:border-[#ef4444] transition-colors"
+              />
+              <div className="flex justify-end gap-3 mt-4">
+                <button onClick={() => setDisputeOpen(false)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-[#d1d5db] hover:bg-[#1a1a1a] transition-colors">
+                  Cancel
+                </button>
+                <button
+                  onClick={dispute}
+                  disabled={!reason.trim() || !!acting}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-[#ef4444] text-white hover:bg-[#dc2626] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {acting === 'dispute' ? <Loader2 size={16} className="animate-spin" /> : <AlertCircle size={16} />}
+                  Raise Dispute
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -317,6 +317,10 @@ export class JobService {
         job_title: job?.title || '',
         job_total_budget: job?.total_budget || 0,
         job_target_platform: job?.target_platform || '',
+        // Surface the job lifecycle + earnings so the creator's deal list can
+        // split active from history (completed/cancelled) and show real payout.
+        job_status: job?.status || '',
+        job_released_total: job?.released_total ?? 0,
         organization: job?.organization || {},
       };
     }));

@@ -39,3 +39,4 @@ backend/registration_payload*.json
 
 .env
 .claude
+docs

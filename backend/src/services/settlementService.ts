@@ -66,6 +66,56 @@ export class SettlementService {
       payout,
     };
   }
+
+  // Brand override: manually approve a submitted milestone and release its USDC
+  // without waiting for (or regardless of) the autonomous AI loop. The amount is
+  // quality-weighted when the AI already scored the deliverable, otherwise the
+  // full milestone amount is released. Unlike settleMilestone there is no score
+  // gate — the brand's approval is the authority.
+  async approveAndRelease(
+    milestoneId: string,
+    opts: { via?: 'direct' | 'relayer' } = {},
+  ) {
+    if (!milestoneId) throw new ValidationError('milestoneId is required');
+
+    const milestone = await this.milestones.findById(milestoneId);
+    if (!milestone) throw new NotFoundError('Milestone not found');
+    if (milestone.status !== 'submitted') {
+      throw new ValidationError(`Cannot approve milestone from status: ${milestone.status}`);
+    }
+
+    // Quality-weighted if the AI already scored it; full amount otherwise.
+    const score = Number(milestone.ai_verification?.score);
+    const amountUsdc = Number.isFinite(score) && score > 0
+      ? round6(Number(milestone.amount) * score)
+      : Number(milestone.amount);
+
+    // The brand approves — record it so payout's invariant (only pay approved
+    // milestones) holds and reputation/UI reflect the new state.
+    const updated = await this.milestones.update(milestoneId, { status: 'approved' });
+
+    // Attempt the release. A payout failure (e.g. no permission on the job) must
+    // NOT undo the approval — surface it instead so the brand can act.
+    let payout: any;
+    try {
+      payout = await this.payout.releaseMilestone(milestoneId, {
+        via: opts.via || 'direct',
+        amountUsdc,
+      });
+    } catch (error) {
+      payout = { ok: false, reason: (error as Error).message };
+    }
+
+    // Spread the updated milestone so callers expecting the record (status:
+    // 'approved') keep working, then attach the release metadata.
+    return {
+      ...updated,
+      approved: true,
+      scored_amount: amountUsdc,
+      milestone_amount: milestone.amount,
+      payout,
+    };
+  }
 }
 
 // USDC has 6 decimals — round to avoid parseUnits overflow on long floats.
