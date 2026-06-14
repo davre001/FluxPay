@@ -35,6 +35,9 @@ export const SCHEMA_STATEMENTS: string[] = [
    )`,
   `CREATE INDEX IF NOT EXISTS jobs_org_idx ON jobs (organization_id)`,
   `CREATE INDEX IF NOT EXISTS jobs_status_idx ON jobs (status)`,
+  // selected_creator_id lives in the JSONB blob (not a promoted column); index the
+  // expression so creator-reputation lookups filter without scanning every job.
+  `CREATE INDEX IF NOT EXISTS jobs_selected_creator_idx ON jobs ((data->>'selected_creator_id'))`,
 
   `CREATE TABLE IF NOT EXISTS applications (
      id TEXT PRIMARY KEY,

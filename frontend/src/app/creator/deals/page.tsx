@@ -3,27 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Search, Briefcase, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
-import { useUserStore } from '@/stores/userStore';
 import { useMyApplications } from '@/hooks/useDeals';
 
-const MOCK_APPS = [
-  {
-    id: 'app-1',
-    job_id: 'job-5',
-    status: 'accepted',
-    job_title: 'Ongoing Brand Ambassador - Q3',
-    job_target_platform: 'instagram',
-    job_total_budget: 5000,
-    organization: { brand_name: 'Adidas' },
-  }
-];
-
 export default function CreatorActiveDealsPage() {
-  const { user } = useUserStore();
   const { applications, isLoading } = useMyApplications();
-  const accepted = applications.filter((a: any) => a.status === 'accepted');
-  // Real accepted deals when signed in; mock keeps the page populated logged out.
-  const activeDeals = accepted.length > 0 ? accepted : (user?.id ? [] : MOCK_APPS);
+  // Real accepted deals only (empty until the creator is hired on a deal).
+  const activeDeals = applications.filter((a: any) => a.status === 'accepted');
   const [search, setSearch] = useState('');
   const [platformFilter, setPlatformFilter] = useState('all');
 

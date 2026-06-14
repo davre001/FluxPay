@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Search, ArrowRight, FileText, CheckCircle2, XCircle, Clock, Trash2, Loader2 } from 'lucide-react';
-import { useUserStore } from '@/stores/userStore';
 import { useMyApplications } from '@/hooks/useDeals';
 import { applicationAPI } from '@/lib/api-client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -16,38 +15,11 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string;
   rejected: { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.2)', icon: XCircle },
 };
 
-const MOCK_APPS = [
-  {
-    id: 'app-1',
-    job_id: 'job-5',
-    status: 'accepted',
-    job_title: 'Ongoing Brand Ambassador - Q3',
-    job_target_platform: 'instagram',
-    job_total_budget: 5000,
-    organization: { brand_name: 'Adidas', logo_url: 'https://www.google.com/s2/favicons?domain=adidas.com&sz=128' },
-    applied_at: new Date(Date.now() - 864000000).toISOString(),
-    cover_note: 'I love Adidas and have a highly engaged fitness audience!',
-  },
-  {
-    id: 'app-2',
-    job_id: 'job-3',
-    status: 'pending',
-    job_title: 'Twitter Thread on Web3 Payments',
-    job_target_platform: 'twitter',
-    job_total_budget: 500,
-    organization: { brand_name: 'Flux Protocol', logo_url: 'https://ui-avatars.com/api/?name=Flux+Protocol&background=1a1a1a&color=fff' },
-    applied_at: new Date().toISOString(),
-    cover_note: 'I write technical threads about crypto daily!',
-  }
-];
-
 export default function CreatorApplicationsPage() {
-  const { user } = useUserStore();
   const { applications: myApps, isLoading } = useMyApplications();
   const qc = useQueryClient();
-  // Real applications when signed in; mock keeps the page populated for a
-  // logged-out demo. Withdraw hides client-side (no withdraw endpoint yet).
-  const source = myApps.length > 0 ? myApps : (user?.id ? [] : MOCK_APPS);
+  // Real applications only (empty until the creator applies).
+  const source = myApps;
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');

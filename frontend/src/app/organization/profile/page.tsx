@@ -134,6 +134,7 @@ export default function OrgProfilePage() {
   const [location, setLocation] = useState('');
   const [picUrl, setPicUrl] = useState('');
   const [industries, setIndustries] = useState<string[]>([]);
+  const [rep, setRep] = useState<number | null>(null);
   const [instagram, setInstagram] = useState('');
   const [twitter, setTwitter] = useState('');
   const [youtube, setYoutube] = useState('');
@@ -161,7 +162,12 @@ export default function OrgProfilePage() {
       setYoutube(data?.youtube || '');
       setTiktok(data?.tiktok || '');
     }).catch(() => {});
-  }, [user?.id, user?.email]);
+    if (user?.walletAddress) {
+      profileAPI.getReputation(user.walletAddress)
+        .then(({ data }: any) => setRep(typeof data?.score === 'number' ? data.score : null))
+        .catch(() => {});
+    }
+  }, [user?.id, user?.email, user?.walletAddress]);
 
   const toggleIndustry = (i: string) =>
     setIndustries((prev) => prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]);
@@ -311,7 +317,7 @@ export default function OrgProfilePage() {
                   Brand Account
                 </span>
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-md text-[11px] font-semibold text-[#d1d5db]" style={{ background: '#1a1a1a', border: '1px solid #252525' }}>
-                  <Star size={10} className="fill-[#f59e0b] text-[#f59e0b]" /> 4.5 Rep
+                  <Star size={10} className="fill-[#f59e0b] text-[#f59e0b]" /> {rep ?? '—'} Rep
                 </span>
               </div>
 
@@ -342,7 +348,7 @@ export default function OrgProfilePage() {
               <p className="text-[10px] font-semibold uppercase tracking-widest text-[#4b5563]">Account Status</p>
               {[
                 { icon: CheckCircle2, label: 'Identity Verified', value: 'Verified', color: '#22c55e' },
-                { icon: Star, label: 'Brand Reputation', value: '4.5 / 5', color: '#f59e0b' },
+                { icon: Star, label: 'Brand Reputation', value: `${rep ?? '—'} / 100`, color: '#f59e0b' },
                 { icon: Shield, label: 'Escrow Protected', value: 'Active', color: '#60a5fa' },
               ].map(({ icon: Icon, label, value, color }) => (
                 <div key={label} className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid #161616' }}>

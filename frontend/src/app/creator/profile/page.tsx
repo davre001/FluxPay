@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import {
   Save, Loader2, X, User, Upload, Pencil, Check,
-  MapPin, Clock, Star, Shield, TrendingUp,
+  MapPin, Clock, Star, Shield, TrendingUp, Globe,
   Eye, Trash2, Camera, ArrowRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -133,8 +133,11 @@ export default function CreatorProfilePage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [bio, setBio] = useState('');
+  const [websiteUrl, setWebsiteUrl] = useState('');
+  const [location, setLocation] = useState('');
   const [picUrl, setPicUrl] = useState('');
   const [niches, setNiches] = useState<string[]>([]);
+  const [rep, setRep] = useState<number | null>(null);
   const [instagram, setInstagram] = useState('');
   const [twitter, setTwitter] = useState('');
   const [youtube, setYoutube] = useState('');
@@ -151,6 +154,8 @@ export default function CreatorProfilePage() {
       setName(data?.name || '');
       setEmail(data?.email || user?.email || '');
       setBio(data?.bio || '');
+      setWebsiteUrl(data?.website_url || '');
+      setLocation(data?.location || '');
       setPicUrl(data?.profile_picture_url || '');
       setNiches(data?.niche_tags || []);
       setInstagram(data?.instagram || '');
@@ -158,7 +163,12 @@ export default function CreatorProfilePage() {
       setYoutube(data?.youtube || '');
       setTiktok(data?.tiktok || '');
     }).catch(() => {});
-  }, [user?.id, user?.email]);
+    if (user?.walletAddress) {
+      profileAPI.getReputation(user.walletAddress)
+        .then(({ data }: any) => setRep(typeof data?.score === 'number' ? data.score : null))
+        .catch(() => {});
+    }
+  }, [user?.id, user?.email, user?.walletAddress]);
 
   const toggleNiche = (n: string) =>
     setNiches((prev) => prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]);
@@ -169,7 +179,9 @@ export default function CreatorProfilePage() {
     setSaving(true);
     try {
       await profileAPI.updateMe({
-        name, email, bio, profile_picture_url: picUrl || null,
+        name, email, bio,
+        website_url: websiteUrl || null, location: location || null,
+        profile_picture_url: picUrl || null,
         niche_tags: niches, instagram: instagram || null,
         twitter: twitter || null, youtube: youtube || null, tiktok: tiktok || null,
       });
@@ -298,7 +310,7 @@ export default function CreatorProfilePage() {
               <p className="text-[10px] font-semibold uppercase tracking-widest text-[#4b5563]">Performance</p>
               <div className="space-y-3">
                 {[
-                  { icon: Star, label: 'Reputation', value: '— / 100', color: '#f59e0b' },
+                  { icon: Star, label: 'Reputation', value: `${rep ?? '—'} / 100`, color: '#f59e0b' },
                   { icon: Shield, label: 'Verified Status', value: 'Verified', color: '#60a5fa' },
                 ].map(({ icon: Icon, label, value, color }) => (
                   <div key={label} className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid #161616' }}>
@@ -346,6 +358,22 @@ export default function CreatorProfilePage() {
                   textarea
                   rows={5}
                   hint={isEditing ? `${bio.length} / 500 characters` : undefined}
+                  isEditing={isEditing}
+                />
+                <PremiumInput
+                  label="Website"
+                  value={websiteUrl}
+                  onChange={setWebsiteUrl}
+                  placeholder="https://yourportfolio.com"
+                  prefix={<Globe size={14} className="text-[#4b5563]" />}
+                  isEditing={isEditing}
+                />
+                <PremiumInput
+                  label="Location"
+                  value={location}
+                  onChange={setLocation}
+                  placeholder="e.g. Lagos, Nigeria"
+                  prefix={<MapPin size={14} className="text-[#4b5563]" />}
                   isEditing={isEditing}
                 />
               </div>
@@ -487,7 +515,7 @@ export default function CreatorProfilePage() {
                       </div>
                       <p className="text-xs font-semibold text-[#9ca3af]">Reputation Score</p>
                     </div>
-                    <p className="text-3xl font-black text-white">— <span className="text-lg text-[#4b5563] font-bold">/ 100</span></p>
+                    <p className="text-3xl font-black text-white">{rep ?? '—'} <span className="text-lg text-[#4b5563] font-bold">/ 100</span></p>
                     <p className="text-xs text-[#4b5563] mt-1.5 leading-relaxed">View the Reputation page for your full score and tier breakdown.</p>
                   </div>
                 </div>

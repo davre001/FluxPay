@@ -66,6 +66,7 @@ export class InMemoryJobRepository {
   async findMany(filters: any = {}) {
     const matches = [...this.jobs.values()].filter((job: any) => {
       if (filters.organization_id && job.organization_id !== filters.organization_id) return false;
+      if (filters.selected_creator_id && job.selected_creator_id !== filters.selected_creator_id) return false;
       if (filters.status && job.status !== filters.status) return false;
       if (filters.platform && job.target_platform !== filters.platform) return false;
       if (filters.payout_type && job.payout_type !== filters.payout_type) return false;

@@ -64,8 +64,6 @@ function ScoreRing({ score, max = 100 }: { score: number; max?: number }) {
   );
 }
 
-
-
 export default function CreatorReputationPage() {
   const { user } = useUserStore();
   const [myScore, setMyScore] = useState<number | null>(null);

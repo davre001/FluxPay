@@ -33,11 +33,6 @@ const MOCK_JOBS = [
   { id: 'mock_6', title: 'Holiday Special Post', status: 'cancelled', target_platform: 'instagram', post_type: 'image', total_budget: 1000, application_count: 0, description: 'Static feed post featuring our holiday discount code.' }
 ];
 
-const MOCK_APPS = [
-  { id: 'app_1', creator_id: 'Alex Rivers', avatar: 'A', reputation: 98, status: 'pending', cover_note: 'I would love to shoot this! I have a background in fashion videography.', applied_at: new Date().toISOString() },
-  { id: 'app_2', creator_id: 'Samira Tech', avatar: 'S', reputation: 92, status: 'pending', cover_note: 'I review tech gadgets every week. Turnaround is 3 days.', applied_at: new Date().toISOString() }
-];
-
 function MilestoneRow({ milestone, onAction }: { milestone: any; onAction: () => void; }) {
   const [open, setOpen] = useState(milestone.status === 'submitted');
   const [acting, setActing] = useState<string | null>(null);
@@ -158,7 +153,8 @@ export default function OrgJobDetailPage() {
   const { deal: fetchedJob } = useDeal(isMock ? undefined : jobId);
   const { applications: fetchedApps } = useJobApplications(isMock ? undefined : jobId);
   const job = isMock ? (MOCK_JOBS.find(j => j.id === jobId) ?? null) : fetchedJob;
-  const applications = isMock ? MOCK_APPS : fetchedApps;
+  // Applicants are always real — mock jobs simply have none until creators apply.
+  const applications = fetchedApps;
 
   const [tab, setTab] = useState<'applicants' | 'milestones'>('applicants');
   const [selecting, setSelecting] = useState<string | null>(null);
@@ -359,17 +355,17 @@ export default function OrgJobDetailPage() {
                   <div key={app.id} className="rounded-2xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
                     <div className="flex flex-col md:flex-row gap-5">
                       <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-black font-black text-xl flex-shrink-0">
-                        {app.avatar || (app.creator_id?.[0] ?? '?').toUpperCase()}
+                        {((app.creator_name || app.creator_id)?.[0] ?? '?').toUpperCase()}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <h3 className="font-black text-white text-lg">{app.creator_id}</h3>
+                            <h3 className="font-black text-white text-lg">{app.creator_name || app.creator_id}</h3>
                             <div className="flex items-center gap-3 mt-1">
                               <span className="flex items-center gap-1 text-[10px] font-bold text-[#22c55e] uppercase tracking-widest bg-[rgba(34,197,94,0.1)] px-2 py-0.5 rounded border border-[rgba(34,197,94,0.2)]">
-                                <Zap size={10} fill="currentColor" /> {app.reputation ?? 0} Rep Score
+                                <Zap size={10} fill="currentColor" /> {app.creator_reputation ?? 0} / 100 Rep
                               </span>
-                              <span className="text-xs font-semibold text-[#6b7280]">Applied {new Date(app.applied_at).toLocaleDateString()}</span>
+                              <span className="text-xs font-semibold text-[#6b7280]">Applied {new Date(app.applied_at ?? app.created_at).toLocaleDateString()}</span>
                             </div>
                           </div>
                           {job.status === 'open' && app.status === 'pending' && (

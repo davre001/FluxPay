@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { milestoneAPI } from '@/lib/api-client';
+import { milestoneAPI, profileAPI } from '@/lib/api-client';
 import { useDeal, useMyApplications, useApplyToDeal } from '@/hooks/useDeals';
 
 const XLogo = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
@@ -26,7 +26,7 @@ const MOCK_JOBS: Record<string, any> = {
   'job-1': {
     id: 'job-1',
     title: 'Nike Air Max Campaign',
-    organization: { brand_name: 'Nike', bio: 'Just Do It. Inspiring the world\'s athletes.', website: 'https://nike.com', reputation: 4.9, logo_url: 'https://www.google.com/s2/favicons?domain=nike.com&sz=128' },
+    organization: { brand_name: 'Nike', bio: 'Just Do It. Inspiring the world\'s athletes.', website: 'https://nike.com', logo_url: 'https://www.google.com/s2/favicons?domain=nike.com&sz=128' },
     description: 'Looking for fitness creators to promote the new Nike Air Max 2026 collection. You will need to create a 60-second high-energy workout video wearing the shoes.',
     target_platform: 'instagram',
     post_type: 'video',
@@ -40,7 +40,7 @@ const MOCK_JOBS: Record<string, any> = {
   'job-2': {
     id: 'job-2',
     title: 'PlayStation 6 Launch Review',
-    organization: { brand_name: 'Sony Interactive', bio: 'The future of gaming is here.', website: 'https://playstation.com', reputation: 4.8, logo_url: 'https://www.google.com/s2/favicons?domain=sony.com&sz=128' },
+    organization: { brand_name: 'Sony Interactive', bio: 'The future of gaming is here.', website: 'https://playstation.com', logo_url: 'https://www.google.com/s2/favicons?domain=sony.com&sz=128' },
     description: 'We are sending early review units of the PS6. We need a comprehensive 10-minute unboxing and first impressions review for your YouTube channel.',
     target_platform: 'youtube',
     post_type: 'video',
@@ -55,7 +55,7 @@ const MOCK_JOBS: Record<string, any> = {
   'job-3': {
     id: 'job-3',
     title: 'Twitter Thread on Web3 Payments',
-    organization: { brand_name: 'Flux Protocol', bio: 'Flux Protocol is a decentralized escrow and payment infrastructure tailored for the creator economy.', website: 'https://fluxpay.xyz', reputation: 5.0, logo_url: 'https://ui-avatars.com/api/?name=Flux+Protocol&background=1a1a1a&color=fff' },
+    organization: { brand_name: 'Flux Protocol', bio: 'Flux Protocol is a decentralized escrow and payment infrastructure tailored for the creator economy.', website: 'https://fluxpay.xyz', logo_url: 'https://ui-avatars.com/api/?name=Flux+Protocol&background=1a1a1a&color=fff' },
     description: 'Write an engaging 10-tweet thread explaining the benefits of crypto escrow for freelancers.',
     target_platform: 'twitter',
     post_type: 'content_writing',
@@ -69,7 +69,7 @@ const MOCK_JOBS: Record<string, any> = {
   'job-4': {
     id: 'job-4',
     title: 'Red Bull Extreme Sports Challenge',
-    organization: { brand_name: 'Red Bull', bio: 'Red Bull gives you wings.', website: 'https://redbull.com', reputation: 4.7, logo_url: 'https://www.google.com/s2/favicons?domain=redbull.com&sz=128' },
+    organization: { brand_name: 'Red Bull', bio: 'Red Bull gives you wings.', website: 'https://redbull.com', logo_url: 'https://www.google.com/s2/favicons?domain=redbull.com&sz=128' },
     description: 'Record a crazy extreme sports stunt (must be safe!) drinking a Red Bull before or after the stunt. TikTok format preferred.',
     target_platform: 'tiktok',
     post_type: 'video',
@@ -94,6 +94,16 @@ export default function JobDetailsPage() {
   const [pitch, setPitch] = useState('');
   const [justApplied, setJustApplied] = useState(false);
   const hasApplied = justApplied || appliedJobIds.has(jobId);
+
+  // Real brand reputation (0–100) — fetched from the brand's public profile.
+  const [brandRep, setBrandRep] = useState<number | null>(null);
+  const orgId = job?.organization_id;
+  useEffect(() => {
+    if (!orgId) { setBrandRep(null); return; }
+    profileAPI.getPublic(orgId)
+      .then(({ data }: any) => setBrandRep(typeof data?.reputation?.score === 'number' ? data.reputation.score : null))
+      .catch(() => setBrandRep(null));
+  }, [orgId]);
 
   // Deliverable Submission State
   const [deliverableUrl, setDeliverableUrl] = useState('');
@@ -351,7 +361,7 @@ export default function JobDetailsPage() {
                   <p className="font-bold text-white text-sm">{job.organization.brand_name}</p>
                   <div className="flex items-center gap-1 mt-0.5">
                     <Star size={10} className="fill-[#f59e0b] text-[#f59e0b]" />
-                    <span className="text-[10px] font-bold text-[#d1d5db]">{job.organization.reputation ?? '5.0'}</span>
+                    <span className="text-[10px] font-bold text-[#d1d5db]">{brandRep ?? 0} / 100</span>
                     <span className="text-[10px] text-[#6b7280] ml-1">On-Chain Rating</span>
                   </div>
                 </div>

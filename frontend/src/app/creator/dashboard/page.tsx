@@ -9,8 +9,10 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { useUserStore } from '@/stores/userStore';
 import { useDeals, useMyApplications, useApplyToDeal } from '@/hooks/useDeals';
+import { profileAPI, jobAPI } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 
 const PLATFORMS = ['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'facebook', 'other'];
@@ -30,27 +32,6 @@ const PLATFORM_COLOR: Record<string, string> = {
   instagram: '#e1306c', twitter: '#1da1f2', youtube: '#ff0000',
   tiktok: '#e2e8f0', other: '#d1d5db',
 };
-
-const MOCK_APPS = [
-  {
-    id: 'app-1',
-    job_id: 'job-5',
-    status: 'accepted',
-    job_title: 'Ongoing Brand Ambassador - Q3',
-    job_target_platform: 'instagram',
-    job_total_budget: 5000,
-    organization: { brand_name: 'Adidas', logo_url: 'https://www.google.com/s2/favicons?domain=adidas.com&sz=128' },
-  },
-  {
-    id: 'app-2',
-    job_id: 'job-3',
-    status: 'pending',
-    job_title: 'Twitter Thread on Web3 Payments',
-    job_target_platform: 'twitter',
-    job_total_budget: 500,
-    organization: { brand_name: 'Flux Protocol', logo_url: 'https://ui-avatars.com/api/?name=Flux+Protocol&background=1a1a1a&color=fff' },
-  }
-];
 
 
 const StatCard = ({ icon: Icon, label, value, color, sub, blur }: any) => (
@@ -89,8 +70,8 @@ export default function CreatorDashboard() {
   const { user } = useUserStore();
   const { deals: openJobs, isLoading } = useDeals({ status: 'open' });
   const { applications: myApps, appliedJobIds: appliedIds } = useMyApplications();
-  // Real applications when signed in; mock keeps the stats populated logged out.
-  const myApplications = myApps.length > 0 ? myApps : (user?.id ? [] : MOCK_APPS);
+  // Real applications only (empty until the creator applies).
+  const myApplications = myApps;
   const applyMutation = useApplyToDeal();
   const [search, setSearch] = useState('');
   const [platform, setPlatform] = useState('all');
@@ -107,7 +88,34 @@ export default function CreatorDashboard() {
     return false;
   });
   const [welcomeText, setWelcomeText] = useState('');
-  
+  const [rep, setRep] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!user?.walletAddress) return;
+    profileAPI.getReputation(user.walletAddress)
+      .then(({ data }: any) => setRep(typeof data?.score === 'number' ? data.score : null))
+      .catch(() => {});
+  }, [user?.walletAddress]);
+
+  // Real total earned: sum of approved-milestone payouts across the creator's
+  // accepted deals (USDC). Starts at $0 — no hardcoded figure.
+  const acceptedJobIds = myApps.filter((a: any) => a.status === 'accepted').map((a: any) => a.job_id).filter(Boolean);
+  const { data: earned = 0 } = useQuery({
+    queryKey: ['creator-earnings', acceptedJobIds.join(',')],
+    enabled: acceptedJobIds.length > 0,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const deals = await Promise.all(
+        acceptedJobIds.map((id: string) => jobAPI.detail(id).then((r: any) => r.data).catch(() => null)),
+      );
+      let sum = 0;
+      for (const d of deals as any[]) {
+        for (const m of (d?.milestones ?? [])) if (m?.status === 'approved') sum += Number(m.amount) || 0;
+      }
+      return sum;
+    },
+  });
+
   const fullText = `Welcome back, ${user?.email?.split('@')[0] || 'Creator'}`;
 
   useEffect(() => {
@@ -193,8 +201,8 @@ export default function CreatorDashboard() {
         >
           <motion.div variants={itemVariants}><StatCard icon={Clock}       label="Applications"  value={myApplications.length} color="#9ca3af" blur={hideStats} /></motion.div>
           <motion.div variants={itemVariants}><StatCard icon={CheckCircle} label="Active Deals"  value={active}                color="#22c55e" blur={hideStats} /></motion.div>
-          <motion.div variants={itemVariants}><StatCard icon={WalletIcon}  label="Total Earned"  value="$1,500"                color="#60a5fa" sub="USDC" blur={hideStats} /></motion.div>
-          <motion.div variants={itemVariants}><StatCard icon={Star}        label="Reputation"    value="4.8"                 color="#f59e0b" sub="Score" blur={hideStats} /></motion.div>
+          <motion.div variants={itemVariants}><StatCard icon={WalletIcon}  label="Total Earned"  value={`$${Number(earned).toLocaleString()}`} color="#60a5fa" sub="USDC" blur={hideStats} /></motion.div>
+          <motion.div variants={itemVariants}><StatCard icon={Star}        label="Reputation"    value={rep ?? '—'}          color="#f59e0b" sub="/ 100" blur={hideStats} /></motion.div>
         </motion.div>
 
         {/* ── Quick Links ── */}

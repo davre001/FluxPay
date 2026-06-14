@@ -92,7 +92,35 @@ export class JobService {
   async listApplications(jobId: string) {
     const job = await this.jobs.findById(jobId);
     if (!job) throw new NotFoundError('Job not found');
-    return this.applications.findMany({ job_id: jobId });
+    const apps = (await this.applications.findMany({ job_id: jobId }))
+      .filter((a: any) => a.status !== 'withdrawn');
+    return Promise.all(apps.map(async (app: any) => {
+      const profile = await this.profiles.findByUserId(app.creator_id).catch(() => null);
+      return {
+        ...app,
+        creator_name: (profile as any)?.name || app.creator_id,
+        creator_reputation: await this.creatorReputation(app.creator_id),
+      };
+    }));
+  }
+
+  // Creator reputation on the unified 0–100 scale (starts at the +5 signup bonus):
+  //   score = 5 + approvedMilestones × 5 + completedDeals × 10 − disputes × 3
+  // Mirrors ProfileService.computeCreatorScore; kept here so application listings
+  // can enrich without a cross-service dependency.
+  private async creatorReputation(creatorId: string): Promise<number> {
+    const creatorJobs = await this.jobs.findMany({ selected_creator_id: creatorId });
+    const completedDeals = creatorJobs.filter((j: any) => j.status === 'completed').length;
+    let approvedMs = 0;
+    let disputes = 0;
+    for (const cj of creatorJobs) {
+      const ms = await this.milestones.findMany({ job_id: cj.id });
+      for (const m of ms) {
+        if (m.status === 'approved') approvedMs++;
+        if (m.status === 'disputed') disputes++;
+      }
+    }
+    return Math.max(0, Math.min(100, 5 + approvedMs * 5 + completedDeals * 10 - disputes * 3));
   }
 
   async selectCreator(jobId: string, creatorId: string) {
@@ -196,23 +224,6 @@ export class JobService {
           .filter((a: any) => a.status !== 'withdrawn')
           .map(async (app: any) => {
             const profile = await this.profiles.findByUserId(app.creator_id).catch(() => null);
-
-            // Compute creator reputation inline (0–100):
-            // score = 5 (signup) + approvedMilestones × 5 + completedDeals × 10 − disputes × 3
-            const allJobs = await this.jobs.findMany({});
-            const creatorJobs = allJobs.filter((j: any) => j.selected_creator_id === app.creator_id);
-            const completedDeals = creatorJobs.filter((j: any) => j.status === 'completed').length;
-            let approvedMs = 0;
-            let disputes = 0;
-            for (const cj of creatorJobs) {
-              const ms = await this.milestones.findMany({ job_id: cj.id });
-              for (const m of ms) {
-                if (m.status === 'approved') approvedMs++;
-                if (m.status === 'disputed') disputes++;
-              }
-            }
-            const creatorRep = Math.max(0, Math.min(100, 5 + approvedMs * 5 + completedDeals * 10 - disputes * 3));
-
             return {
               ...app,
               job_id: job.id,
@@ -220,7 +231,7 @@ export class JobService {
               job_target_platform: job.target_platform,
               job_total_budget: job.total_budget,
               creator_name: (profile as any)?.name || app.creator_id,
-              creator_reputation: creatorRep,
+              creator_reputation: await this.creatorReputation(app.creator_id),
             };
           }),
       );
@@ -236,6 +247,8 @@ export class JobService {
     }
     const reason = String(data.reason || '').trim();
     if (!reason) throw new ValidationError('reason is required');
-    return this.milestones.update(milestoneId, { status: 'disputed', dispute_reason: reason });
+    // `was_disputed` is a permanent, immutable record that this milestone was ever
+    // disputed — used for brand reputation. dispute_reason may be cleared on resubmit.
+    return this.milestones.update(milestoneId, { status: 'disputed', dispute_reason: reason, was_disputed: true });
   }
 }

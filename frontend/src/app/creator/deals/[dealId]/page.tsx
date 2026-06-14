@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ArrowLeft, Clock, CheckCircle, AlertCircle, Upload,
   ExternalLink, ChevronDown, ChevronUp, Loader2, X, FileText, Globe, Star, Zap, Trash2,
@@ -11,7 +11,7 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
-import { jobAPI, milestoneAPI } from '@/lib/api-client';
+import { jobAPI, milestoneAPI, profileAPI } from '@/lib/api-client';
 import { useDeal } from '@/hooks/useDeals';
 
 const XLogo = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
@@ -36,10 +36,9 @@ const MOCK_DEALS: Record<string, any> = {
     id: 'job-5',
     title: 'Ongoing Brand Ambassador - Q3',
     organization: { 
-      brand_name: 'Adidas', 
+      brand_name: 'Adidas',
       bio: 'Adidas is a global leader in the sporting goods industry, offering a broad portfolio of footwear, apparel, and hardware. We collaborate with top fitness creators worldwide.',
       website: 'https://adidas.com',
-      reputation: 4.9,
       logo_url: 'https://www.google.com/s2/favicons?domain=adidas.com&sz=128'
     },
     description: 'Monthly Instagram posts wearing our new summer collection. You will receive 3 boxes of our latest gear, and you need to post one feed post and two stories per month.',
@@ -62,7 +61,6 @@ const MOCK_DEALS: Record<string, any> = {
       brand_name: 'Flux Protocol',
       bio: 'Flux Protocol is a decentralized escrow and payment infrastructure tailored for the creator economy.',
       website: 'https://fluxpay.xyz',
-      reputation: 5.0,
       logo_url: 'https://www.google.com/s2/favicons?domain=fluxpay.xyz&sz=128'
     },
     description: 'Write an engaging 10-tweet thread explaining the benefits of crypto escrow for freelancers.',
@@ -202,6 +200,16 @@ export default function CreatorDealPage() {
   // page's richer demo deals for the logged-out walkthrough.
   const deal = fetchedDeal ?? MOCK_DEALS[dealId] ?? null;
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+
+  // Real brand reputation (0–100) — from the brand's public profile.
+  const [brandRep, setBrandRep] = useState<number | null>(null);
+  const orgId = deal?.organization_id;
+  useEffect(() => {
+    if (!orgId) { setBrandRep(null); return; }
+    profileAPI.getPublic(orgId)
+      .then(({ data }: any) => setBrandRep(typeof data?.reputation?.score === 'number' ? data.reputation.score : null))
+      .catch(() => setBrandRep(null));
+  }, [orgId]);
 
   const refresh = () => qc.invalidateQueries({ queryKey: ['deal', dealId] });
 
@@ -379,7 +387,7 @@ export default function CreatorDealPage() {
                   <p className="font-bold text-white text-sm">{deal.organization.brand_name}</p>
                   <div className="flex items-center gap-1 mt-0.5">
                     <Star size={10} className="fill-[#f59e0b] text-[#f59e0b]" />
-                    <span className="text-[10px] font-bold text-[#d1d5db]">{deal.organization.reputation ?? '5.0'}</span>
+                    <span className="text-[10px] font-bold text-[#d1d5db]">{brandRep ?? 0} / 100</span>
                     <span className="text-[10px] text-[#6b7280] ml-1">On-Chain Rating</span>
                   </div>
                 </div>

@@ -4,7 +4,7 @@ import { normalizeAddress, sanitizeString } from './helpers.ts';
 export const PAYMENT_STATUSES = ['pending', 'completed', 'failed', 'cancelled'];
 export const SUPPORTED_CURRENCIES = ['FPT', 'ETH', 'USDC', 'USD'];
 export const JOB_STATUSES = ['open', 'in_progress', 'completed', 'cancelled'];
-export const APPLICATION_STATUSES = ['pending', 'accepted', 'rejected'];
+export const APPLICATION_STATUSES = ['pending', 'accepted', 'rejected', 'withdrawn'];
 export const MILESTONE_STATUSES = ['pending', 'submitted', 'approved', 'disputed'];
 export const TARGET_PLATFORMS = ['instagram', 'twitter', 'youtube', 'tiktok', 'facebook', 'other'];
 export const POST_TYPES = ['video', 'image', 'content_writing', 'other'];

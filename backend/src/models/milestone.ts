@@ -16,6 +16,9 @@ export function createMilestoneRecord(input) {
     deliverable_note: null,
     due_date: input.due_date || input.deadline || null,
     dispute_reason: null,
+    // Permanent flag: set true the first time this milestone is disputed and never
+    // cleared — brand reputation reads this instead of the mutable dispute_reason.
+    was_disputed: false,
     created_at: timestamp,
     updated_at: timestamp,
   };

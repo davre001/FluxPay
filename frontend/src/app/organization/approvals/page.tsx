@@ -6,7 +6,6 @@ import { Check, X, User, ExternalLink, Zap, ShieldCheck, Loader2 } from 'lucide-
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { jobAPI } from '@/lib/api-client';
-import { useUserStore } from '@/stores/userStore';
 import { useIncomingApplications } from '@/hooks/useDeals';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -20,35 +19,25 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 24 } }
 };
 
-const MOCK_APPS = [
-  { id: 'app_1', creatorName: 'Alex Rivers', creatorAvatar: 'A', reputation: 85, jobTitle: 'Summer Launch Reel', status: 'pending', coverNote: 'I would love to shoot this reel! I have a background in fashion videography and a dedicated audience of 50k followers who perfectly match your target demographic.', platform: 'instagram', creator_id: 'demo_creator_1' },
-  { id: 'app_2', creatorName: 'Samira Tech', creatorAvatar: 'S', reputation: 72, jobTitle: 'Tech Review Video', status: 'pending', coverNote: 'I review tech gadgets every week. I can guarantee a turnaround of 3 days after receiving the product. Let\'s make this happen!', platform: 'youtube', creator_id: 'demo_creator_2' },
-  { id: 'app_3', creatorName: 'Jordan Creative', creatorAvatar: 'J', reputation: 45, jobTitle: 'Sponsored Blog Feature', status: 'pending', coverNote: 'I specialize in written tech content. I can integrate your brand naturally into my next article reaching 20k readers.', platform: 'other', creator_id: 'demo_creator_3' }
-];
-
 export default function ApprovalsPage() {
-  const { user } = useUserStore();
   const { applications: incoming, isLoading } = useIncomingApplications();
   const qc = useQueryClient();
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
   const [acting, setActing] = useState<string | null>(null);
 
-  // Normalize real incoming applications into the card shape; mock keeps the
-  // inbox populated for a logged-out demo.
-  const source = incoming.length > 0
-    ? incoming.map((a: any) => ({
-        id: a.id,
-        job_id: a.job_id,
-        creator_id: a.creator_id,
-        creatorName: a.creator_name || a.creator_id,
-        creatorAvatar: String(a.creator_name || a.creator_id || '?')[0].toUpperCase(),
-        reputation: a.creator_reputation ?? 0,
-        jobTitle: a.job_title || 'Deal',
-        status: a.status,
-        coverNote: a.cover_note,
-        platform: a.job_target_platform || 'other',
-      }))
-    : (user?.id ? [] : MOCK_APPS);
+  // Normalize real incoming applications into the card shape (real reputation, 0–100).
+  const source = incoming.map((a: any) => ({
+    id: a.id,
+    job_id: a.job_id,
+    creator_id: a.creator_id,
+    creatorName: a.creator_name || a.creator_id,
+    creatorAvatar: String(a.creator_name || a.creator_id || '?')[0].toUpperCase(),
+    reputation: a.creator_reputation ?? 0,
+    jobTitle: a.job_title || 'Deal',
+    status: a.status,
+    coverNote: a.cover_note,
+    platform: a.job_target_platform || 'other',
+  }));
   const applications = source.filter((a: any) => !removedIds.has(a.id));
 
   // Hire the applicant (real). The ERC-7715 release grant is done on the deal page.

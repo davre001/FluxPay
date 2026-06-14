@@ -41,7 +41,7 @@ const logo = (domain: string) => `https://www.google.com/s2/favicons?domain=${do
 export const EXTRA_MOCK_JOBS: MockDeal[] = [
   {
     id: 'job-5', title: 'Twitch Stream Sponsorship — Apex Legends', category: 'Gaming',
-    organization: { brand_name: 'Logitech G', bio: 'Play to win.', website: 'https://logitechg.com', reputation: 4.9, logo_url: logo('logitechg.com') },
+    organization: { brand_name: 'Logitech G', bio: 'Play to win.', website: 'https://logitechg.com', logo_url: logo('logitechg.com') },
     description: 'Showcase our G Pro Wireless mouse during a 2-hour Apex Legends stream with authentic gameplay.',
     skills: ['Live streaming', 'Commentary', 'Gaming'],
     target_platform: 'other', post_type: 'video', payout_type: 'milestone', total_budget: 2000, status: 'open', funding_status: 'funded',
@@ -50,7 +50,7 @@ export const EXTRA_MOCK_JOBS: MockDeal[] = [
   },
   {
     id: 'job-6', title: 'Instagram Carousel — Summer Wardrobe', category: 'Fashion',
-    organization: { brand_name: 'Zara', bio: 'Latest trends in fashion.', website: 'https://zara.com', reputation: 4.6, logo_url: logo('zara.com') },
+    organization: { brand_name: 'Zara', bio: 'Latest trends in fashion.', website: 'https://zara.com', logo_url: logo('zara.com') },
     description: 'Create a 5-slide carousel featuring our new summer collection. Clothing provided.',
     skills: ['Photography', 'Styling', 'Copywriting'],
     target_platform: 'instagram', post_type: 'image', payout_type: 'milestone', total_budget: 800, status: 'in_progress', funding_status: 'partially_released',
@@ -59,7 +59,7 @@ export const EXTRA_MOCK_JOBS: MockDeal[] = [
   },
   {
     id: 'job-7', title: 'YouTube Tutorial — Intro to Web3', category: 'Crypto',
-    organization: { brand_name: 'Coinbase', bio: 'The easiest place to buy and sell crypto.', website: 'https://coinbase.com', reputation: 4.8, logo_url: logo('coinbase.com') },
+    organization: { brand_name: 'Coinbase', bio: 'The easiest place to buy and sell crypto.', website: 'https://coinbase.com', logo_url: logo('coinbase.com') },
     description: 'A 15-minute beginner-friendly tutorial on setting up a Web3 wallet and making a first transaction.',
     skills: ['Tutorial creation', 'Scriptwriting', 'Voiceover'],
     target_platform: 'youtube', post_type: 'video', payout_type: 'milestone', total_budget: 4500, status: 'open', funding_status: 'funded',
@@ -68,7 +68,7 @@ export const EXTRA_MOCK_JOBS: MockDeal[] = [
   },
   {
     id: 'job-8', title: 'TikTok Recipe — Healthy Snacks', category: 'Food',
-    organization: { brand_name: 'Whole Foods', bio: 'Quality natural and organic products.', website: 'https://wholefoodsmarket.com', reputation: 4.7, logo_url: logo('wholefoodsmarket.com') },
+    organization: { brand_name: 'Whole Foods', bio: 'Quality natural and organic products.', website: 'https://wholefoodsmarket.com', logo_url: logo('wholefoodsmarket.com') },
     description: 'A quick, under-60s healthy snack recipe using ingredients from Whole Foods.',
     skills: ['Short-form video', 'Food styling'],
     target_platform: 'tiktok', post_type: 'video', payout_type: 'full', total_budget: 900, status: 'open', funding_status: 'unfunded',
@@ -77,7 +77,7 @@ export const EXTRA_MOCK_JOBS: MockDeal[] = [
   },
   {
     id: 'job-9', title: 'Twitter Giveaway Campaign', category: 'Crypto',
-    organization: { brand_name: 'Ledger', bio: 'Secure your crypto.', website: 'https://ledger.com', reputation: 4.9, logo_url: logo('ledger.com') },
+    organization: { brand_name: 'Ledger', bio: 'Secure your crypto.', website: 'https://ledger.com', logo_url: logo('ledger.com') },
     description: 'Host a giveaway for a Ledger Nano X. Prize and copy provided.',
     skills: ['Thread writing', 'Community management'],
     target_platform: 'twitter', post_type: 'content_writing', payout_type: 'full', total_budget: 600, status: 'completed', funding_status: 'released',
@@ -86,7 +86,7 @@ export const EXTRA_MOCK_JOBS: MockDeal[] = [
   },
   {
     id: 'job-10', title: 'Instagram Story Takeover', category: 'Music',
-    organization: { brand_name: 'Spotify', bio: 'Listening is everything.', website: 'https://spotify.com', reputation: 4.8, logo_url: logo('spotify.com') },
+    organization: { brand_name: 'Spotify', bio: 'Listening is everything.', website: 'https://spotify.com', logo_url: logo('spotify.com') },
     description: 'Take over our IG for a day sharing summer playlists and music discovery tips.',
     skills: ['Short-form video', 'Storytelling'],
     target_platform: 'instagram', post_type: 'video', payout_type: 'milestone', total_budget: 2500, status: 'open', funding_status: 'funded',
@@ -95,7 +95,7 @@ export const EXTRA_MOCK_JOBS: MockDeal[] = [
   },
   {
     id: 'job-11', title: 'YouTube Gameplay Walkthrough', category: 'Gaming',
-    organization: { brand_name: 'Epic Games', bio: 'Creators of Fortnite and Unreal Engine.', website: 'https://epicgames.com', reputation: 4.5, logo_url: logo('epicgames.com') },
+    organization: { brand_name: 'Epic Games', bio: 'Creators of Fortnite and Unreal Engine.', website: 'https://epicgames.com', logo_url: logo('epicgames.com') },
     description: 'A 20-minute gameplay video for the new Fortnite season highlighting map changes.',
     skills: ['Video editing', 'Commentary', 'Gaming'],
     target_platform: 'youtube', post_type: 'video', payout_type: 'milestone', total_budget: 3500, status: 'in_progress', funding_status: 'funded',
@@ -104,7 +104,7 @@ export const EXTRA_MOCK_JOBS: MockDeal[] = [
   },
   {
     id: 'job-12', title: 'TikTok Fitness Transformation', category: 'Fitness',
-    organization: { brand_name: 'Gymshark', bio: 'Be a visionary.', website: 'https://gymshark.com', reputation: 4.7, logo_url: logo('gymshark.com') },
+    organization: { brand_name: 'Gymshark', bio: 'Be a visionary.', website: 'https://gymshark.com', logo_url: logo('gymshark.com') },
     description: 'A TikTok showing a 30-day transformation or daily routine in our seamless collection.',
     skills: ['Short-form video', 'Fitness coaching'],
     target_platform: 'tiktok', post_type: 'video', payout_type: 'milestone', total_budget: 1500, status: 'open', funding_status: 'funded',
@@ -113,7 +113,7 @@ export const EXTRA_MOCK_JOBS: MockDeal[] = [
   },
   {
     id: 'job-13', title: 'Twitter Space Co-Host — DeFi', category: 'Crypto',
-    organization: { brand_name: 'Binance', bio: 'Exchange the world.', website: 'https://binance.com', reputation: 4.8, logo_url: logo('binance.com') },
+    organization: { brand_name: 'Binance', bio: 'Exchange the world.', website: 'https://binance.com', logo_url: logo('binance.com') },
     description: 'Co-host an official Binance Space on the future of DeFi and Web3 payments.',
     skills: ['Public speaking', 'Moderation'],
     target_platform: 'twitter', post_type: 'other', payout_type: 'full', total_budget: 1800, status: 'open', funding_status: 'funded',
@@ -122,7 +122,7 @@ export const EXTRA_MOCK_JOBS: MockDeal[] = [
   },
   {
     id: 'job-14', title: 'Instagram Product Photography', category: 'Tech',
-    organization: { brand_name: 'Apple', bio: 'Think different.', website: 'https://apple.com', reputation: 5.0, logo_url: logo('apple.com') },
+    organization: { brand_name: 'Apple', bio: 'Think different.', website: 'https://apple.com', logo_url: logo('apple.com') },
     description: 'Aesthetic lifestyle shots of the new AirPods Max for your feed.',
     skills: ['Photography', 'Product styling'],
     target_platform: 'instagram', post_type: 'image', payout_type: 'milestone', total_budget: 4000, status: 'open', funding_status: 'funded',
@@ -131,7 +131,7 @@ export const EXTRA_MOCK_JOBS: MockDeal[] = [
   },
   {
     id: 'job-15', title: 'YouTube Short — Glow Skincare Routine', category: 'Beauty',
-    organization: { brand_name: 'Sephora', bio: 'Beauty, your way.', website: 'https://sephora.com', reputation: 4.7, logo_url: logo('sephora.com') },
+    organization: { brand_name: 'Sephora', bio: 'Beauty, your way.', website: 'https://sephora.com', logo_url: logo('sephora.com') },
     description: 'A 60-second Short featuring a morning skincare routine with our new serum.',
     skills: ['Tutorial creation', 'Lighting'],
     target_platform: 'youtube', post_type: 'video', payout_type: 'full', total_budget: 1300, status: 'open', funding_status: 'unfunded',
@@ -140,7 +140,7 @@ export const EXTRA_MOCK_JOBS: MockDeal[] = [
   },
   {
     id: 'job-16', title: 'Explainer — Smart Budgeting for Gen Z', category: 'Finance',
-    organization: { brand_name: 'Revolut', bio: 'One app, all things money.', website: 'https://revolut.com', reputation: 4.6, logo_url: logo('revolut.com') },
+    organization: { brand_name: 'Revolut', bio: 'One app, all things money.', website: 'https://revolut.com', logo_url: logo('revolut.com') },
     description: 'A short, animated explainer on budgeting and saving for a Gen Z audience.',
     skills: ['Scriptwriting', 'Motion graphics'],
     target_platform: 'youtube', post_type: 'video', payout_type: 'milestone', total_budget: 2200, status: 'in_progress', funding_status: 'partially_released',
@@ -149,7 +149,7 @@ export const EXTRA_MOCK_JOBS: MockDeal[] = [
   },
   {
     id: 'job-17', title: 'Vlog — 48 Hours City Guide', category: 'Travel',
-    organization: { brand_name: 'Airbnb', bio: 'Belong anywhere.', website: 'https://airbnb.com', reputation: 4.8, logo_url: logo('airbnb.com') },
+    organization: { brand_name: 'Airbnb', bio: 'Belong anywhere.', website: 'https://airbnb.com', logo_url: logo('airbnb.com') },
     description: 'A travel vlog featuring a 48-hour city guide staying at an Airbnb.',
     skills: ['Vlogging', 'Video editing', 'Drone'],
     target_platform: 'youtube', post_type: 'video', payout_type: 'milestone', total_budget: 2800, status: 'open', funding_status: 'funded',
@@ -162,7 +162,7 @@ export const EXTRA_MOCK_JOBS: MockDeal[] = [
   // chips return results on Explore. Folds in a teammate's earlier inline deals.
   {
     id: 'job-18', title: 'B2B SaaS Content Writing Specialist', category: 'Tech',
-    organization: { brand_name: 'SaaSPro', bio: 'Developer tools for modern teams.', reputation: 4.6 },
+    organization: { brand_name: 'SaaSPro', bio: 'Developer tools for modern teams.' },
     description: 'Write a high-quality blog post about our Web3 developer tools — clear, technical, and SEO-aware.',
     skills: ['Copywriting', 'SEO', 'Research'],
     target_platform: 'other', post_type: 'content_writing', payout_type: 'milestone', total_budget: 1200, status: 'open', funding_status: 'funded',
@@ -171,7 +171,7 @@ export const EXTRA_MOCK_JOBS: MockDeal[] = [
   },
   {
     id: 'job-19', title: 'Professional Video Editing for YouTube', category: 'Entertainment',
-    organization: { brand_name: 'VlogStars', bio: 'High-production creator network.', reputation: 4.7 },
+    organization: { brand_name: 'VlogStars', bio: 'High-production creator network.' },
     description: 'Edit a 10-minute high-production vlog with custom sound design and motion graphics.',
     skills: ['Video editing', 'Motion graphics', 'Sound design'],
     target_platform: 'youtube', post_type: 'video', payout_type: 'milestone', total_budget: 2500, status: 'open', funding_status: 'funded',
@@ -180,7 +180,7 @@ export const EXTRA_MOCK_JOBS: MockDeal[] = [
   },
   {
     id: 'job-20', title: 'UGC Creator for Skincare Line', category: 'Beauty',
-    organization: { brand_name: 'GlowBeauty', bio: 'Clean, organic skincare.', reputation: 4.8 },
+    organization: { brand_name: 'GlowBeauty', bio: 'Clean, organic skincare.' },
     description: 'Produce 3 authentic short-form videos demonstrating our new organic skincare collection.',
     skills: ['Short-form video', 'UGC', 'Storytelling'],
     target_platform: 'tiktok', post_type: 'video', payout_type: 'milestone', total_budget: 950, status: 'open', funding_status: 'unfunded',
@@ -189,7 +189,7 @@ export const EXTRA_MOCK_JOBS: MockDeal[] = [
   },
   {
     id: 'job-21', title: 'Long-term Brand Ambassador', category: 'Fitness',
-    organization: { brand_name: 'FitLife', bio: 'Premium fitness apparel.', reputation: 4.9 },
+    organization: { brand_name: 'FitLife', bio: 'Premium fitness apparel.' },
     description: 'Represent our premium fitness apparel brand across your socials for the next 3 months.',
     skills: ['Brand ambassadorship', 'Content creation', 'Community management'],
     target_platform: 'instagram', post_type: 'image', payout_type: 'milestone', total_budget: 5000, status: 'open', funding_status: 'funded',

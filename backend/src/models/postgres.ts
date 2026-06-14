@@ -111,6 +111,9 @@ export class PgJobRepository {
     const params: any[] = [];
     const add = (sql: string, value: any) => { params.push(value); conds.push(sql.replace('?', `$${params.length}`)); };
     if (filters.organization_id) add('organization_id = ?', filters.organization_id);
+    // selected_creator_id isn't a promoted column — filter on the JSONB blob
+    // (indexed via jobs_selected_creator_idx) so we don't scan/transfer every job.
+    if (filters.selected_creator_id) add("data->>'selected_creator_id' = ?", filters.selected_creator_id);
     if (filters.status) add('status = ?', filters.status);
     if (filters.platform) add('target_platform = ?', filters.platform);
     if (filters.payout_type) add('payout_type = ?', filters.payout_type);

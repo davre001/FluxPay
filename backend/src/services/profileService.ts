@@ -88,8 +88,7 @@ export class ProfileService {
   //   +10 per completed deal
   //   −3 per disputed milestone
   private async computeCreatorScore(userId: string): Promise<number> {
-    const allJobs = await this.jobs.findMany({});
-    const creatorJobs = allJobs.filter((j: any) => j.selected_creator_id === userId);
+    const creatorJobs = await this.jobs.findMany({ selected_creator_id: userId });
 
     const completedDeals = creatorJobs.filter((j: any) => j.status === 'completed').length;
 
@@ -125,8 +124,9 @@ export class ProfileService {
       const milestones = await this.milestones.findMany({ job_id: job.id });
       for (const ms of milestones) {
         if (ms.status === 'approved') approvedMilestones++;
-        // Dispute lost = milestone that was disputed, then re-submitted and approved
-        if (ms.status === 'approved' && ms.dispute_reason) disputesLost++;
+        // Dispute lost = milestone that was disputed, then re-submitted and approved.
+        // Uses the immutable `was_disputed` flag rather than the mutable dispute_reason text.
+        if (ms.status === 'approved' && ms.was_disputed) disputesLost++;
       }
     }
 
@@ -154,9 +154,9 @@ export class ProfileService {
     // Completed deals for this user (works for both creators and brands)
     const completedDeals: any[] = [];
     if (profileType === 'creator') {
-      const allJobs = await this.jobs.findMany({});
-      for (const job of allJobs) {
-        if (job.selected_creator_id === userId && job.status === 'completed') {
+      const creatorJobs = await this.jobs.findMany({ selected_creator_id: userId });
+      for (const job of creatorJobs) {
+        if (job.status === 'completed') {
           completedDeals.push({
             job_id: job.id,
             title: job.title,
@@ -182,7 +182,8 @@ export class ProfileService {
     return {
       user_id: userId,
       name: profile?.name || user?.email || userId,
-      email: profile?.email || user?.email || null,
+      // NOTE: email is intentionally omitted — this is a public, no-auth endpoint.
+      // The owner's email stays available via the authenticated getMyProfile().
       bio: profile?.bio || '',
       profile_picture_url: profile?.profile_picture_url || null,
       niche_tags: profile?.niche_tags || [],

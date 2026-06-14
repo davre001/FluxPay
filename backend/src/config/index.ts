@@ -49,7 +49,7 @@ export const config = {
     baseUrl: process.env.VENICE_BASE_URL || 'https://api.venice.ai/api/v1',
     // Confirmed, vision-capable model. Override via VENICE_MODEL; list options
     // with GET {baseUrl}/models.
-    model: process.env.VENICE_MODEL || 'claude-opus-4-7',
+    model: process.env.VENICE_MODEL || 'claude-opus-4-8',
   },
 
   // Gemini AI — testing-only fallback when Venice is unavailable. Same
