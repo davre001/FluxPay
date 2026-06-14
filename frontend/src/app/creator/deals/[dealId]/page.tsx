@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import { jobAPI, milestoneAPI, profileAPI } from '@/lib/api-client';
+import { validateDeliverableUrl } from '@/lib/deliverable';
 import { useDeal } from '@/hooks/useDeals';
 
 const XLogo = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
@@ -76,7 +77,7 @@ const MOCK_DEALS: Record<string, any> = {
   }
 };
 
-function MilestoneCard({ milestone, onRefresh }: { milestone: any; onRefresh: () => void; }) {
+function MilestoneCard({ milestone, platform, onRefresh }: { milestone: any; platform?: string; onRefresh: () => void; }) {
   const [open, setOpen] = useState(milestone.status === 'pending' || milestone.status === 'disputed' || milestone.status === 'submitted');
   const [url, setUrl] = useState('');
   const [note, setNote] = useState('');
@@ -85,7 +86,8 @@ function MilestoneCard({ milestone, onRefresh }: { milestone: any; onRefresh: ()
   const Icon = s.icon;
 
   const handleSubmit = async () => {
-    if (!url) { toast.error('Enter a deliverable URL'); return; }
+    const urlError = validateDeliverableUrl(url, platform);
+    if (urlError) { toast.error(urlError); return; }
     setSubmitting(true);
     try {
       await milestoneAPI.submit(milestone.id, { deliverable_url: url, deliverable_note: note });
@@ -326,7 +328,7 @@ export default function CreatorDealPage() {
               className="space-y-4"
             >
               {milestones.map((m: any) => (
-                <MilestoneCard key={m.id} milestone={m} onRefresh={refresh} />
+                <MilestoneCard key={m.id} milestone={m} platform={deal.target_platform} onRefresh={refresh} />
               ))}
             </motion.div>
           )}

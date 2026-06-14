@@ -35,6 +35,9 @@ export function createJobRecord(input) {
     status: input.status || 'open',
     // Escrow/settlement state for the deal: unfunded | funded | partially_released | released.
     funding_status: input.funding_status || 'unfunded',
+    // Cumulative USDC released to the creator across milestones — the runtime
+    // ledger guarded against total_budget on every release.
+    released_total: input.released_total ?? 0,
     // true only for demo/seed deals — lets them be deleted without touching real ones.
     seeded: input.seeded || false,
     selected_creator_id: input.selected_creator_id || null,

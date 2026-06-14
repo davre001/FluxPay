@@ -162,12 +162,11 @@ export default function OrgProfilePage() {
       setYoutube(data?.youtube || '');
       setTiktok(data?.tiktok || '');
     }).catch(() => {});
-    if (user?.walletAddress) {
-      profileAPI.getReputation(user.walletAddress)
-        .then(({ data }: any) => setRep(typeof data?.score === 'number' ? data.score : null))
-        .catch(() => {});
-    }
-  }, [user?.id, user?.email, user?.walletAddress]);
+    // Real reputation by user id (no walletAddress dependency).
+    profileAPI.getPublic(user.id)
+      .then(({ data }: any) => setRep(typeof data?.reputation?.score === 'number' ? data.reputation.score : null))
+      .catch(() => {});
+  }, [user?.id, user?.email]);
 
   const toggleIndustry = (i: string) =>
     setIndustries((prev) => prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]);

@@ -91,11 +91,11 @@ export default function CreatorDashboard() {
   const [rep, setRep] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!user?.walletAddress) return;
-    profileAPI.getReputation(user.walletAddress)
-      .then(({ data }: any) => setRep(typeof data?.score === 'number' ? data.score : null))
+    if (!user?.id) return;
+    profileAPI.getPublic(user.id)
+      .then(({ data }: any) => setRep(typeof data?.reputation?.score === 'number' ? data.reputation.score : null))
       .catch(() => {});
-  }, [user?.walletAddress]);
+  }, [user?.id]);
 
   // Real total earned: sum of approved-milestone payouts across the creator's
   // accepted deals (USDC). Starts at $0 — no hardcoded figure.

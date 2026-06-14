@@ -3,7 +3,7 @@ import { InMemoryApplicationRepository } from '../models/application.ts';
 import { InMemoryMilestoneRepository } from '../models/milestone.ts';
 import { InMemoryProfileRepository } from '../models/profile.ts';
 import { NotFoundError, ValidationError } from '../utils/errors.ts';
-import { assertJobStatus, parseApplicationInput, parseJobInput, parseMilestoneInput } from '../utils/validators.ts';
+import { assertJobStatus, parseApplicationInput, parseJobInput, parseMilestoneInput, isValidHttpUrl, urlMatchesPlatform } from '../utils/validators.ts';
 
 const MILESTONE_TRANSITIONS: Record<string, string[]> = {
   pending: ['submitted'],
@@ -152,7 +152,7 @@ export class JobService {
     const job = await this.jobs.findById(jobId);
     if (!job) throw new NotFoundError('Job not found');
     return this.jobs.update(jobId, {
-      funded: true,
+      funding_status: 'funded',
       escrow_tx_hash: data.tx_hash || null,
     });
   }
@@ -171,6 +171,15 @@ export class JobService {
     }
     const deliverable_url = String(data.deliverable_url || '').trim();
     if (!deliverable_url) throw new ValidationError('deliverable_url is required');
+    if (!isValidHttpUrl(deliverable_url)) {
+      throw new ValidationError('deliverable_url must be a valid http(s) link');
+    }
+    // Deliverable must be on the job's target platform (e.g. no TikTok link on
+    // an Instagram job). 'other' platform jobs accept any valid URL.
+    const job = await this.jobs.findById(milestone.job_id);
+    if (job && job.target_platform !== 'other' && !urlMatchesPlatform(job.target_platform, deliverable_url)) {
+      throw new ValidationError(`Deliverable must be a ${job.target_platform} link`);
+    }
     return this.milestones.update(milestoneId, {
       status: 'submitted',
       deliverable_url,

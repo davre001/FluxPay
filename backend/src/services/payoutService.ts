@@ -59,6 +59,18 @@ export class PayoutService {
     const amount = opts.amountUsdc != null
       ? Math.min(Number(opts.amountUsdc), Number(milestone.amount))
       : Number(milestone.amount);
+
+    // Runtime budget guard: cumulative releases must never exceed the deal
+    // budget (defense-in-depth atop the per-milestone cap and the permission
+    // cap). Compared in integer cents to avoid float drift.
+    const priorReleased = Number(job.released_total || 0);
+    const budget = Number(job.total_budget || 0);
+    if (budget > 0 && Math.round((priorReleased + amount) * 100) > Math.round(budget * 100)) {
+      throw new ValidationError(
+        `Release of ${amount} would exceed the job budget (${priorReleased} of ${budget} already released)`
+      );
+    }
+
     let result: any;
 
     if (via === 'relayer') {
@@ -87,6 +99,24 @@ export class PayoutService {
         delegationManager: permission.delegation_manager,
       });
       result = { ok: redeemed.redeemed, txHash: redeemed.txHash || null, reason: redeemed.reason, via: 'direct', ...redeemed };
+    }
+
+    // Advance the deal's budget ledger on a successful release. Read-modify-write
+    // on the Neon HTTP driver (no transactions) — fine here since releases for a
+    // single job aren't concurrent in practice.
+    if (result.ok) {
+      const newReleased = Math.round((priorReleased + amount) * 1e6) / 1e6;
+      // Done when the budget is fully released, or every milestone is approved
+      // (quality-weighted payouts can sum to < budget yet still finish the deal).
+      const allMilestones = await this.milestones.findMany({ job_id: job.id });
+      const allApproved = allMilestones.length > 0 && allMilestones.every((m: any) => m.status === 'approved');
+      const budgetReached = budget > 0 && Math.round(newReleased * 100) >= Math.round(budget * 100);
+      const done = budgetReached || allApproved;
+      await this.jobs.update(job.id, {
+        released_total: newReleased,
+        funding_status: done ? 'released' : 'partially_released',
+        ...(done ? { status: 'completed' } : {}),
+      });
     }
 
     // Record the attempt on the permission record (new slice — safe to mutate).

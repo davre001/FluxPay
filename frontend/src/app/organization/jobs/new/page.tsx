@@ -64,11 +64,32 @@ export default function NewJobPage() {
   const removeMilestone = (i: number) =>
     setMilestones(milestones.filter((_, idx) => idx !== i));
 
+  // Milestone allocation vs budget. For milestone-based payout the stage amounts
+  // must add up to the total budget (the escrow/permission is sized to it).
+  const budgetNum = Number(budget) || 0;
+  const allocated = milestones.reduce((s, m) => s + (Number(m.amount) || 0), 0);
+  const milestonesBalanced = budgetNum > 0 && Math.round(allocated * 100) === Math.round(budgetNum * 100);
+  const canSubmit = payoutType !== 'milestone' || (milestones.length > 0 && milestonesBalanced);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !description || !budget) {
       toast.error('Fill in all required fields');
       return;
+    }
+    if (payoutType === 'milestone') {
+      if (milestones.length === 0) {
+        toast.error('Add at least one milestone, or switch to Single Payment');
+        return;
+      }
+      if (!milestonesBalanced) {
+        toast.error(
+          allocated > budgetNum
+            ? `Milestones total $${allocated.toLocaleString()} — $${(allocated - budgetNum).toLocaleString()} over the $${budgetNum.toLocaleString()} budget`
+            : `Milestones total $${allocated.toLocaleString()} — $${(budgetNum - allocated).toLocaleString()} of the $${budgetNum.toLocaleString()} budget is unallocated`
+        );
+        return;
+      }
     }
     if (platform === 'other' && !platformOther.trim()) {
       toast.error('Enter the name of the social platform');
@@ -347,6 +368,24 @@ export default function NewJobPage() {
                   ))}
                 </div>
               )}
+
+              {milestones.length > 0 && (
+                <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid #1a1a1a' }}>
+                  <span className="text-xs font-bold text-[#6b7280] uppercase tracking-wider">Allocated</span>
+                  <div className="text-right">
+                    <span className={`text-sm font-bold ${milestonesBalanced ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
+                      ${allocated.toLocaleString()} / ${budgetNum.toLocaleString()}
+                    </span>
+                    {!milestonesBalanced && (
+                      <p className="text-[11px] font-semibold text-[#ef4444] mt-0.5">
+                        {allocated > budgetNum
+                          ? `Over budget by $${(allocated - budgetNum).toLocaleString()}`
+                          : `$${(budgetNum - allocated).toLocaleString()} unallocated`}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -388,9 +427,9 @@ export default function NewJobPage() {
             <Link href="/organization/dashboard" className="px-6 py-3 rounded-xl font-bold text-sm bg-[#1a1a1a] text-white hover:bg-[#222222] transition-colors border border-[#333333] text-center flex-1 sm:flex-none">
               Cancel
             </Link>
-            <button 
-              type="submit" disabled={loading} 
-              className="flex-1 px-6 py-3 rounded-xl font-bold text-sm bg-white text-black hover:bg-[#f0f0f0] transition-colors flex items-center justify-center gap-2"
+            <button
+              type="submit" disabled={loading || !canSubmit}
+              className="flex-1 px-6 py-3 rounded-xl font-bold text-sm bg-white text-black hover:bg-[#f0f0f0] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
               {loading ? 'Posting Deal...' : 'Publish Deal'}

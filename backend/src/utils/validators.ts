@@ -141,6 +141,30 @@ export function parseJobInput(data: any = {}) {
 
   const milestones = Array.isArray(data.milestones) ? data.milestones : [];
 
+  // Milestone-based deals must allocate the budget exactly across stages: the
+  // escrow / ERC-7715 spending permission is sized to total_budget, so the sum
+  // of milestone amounts can't exceed (or fall short of) it — otherwise later
+  // releases revert or funds are stranded. Money-path invariant; enforce here.
+  if (payout_type === 'milestone') {
+    if (milestones.length === 0) {
+      throw new ValidationError('Milestone-based payout requires at least one milestone');
+    }
+    let allocated = 0;
+    for (const m of milestones) {
+      const amt = Number(m?.amount);
+      if (!(amt > 0)) {
+        throw new ValidationError('Each milestone amount must be a positive number');
+      }
+      allocated += amt;
+    }
+    // Compare in integer cents to avoid float drift.
+    if (Math.round(allocated * 100) !== Math.round(total_budget * 100)) {
+      throw new ValidationError(
+        `Milestone amounts must sum to the total budget of ${total_budget} USDC (got ${allocated})`
+      );
+    }
+  }
+
   return {
     title,
     description: String(sanitizeString(data.description || '')),
@@ -235,4 +259,41 @@ export function parseWalletWithdrawInput(data: any = {}) {
     throw new ValidationError('to_address must be a valid Ethereum address');
   }
   return { amount, to_address };
+}
+
+// ─── Deliverable submission validation ────────────────────────────────────────
+
+// A milestone deliverable must be a well-formed http(s) URL.
+export function isValidHttpUrl(value: any): boolean {
+  try {
+    const u = new URL(String(value));
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+// Allowed deliverable hosts per target platform. `other` has no constraint.
+export const PLATFORM_DOMAINS: Record<string, string[]> = {
+  instagram: ['instagram.com'],
+  twitter: ['twitter.com', 'x.com'],
+  youtube: ['youtube.com', 'youtu.be'],
+  tiktok: ['tiktok.com'],
+  facebook: ['facebook.com', 'fb.watch'],
+  other: [],
+};
+
+// Does the deliverable URL belong to the job's target platform? `other` (or an
+// unknown platform) imposes no host constraint. Matches the domain or any
+// subdomain of it (e.g. www.instagram.com, m.youtube.com).
+export function urlMatchesPlatform(platform: string, url: string): boolean {
+  const domains = PLATFORM_DOMAINS[platform];
+  if (!domains || domains.length === 0) return true; // 'other'/unknown — no check
+  let host: string;
+  try {
+    host = new URL(String(url)).hostname.toLowerCase().replace(/^www\./, '');
+  } catch {
+    return false;
+  }
+  return domains.some((d) => host === d || host.endsWith(`.${d}`));
 }

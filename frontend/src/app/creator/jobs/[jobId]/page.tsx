@@ -10,6 +10,7 @@ import {
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { milestoneAPI, profileAPI } from '@/lib/api-client';
+import { validateDeliverableUrl } from '@/lib/deliverable';
 import { useDeal, useMyApplications, useApplyToDeal } from '@/hooks/useDeals';
 
 const XLogo = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
@@ -126,8 +127,9 @@ export default function JobDetailsPage() {
   };
 
   const handleSubmitDeliverable = async (milestoneId: string) => {
-    if (!deliverableUrl.trim()) {
-      toast.error('Please provide a URL to your deliverable');
+    const urlError = validateDeliverableUrl(deliverableUrl, job?.target_platform);
+    if (urlError) {
+      toast.error(urlError);
       return;
     }
     setSubmitting(true);

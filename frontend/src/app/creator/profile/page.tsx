@@ -138,6 +138,7 @@ export default function CreatorProfilePage() {
   const [picUrl, setPicUrl] = useState('');
   const [niches, setNiches] = useState<string[]>([]);
   const [rep, setRep] = useState<number | null>(null);
+  const [completedCount, setCompletedCount] = useState<number | null>(null);
   const [instagram, setInstagram] = useState('');
   const [twitter, setTwitter] = useState('');
   const [youtube, setYoutube] = useState('');
@@ -163,12 +164,14 @@ export default function CreatorProfilePage() {
       setYoutube(data?.youtube || '');
       setTiktok(data?.tiktok || '');
     }).catch(() => {});
-    if (user?.walletAddress) {
-      profileAPI.getReputation(user.walletAddress)
-        .then(({ data }: any) => setRep(typeof data?.score === 'number' ? data.score : null))
-        .catch(() => {});
-    }
-  }, [user?.id, user?.email, user?.walletAddress]);
+    // Real reputation + completed-deal count by user id (no walletAddress needed).
+    profileAPI.getPublic(user.id)
+      .then(({ data }: any) => {
+        setRep(typeof data?.reputation?.score === 'number' ? data.reputation.score : null);
+        setCompletedCount(Array.isArray(data?.completed_deals) ? data.completed_deals.length : 0);
+      })
+      .catch(() => {});
+  }, [user?.id, user?.email]);
 
   const toggleNiche = (n: string) =>
     setNiches((prev) => prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]);
@@ -460,6 +463,17 @@ export default function CreatorProfilePage() {
           </>
         ) : (
           <>
+                {/* View: Profile Details */}
+                <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+                  <SectionHeader title="Profile Details" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <PremiumInput label="Display Name" value={name} onChange={() => {}} isEditing={false} />
+                    <PremiumInput label="Email Address" value={email} onChange={() => {}} isEditing={false} />
+                    <PremiumInput label="Website" value={websiteUrl} onChange={() => {}} prefix={<Globe size={14} className="text-[#4b5563]" />} isEditing={false} />
+                    <PremiumInput label="Location" value={location} onChange={() => {}} prefix={<MapPin size={14} className="text-[#4b5563]" />} isEditing={false} />
+                  </div>
+                </div>
+
                 {/* View: Bio */}
                 <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
                   <SectionHeader title="Professional Summary" />
@@ -505,8 +519,8 @@ export default function CreatorProfilePage() {
                       </div>
                       <p className="text-xs font-semibold text-[#9ca3af]">Completed Escrows</p>
                     </div>
-                    <p className="text-3xl font-black text-white">100%</p>
-                    <p className="text-xs text-[#4b5563] mt-1.5 leading-relaxed">All milestones delivered on-time via smart contracts.</p>
+                    <p className="text-3xl font-black text-white">{completedCount ?? '—'}</p>
+                    <p className="text-xs text-[#4b5563] mt-1.5 leading-relaxed">Deals fully delivered and released via smart-contract escrow.</p>
                   </div>
                   <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
                     <div className="flex items-center gap-2 mb-4">
