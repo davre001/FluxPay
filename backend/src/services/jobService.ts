@@ -333,6 +333,18 @@ export class JobService {
     return this.applications.update(applicationId, { status: 'withdrawn' });
   }
 
+  // Brand declines a pending applicant on one of its own jobs.
+  async rejectApplication(applicationId: string, orgUserId: string) {
+    const application = await this.applications.findById(applicationId);
+    if (!application) throw new NotFoundError('Application not found');
+    const job = await this.jobs.findById(application.job_id);
+    if (!job || job.organization_id !== orgUserId) throw new ValidationError('Not your job');
+    if (application.status !== 'pending') {
+      throw new ValidationError(`Cannot decline a ${application.status} application`);
+    }
+    return this.applications.update(applicationId, { status: 'rejected' });
+  }
+
   // All applications across the org's own jobs, enriched with job + applicant
   // context — powers the brand's approvals inbox.
   async getIncomingApplications(orgUserId: string) {
@@ -340,8 +352,10 @@ export class JobService {
     const grouped = await Promise.all(jobs.map(async (job: any) => {
       const apps = await this.applications.findMany({ job_id: job.id });
       return Promise.all(
+        // Inbox = decisions still pending. Once accepted/rejected/withdrawn, the
+        // application leaves the approvals queue.
         apps
-          .filter((a: any) => a.status !== 'withdrawn')
+          .filter((a: any) => a.status === 'pending')
           .map(async (app: any) => {
             const profile = await this.profiles.findByUserId(app.creator_id).catch(() => null);
             const { qualified, reasons } = await this.qualifyApplicant(job, app.creator_id);

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Check, X, User, ExternalLink, Zap, ShieldCheck, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { jobAPI } from '@/lib/api-client';
+import { jobAPI, applicationAPI } from '@/lib/api-client';
 import { useIncomingApplications } from '@/hooks/useDeals';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -58,9 +58,18 @@ export default function ApprovalsPage() {
     setActing(null);
   };
 
-  const handleReject = (app: any) => {
-    setRemovedIds(prev => new Set([...prev, app.id]));   // local only (no reject endpoint)
-    toast.success('Application dismissed.');
+  const handleReject = async (app: any) => {
+    setActing(app.id);
+    setRemovedIds(prev => new Set([...prev, app.id]));   // optimistic
+    try {
+      await applicationAPI.reject(app.id);
+      qc.invalidateQueries({ queryKey: ['incoming-applications'] });
+      toast.success('Application declined.');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to decline');
+      setRemovedIds(prev => { const next = new Set(prev); next.delete(app.id); return next; }); // roll back
+    }
+    setActing(null);
   };
 
   return (

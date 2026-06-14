@@ -88,6 +88,10 @@ export function createJobRoutes(service = new JobService()) {
       return { statusCode: 200, body: await service.withdrawApplication(applicationId, user.id) };
     },
 
+    async rejectApplication(user: any, applicationId: string) {
+      return { statusCode: 200, body: await service.rejectApplication(applicationId, user.id) };
+    },
+
     async listIncomingApplications(user: any) {
       return { statusCode: 200, body: await service.getIncomingApplications(user.id) };
     },

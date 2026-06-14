@@ -44,4 +44,10 @@ export class InMemoryUserRepository {
     const user = this.users.get(key);
     return user ? { ...user } : null;
   }
+
+  async findByWalletAddress(walletAddress: string) {
+    const target = (walletAddress || '').toLowerCase();
+    const match = [...this.users.values()].find((u: any) => (u.walletAddress || '').toLowerCase() === target);
+    return match ? { ...match } : null;
+  }
 }

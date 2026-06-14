@@ -458,6 +458,10 @@ async function dispatchApplicationRoute(req, parts, routes, user) {
   if (req.method === 'POST' && parts[2] === 'withdraw') {
     return routes.withdrawApplication(user, decodeURIComponent(parts[1]));
   }
+  // POST /api/applications/:id/reject — brand declines an applicant
+  if (req.method === 'POST' && parts[2] === 'reject') {
+    return routes.rejectApplication(user, decodeURIComponent(parts[1]));
+  }
   throw new NotFoundError('Route not found');
 }
 

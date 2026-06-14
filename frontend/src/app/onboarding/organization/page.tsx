@@ -2,12 +2,18 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, ArrowRight, Loader2, Globe } from 'lucide-react';
+import { Building2, ArrowRight, Loader2, Globe, Upload, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { profileAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
 import Footer4Col from '@/components/ui/footer-column';
+
+const INDUSTRY_OPTIONS = [
+  'Technology', 'Fashion & Apparel', 'Food & Beverage', 'Beauty & Wellness',
+  'Finance & Fintech', 'Gaming', 'Travel & Hospitality', 'Health & Fitness',
+  'E-commerce', 'Education', 'Entertainment', 'Sports', 'Automotive', 'Home & Lifestyle',
+];
 
 export default function OrganizationOnboarding() {
   const router = useRouter();
@@ -17,6 +23,9 @@ export default function OrganizationOnboarding() {
   const [email, setEmail] = useState(user?.email || '');
   const [description, setDescription] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
+  const [industries, setIndustries] = useState<string[]>([]);
+  const toggleIndustry = (i: string) =>
+    setIndustries((prev) => prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]);
   const [picUrl, setPicUrl] = useState('');
   const [instagram, setInstagram] = useState('');
   const [twitter, setTwitter] = useState('');
@@ -35,6 +44,7 @@ export default function OrganizationOnboarding() {
         bio: description,
         profile_picture_url: picUrl || null,
         website_url: websiteUrl || null,
+        niche_tags: industries,
         instagram: instagram || null,
         twitter: twitter || null,
         youtube: youtube || null,
@@ -68,16 +78,40 @@ export default function OrganizationOnboarding() {
         <div className="rounded-2xl p-8" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">Brand Logo URL</label>
-              <input value={picUrl} onChange={(e) => setPicUrl(e.target.value)}
-                     placeholder="https://..." 
-                     className="w-full bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-2.5" />
-              {picUrl && (
-                <div className="mt-3 flex justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={picUrl} alt="Preview" className="w-20 h-20 rounded-2xl object-cover bg-white p-1" style={{ border: '1px solid #252525' }} />
-                </div>
-              )}
+              <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-1.5">Brand Logo</label>
+              <div className="mt-1 flex items-center justify-center">
+                {picUrl ? (
+                  <div className="relative group">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={picUrl} alt="Logo" className="w-24 h-24 rounded-2xl object-cover bg-white p-1" style={{ border: '1px solid #252525' }} />
+                    <button type="button" onClick={() => setPicUrl('')}
+                            className="absolute -top-1 -right-1 bg-rose-600 text-white p-1.5 rounded-full hover:bg-rose-500 transition-colors shadow-lg">
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-32 border border-[#222222] border-dashed rounded-2xl cursor-pointer hover:border-[#404040] hover:bg-[#161616] transition-all bg-[#0f0f0f]">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <Upload size={24} className="text-[#6b7280] mb-2" />
+                      <p className="text-sm text-[#d1d5db] font-semibold">Click to upload logo</p>
+                      <p className="text-xs text-[#4b5563] mt-1">PNG, JPG, or WEBP</p>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => setPicUrl(reader.result as string);
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
             </div>
 
             <div>
@@ -103,6 +137,25 @@ export default function OrganizationOnboarding() {
                         placeholder="What does your brand do? What kind of creators do you work with?"
                         rows={4} 
                         className="w-full bg-[#0f0f0f] border border-[#222222] rounded-lg text-sm text-white placeholder-[#4b5563] focus:outline-none focus:border-[#404040] transition-colors duration-200 px-4 py-2.5 resize-none" />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-semibold text-[#6b7280] uppercase tracking-widest mb-2">Industry Verticals</label>
+              <div className="flex flex-wrap gap-2">
+                {INDUSTRY_OPTIONS.map((ind) => {
+                  const active = industries.includes(ind);
+                  return (
+                    <button
+                      key={ind}
+                      type="button"
+                      onClick={() => toggleIndustry(ind)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150 ${active ? 'bg-white text-black border-white' : 'text-[#9ca3af] border-[#1f1f1f] bg-[#0f0f0f] hover:border-[#333333] hover:text-white'}`}
+                    >
+                      {ind}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div>

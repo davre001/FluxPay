@@ -88,9 +88,7 @@ export class ProfileService {
   //   score = clamp(0, 100)
 
   async getReputation(walletAddress: string) {
-    const user = [...this.users.users.values()].find(
-      (u: any) => u.walletAddress?.toLowerCase() === walletAddress.toLowerCase()
-    );
+    const user = await this.users.findByWalletAddress(walletAddress);
 
     if (!user) {
       return {
@@ -179,7 +177,7 @@ export class ProfileService {
     const profile = await this.profiles.findByUserId(userId);
 
     // Find the user to get walletAddress + profileType
-    const user = [...this.users.users.values()].find((u: any) => u.id === userId) || null;
+    const user = await this.users.findByKey(userId);
 
     if (!profile && !user) {
       throw new NotFoundError('Profile not found');
@@ -240,7 +238,7 @@ export class ProfileService {
   // Compute reputation score for a userId directly (for enrichment), returns
   // the numeric score only (0–100 for everyone).
   async getReputationScoreForUser(userId: string): Promise<number> {
-    const user = [...this.users.users.values()].find((u: any) => u.id === userId) || null;
+    const user = await this.users.findByKey(userId);
     if (!user) return 0;
     return this.computeScore(userId, user.profileType);
   }

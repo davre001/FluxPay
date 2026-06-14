@@ -135,6 +135,7 @@ export default function OrgProfilePage() {
   const [picUrl, setPicUrl] = useState('');
   const [industries, setIndustries] = useState<string[]>([]);
   const [rep, setRep] = useState<number | null>(null);
+  const [completedCount, setCompletedCount] = useState<number | null>(null);
   const [instagram, setInstagram] = useState('');
   const [twitter, setTwitter] = useState('');
   const [youtube, setYoutube] = useState('');
@@ -162,9 +163,12 @@ export default function OrgProfilePage() {
       setYoutube(data?.youtube || '');
       setTiktok(data?.tiktok || '');
     }).catch(() => {});
-    // Real reputation by user id (no walletAddress dependency).
+    // Real reputation + completed-campaign count by user id.
     profileAPI.getPublic(user.id)
-      .then(({ data }: any) => setRep(typeof data?.reputation?.score === 'number' ? data.reputation.score : null))
+      .then(({ data }: any) => {
+        setRep(typeof data?.reputation?.score === 'number' ? data.reputation.score : null);
+        setCompletedCount(Array.isArray(data?.completed_deals) ? data.completed_deals.length : 0);
+      })
       .catch(() => {});
   }, [user?.id, user?.email]);
 
@@ -467,6 +471,30 @@ export default function OrgProfilePage() {
                   prefix={<Globe size={14} className="text-[#4b5563]" />}
                   isEditing={isEditing}
                 />
+              </div>
+            </div>
+
+            {/* Track record / stats — what creators check before applying */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#161616' }}>
+                    <CheckCircle2 size={13} className="text-[#22c55e]" />
+                  </div>
+                  <p className="text-xs font-semibold text-[#9ca3af]">Completed Campaigns</p>
+                </div>
+                <p className="text-3xl font-black text-white">{completedCount ?? '—'}</p>
+                <p className="text-xs text-[#4b5563] mt-1.5 leading-relaxed">Deals delivered and paid out via smart-contract escrow.</p>
+              </div>
+              <div className="rounded-xl p-6" style={{ background: '#111111', border: '1px solid #1a1a1a' }}>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#161616' }}>
+                    <Star size={13} className="text-[#f59e0b] fill-[#f59e0b]" />
+                  </div>
+                  <p className="text-xs font-semibold text-[#9ca3af]">Reputation Score</p>
+                </div>
+                <p className="text-3xl font-black text-white">{rep ?? '—'} <span className="text-lg text-[#4b5563] font-bold">/ 100</span></p>
+                <p className="text-xs text-[#4b5563] mt-1.5 leading-relaxed">Earned from completed deals, smooth handoffs, and low disputes.</p>
               </div>
             </div>
 

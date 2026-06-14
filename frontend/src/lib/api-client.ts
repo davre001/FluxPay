@@ -115,6 +115,8 @@ export const applicationAPI = {
     request<Application[]>('GET', '/api/applications/mine', undefined, params as Record<string, unknown>),
   // Creator withdraws their own pending application.
   withdraw: (applicationId: string) => request<Application>('POST', `/api/applications/${applicationId}/withdraw`),
+  // Brand declines a pending applicant on its own job.
+  reject: (applicationId: string) => request<Application>('POST', `/api/applications/${applicationId}/reject`),
   // Brand inbox: applications across the org's own jobs.
   listIncoming: () => request<Application[]>('GET', '/api/applications/incoming'),
 }

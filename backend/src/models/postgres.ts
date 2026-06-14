@@ -53,6 +53,14 @@ export class PgUserRepository {
     return rows[0] ? rows[0].data : null;
   }
 
+  async findByWalletAddress(walletAddress: string) {
+    const rows = await query(
+      `SELECT data FROM users WHERE lower(data->>'walletAddress') = lower($1) LIMIT 1`,
+      [walletAddress],
+    );
+    return rows[0] ? rows[0].data : null;
+  }
+
   async clear() {
     await query(`DELETE FROM users`);
   }
