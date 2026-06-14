@@ -129,6 +129,13 @@ export function parseJobInput(data: any = {}) {
     throw new ValidationError(`payout_type must be one of: ${PAYOUT_TYPES.join(', ')}`);
   }
 
+  // How many creators the brand will hire (multi-hire). Defaults to single-winner.
+  // The funded pool is total_budget × creator_slots, so this must be a whole number ≥ 1.
+  const creator_slots = data.creator_slots == null ? 1 : Number(data.creator_slots);
+  if (!Number.isInteger(creator_slots) || creator_slots < 1) {
+    throw new ValidationError('creator_slots must be a whole number ≥ 1');
+  }
+
   const target_platform = data.target_platform || 'other';
   if (!TARGET_PLATFORMS.includes(target_platform)) {
     throw new ValidationError(`target_platform must be one of: ${TARGET_PLATFORMS.join(', ')}`);
@@ -141,10 +148,11 @@ export function parseJobInput(data: any = {}) {
 
   const milestones = Array.isArray(data.milestones) ? data.milestones : [];
 
-  // Milestone-based deals must allocate the budget exactly across stages: the
-  // escrow / ERC-7715 spending permission is sized to total_budget, so the sum
-  // of milestone amounts can't exceed (or fall short of) it — otherwise later
-  // releases revert or funds are stranded. Money-path invariant; enforce here.
+  // total_budget is the POOL; each of the creator_slots hires earns an equal
+  // per-creator cut = total_budget / creator_slots. Milestones describe ONE
+  // creator's journey, so they must sum to that per-creator cut (not the pool) —
+  // otherwise that creator's releases revert or leave funds stranded. Money-path
+  // invariant; enforce here.
   if (payout_type === 'milestone') {
     if (milestones.length === 0) {
       throw new ValidationError('Milestone-based payout requires at least one milestone');
@@ -157,10 +165,12 @@ export function parseJobInput(data: any = {}) {
       }
       allocated += amt;
     }
+    const perCreator = total_budget / creator_slots;
     // Compare in integer cents to avoid float drift.
-    if (Math.round(allocated * 100) !== Math.round(total_budget * 100)) {
+    if (Math.round(allocated * 100) !== Math.round(perCreator * 100)) {
       throw new ValidationError(
-        `Milestone amounts must sum to the total budget of ${total_budget} USDC (got ${allocated})`
+        `Milestone amounts must sum to the per-creator cut of ${perCreator} USDC ` +
+        `(total ${total_budget} ÷ ${creator_slots} creator slot(s)), got ${allocated}`
       );
     }
   }
@@ -192,6 +202,7 @@ export function parseJobInput(data: any = {}) {
     category: data.category ? String(sanitizeString(data.category)) : null,
     skills: Array.isArray(data.skills) ? data.skills.map((s: any) => String(s)).slice(0, 20) : [],
     total_budget,
+    creator_slots,
     payout_type,
     target_platform,
     platform_other,

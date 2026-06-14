@@ -4,6 +4,7 @@ import { InMemoryJobRepository } from '../models/job.ts';
 import { InMemoryMilestoneRepository } from '../models/milestone.ts';
 import { NotFoundError } from '../utils/errors.ts';
 import { parseProfileInput } from '../utils/validators.ts';
+import { collectCreatorMilestones } from '../utils/reputation.ts';
 import { SocialOAuthService } from './socialOAuthService.ts';
 
 // Every new user gets a small signup bonus to their reputation.
@@ -123,18 +124,19 @@ export class ProfileService {
   //   +10 per completed deal
   //   −3 per disputed milestone
   private async computeCreatorScore(userId: string): Promise<number> {
-    const creatorJobs = await this.jobs.findMany({ selected_creator_id: userId });
-
-    const completedDeals = creatorJobs.filter((j: any) => j.status === 'completed').length;
+    // Count the creator's worked milestones — per-creator instances (multi-hire)
+    // plus legacy single-winner templates — so historical scores stay intact.
+    const byJob = await collectCreatorMilestones(this.jobs, this.milestones, userId);
 
     let approvedMilestones = 0;
     let disputes = 0;
-    for (const job of creatorJobs) {
-      const milestones = await this.milestones.findMany({ job_id: job.id });
-      for (const ms of milestones) {
-        if (ms.status === 'approved') approvedMilestones++;
-        if (ms.status === 'disputed') disputes++;
+    let completedDeals = 0;
+    for (const ms of byJob.values()) {
+      for (const m of ms) {
+        if (m.status === 'approved') approvedMilestones++;
+        if (m.status === 'disputed') disputes++;
       }
+      if (ms.length > 0 && ms.every((m: any) => m.status === 'approved')) completedDeals++;
     }
 
     const socialBonus = Math.min(20, (await this.linkedSocialCount(userId)) * 5);
@@ -191,9 +193,13 @@ export class ProfileService {
     // Completed deals for this user (works for both creators and brands)
     const completedDeals: any[] = [];
     if (profileType === 'creator') {
-      const creatorJobs = await this.jobs.findMany({ selected_creator_id: userId });
-      for (const job of creatorJobs) {
-        if (job.status === 'completed') {
+      // Deals where all of this creator's worked milestones are approved — covers
+      // both new per-creator instances and legacy single-winner templates.
+      const byJob = await collectCreatorMilestones(this.jobs, this.milestones, userId);
+      for (const [jobId, ms] of byJob) {
+        if (ms.length === 0 || !ms.every((m: any) => m.status === 'approved')) continue;
+        const job = await this.jobs.findById(jobId);
+        if (job) {
           completedDeals.push({
             job_id: job.id,
             title: job.title,

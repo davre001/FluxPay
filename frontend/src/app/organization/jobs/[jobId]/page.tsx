@@ -309,30 +309,49 @@ export default function OrgJobDetailPage() {
     }
 
     try {
+      const isFirstApproval = (job?.approved_creator_ids?.length ?? 0) === 0;
       await jobAPI.selectCreator(jobId, creatorId);
-      toast.success('Creator selected! Deal has started.');
+      toast.success('Creator approved!');
 
-      try {
-        const budget = Number(job?.total_budget ?? 0);
-        if (budget > 0) {
-          await grant({ jobId, organizationId: job?.organization_id, creatorId, budgetUsdc: budget });
-          toast.success(`Approved auto-release of up to $${budget} USDC 🔐`);
+      // The brand's ERC-7715 permission funds the whole pool (per-creator cut ×
+      // slots) and is granted once, on the first approval. Later approvals reuse it.
+      if (isFirstApproval) {
+        try {
+          // total_budget IS the pool — grant the permission for the whole pool.
+          const poolUsdc = Number(job?.total_budget ?? 0);
+          if (poolUsdc > 0) {
+            await grant({ jobId, organizationId: job?.organization_id, creatorId, budgetUsdc: poolUsdc });
+            toast.success(`Approved auto-release of up to $${poolUsdc} USDC 🔐`);
+          }
+        } catch (permErr: any) {
+          toast.error(permErr?.message || 'Permission not granted — you can retry from the deal page');
         }
-      } catch (permErr: any) {
-        toast.error(permErr?.message || 'Permission not granted — you can retry from the deal page');
       }
 
       refresh();
-      setTab('milestones');
     } catch (e: any) {
-      toast.error(e?.message || 'Failed to select creator');
+      toast.error(e?.message || 'Failed to approve creator');
     }
     setSelecting(null);
   };
 
+  const slots = Number(job?.creator_slots ?? 1);
+  const approvedIds: string[] = job?.approved_creator_ids ?? [];
+  const slotsRemaining = slots - approvedIds.length;
+  // total_budget IS the pool; each hired creator earns pool / slots.
+  const pool = Number(job?.total_budget ?? 0);
+  const perCreator = pool / slots;
+  const creatorMilestones: any[] = job?.creator_milestones ?? [];
+  // creator_id → display name, from the applicant list.
+  const nameFor = (cid: string) =>
+    applications.find((a: any) => a.creator_id === cid)?.creator_name || cid;
+
   const milestones = job?.milestones ?? [];
-  const approved = milestones.filter((m: any) => m.status === 'approved').length;
-  const progress = milestones.length > 0 ? (approved / milestones.length) * 100 : 0;
+  // Progress tracks the actual per-creator instances once anyone is approved
+  // (templates never get worked); falls back to the template count beforehand.
+  const progressMs = creatorMilestones.length > 0 ? creatorMilestones : milestones;
+  const approved = progressMs.filter((m: any) => m.status === 'approved').length;
+  const progress = progressMs.length > 0 ? (approved / progressMs.length) * 100 : 0;
 
   if (!job) return (
     <div className="p-10 min-h-screen flex items-center justify-center" style={{ background: '#0a0a0a', fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
@@ -409,7 +428,12 @@ export default function OrgJobDetailPage() {
 
             <div className="flex flex-col items-start md:items-end flex-shrink-0">
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#6b7280] mb-1">Total Escrowed</p>
-              <p className="text-4xl font-black text-[#22c55e] tracking-tight">${job.total_budget} <span className="text-base font-bold text-[#4b5563]">USDC</span></p>
+              <p className="text-4xl font-black text-[#22c55e] tracking-tight">${pool} <span className="text-base font-bold text-[#4b5563]">USDC</span></p>
+              {slots > 1 && (
+                <p className="text-xs font-semibold text-[#6b7280] mt-1">
+                  ${perCreator.toLocaleString(undefined, { maximumFractionDigits: 2 })}/creator · {approvedIds.length} of {slots} slots filled
+                </p>
+              )}
             </div>
           </div>
 
@@ -419,7 +443,7 @@ export default function OrgJobDetailPage() {
               <div className="flex justify-between items-center mb-3">
                 <p className="text-xs font-bold uppercase tracking-widest text-[#6b7280]">Deal Progress</p>
                 <p className="text-xs font-bold text-[#3b82f6] bg-[rgba(59,130,246,0.1)] px-2 py-1 rounded border border-[rgba(59,130,246,0.2)]">
-                  {approved} / {milestones.length} Approved
+                  {approved} / {progressMs.length} Approved
                 </p>
               </div>
               <div className="w-full h-3 rounded-full bg-[#1a1a1a] overflow-hidden border border-[#252525]">
@@ -488,13 +512,23 @@ export default function OrgJobDetailPage() {
                               </div>
                             )}
                           </div>
-                          {job.status === 'open' && app.status === 'pending' && (
-                            <button 
+                          {app.status === 'accepted' && (
+                            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-widest text-[#22c55e] bg-[rgba(34,197,94,0.1)] border border-[rgba(34,197,94,0.2)] flex-shrink-0">
+                              <CheckCircle size={13} /> Approved
+                            </span>
+                          )}
+                          {app.status === 'rejected' && (
+                            <span className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-widest text-[#6b7280] bg-[#1a1a1a] border border-[#252525] flex-shrink-0">
+                              Not selected
+                            </span>
+                          )}
+                          {(job.status === 'open' || job.status === 'in_progress') && app.status === 'pending' && slotsRemaining > 0 && (
+                            <button
                               onClick={() => handleSelect(app.creator_id)} disabled={!!selecting}
                               className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-[#22c55e] text-black hover:bg-[#1ea852] transition-colors flex-shrink-0"
                             >
                               {selecting === app.creator_id ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                              Hire Creator
+                              {slots > 1 ? `Approve (${slotsRemaining} left)` : 'Hire Creator'}
                             </button>
                           )}
                         </div>
@@ -520,10 +554,38 @@ export default function OrgJobDetailPage() {
                   <p className="text-base font-bold text-white mb-1">No milestones defined.</p>
                   <p className="text-sm font-semibold text-[#6b7280]">This deal uses a single payout on completion.</p>
                 </div>
+              ) : approvedIds.length === 0 ? (
+                // No creators approved yet — show the deal's milestone definition.
+                <>
+                  <p className="text-sm font-semibold text-[#6b7280] mb-2">Milestone plan (applies to each hired creator). Approve an applicant to start tracking their progress.</p>
+                  {milestones.map((m: any) => (
+                    <MilestoneRow key={m.id} milestone={m} onAction={refresh} />
+                  ))}
+                </>
               ) : (
-                milestones.map((m: any) => (
-                  <MilestoneRow key={m.id} milestone={m} onAction={refresh} />
-                ))
+                // One section per approved creator with their own instances.
+                approvedIds.map((cid) => {
+                  const theirs = creatorMilestones.filter((m: any) => m.creator_id === cid);
+                  const done = theirs.filter((m: any) => m.status === 'approved').length;
+                  return (
+                    <div key={cid} className="rounded-2xl p-5 space-y-3" style={{ background: '#0d0d0d', border: '1px solid #1a1a1a' }}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-black font-black text-sm flex-shrink-0">
+                            {(nameFor(cid)?.[0] ?? '?').toUpperCase()}
+                          </div>
+                          <p className="font-bold text-white text-sm">{nameFor(cid)}</p>
+                        </div>
+                        <span className="text-xs font-bold text-[#3b82f6] bg-[rgba(59,130,246,0.1)] px-2 py-1 rounded border border-[rgba(59,130,246,0.2)]">
+                          {done} / {theirs.length} Approved
+                        </span>
+                      </div>
+                      {theirs.map((m: any) => (
+                        <MilestoneRow key={m.id} milestone={m} onAction={refresh} />
+                      ))}
+                    </div>
+                  );
+                })
               )}
             </div>
           )}

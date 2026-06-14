@@ -47,6 +47,8 @@ export interface AiVerification {
 export interface Milestone {
   id: string;
   job_id: string;
+  // null = the deal's template milestone; set = a per-creator instance (multi-hire).
+  creator_id?: string | null;
   title: string;
   description: string;
   amount: number;
@@ -85,6 +87,12 @@ export interface Deal {
   funding_status: FundingStatus;
   seeded?: boolean;
   selected_creator_id: string | null;
+  // Multi-hire: how many creators the brand will hire (pool = total_budget × slots),
+  // and the creators approved so far. creator_milestones holds the per-creator
+  // instances; milestones holds the deal's template definition.
+  creator_slots?: number;
+  approved_creator_ids?: string[];
+  creator_milestones?: Milestone[];
   organization: OrganizationRef;
   created_at: string;
   updated_at: string;

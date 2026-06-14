@@ -46,12 +46,15 @@ export class PayoutService {
     const permission = await this.permissions.findByJobId(job.id);
     if (!permission) throw new NotFoundError('No spending permission granted for this job');
 
-    // Resolve the creator's payout wallet from the selected creator on the job.
-    const creatorKey = job.selected_creator_id;
-    if (!creatorKey) throw new ValidationError('Job has no selected creator');
+    // Resolve the payout wallet. Multi-hire: each milestone instance carries its
+    // own creator_id, so co-hired creators on the same deal are paid correctly.
+    // Fall back to the job's first approved creator for legacy single-winner
+    // milestones (creator_id null).
+    const creatorKey = milestone.creator_id || job.selected_creator_id;
+    if (!creatorKey) throw new ValidationError('Milestone has no creator to pay');
     const creator = await this.users.findByKey(creatorKey);
     const recipient = creator?.walletAddress;
-    if (!recipient) throw new ValidationError('Selected creator has no wallet address');
+    if (!recipient) throw new ValidationError('Creator has no wallet address');
 
     const via = opts.via || 'direct';
     // Scored/partial payout: the AI score can release a fraction of the
@@ -60,14 +63,17 @@ export class PayoutService {
       ? Math.min(Number(opts.amountUsdc), Number(milestone.amount))
       : Number(milestone.amount);
 
-    // Runtime budget guard: cumulative releases must never exceed the deal
-    // budget (defense-in-depth atop the per-milestone cap and the permission
-    // cap). Compared in integer cents to avoid float drift.
+    // Runtime budget guard against the deal POOL: total_budget IS the pool, split
+    // equally as a per-creator cut (= total_budget / creator_slots) across all
+    // hires. Cumulative releases (over every co-hired creator) must never exceed
+    // the pool. Compared in integer cents to avoid float drift. The per-creator
+    // cut is bounded structurally — each creator's instances each pay once and
+    // sum to that cut.
     const priorReleased = Number(job.released_total || 0);
-    const budget = Number(job.total_budget || 0);
-    if (budget > 0 && Math.round((priorReleased + amount) * 100) > Math.round(budget * 100)) {
+    const pool = Number(job.total_budget || 0);
+    if (pool > 0 && Math.round((priorReleased + amount) * 100) > Math.round(pool * 100)) {
       throw new ValidationError(
-        `Release of ${amount} would exceed the job budget (${priorReleased} of ${budget} already released)`
+        `Release of ${amount} would exceed the deal pool (${priorReleased} of ${pool} already released)`
       );
     }
 
@@ -106,12 +112,18 @@ export class PayoutService {
     // single job aren't concurrent in practice.
     if (result.ok) {
       const newReleased = Math.round((priorReleased + amount) * 1e6) / 1e6;
-      // Done when the budget is fully released, or every milestone is approved
-      // (quality-weighted payouts can sum to < budget yet still finish the deal).
-      const allMilestones = await this.milestones.findMany({ job_id: job.id });
-      const allApproved = allMilestones.length > 0 && allMilestones.every((m: any) => m.status === 'approved');
-      const budgetReached = budget > 0 && Math.round(newReleased * 100) >= Math.round(budget * 100);
-      const done = budgetReached || allApproved;
+      // Done when the pool is fully released, or every approved creator's own
+      // instances are all approved (quality-weighted payouts can sum to < pool yet
+      // still finish the deal). Templates (creator_id null) are excluded.
+      const instances = (await this.milestones.findMany({ job_id: job.id })).filter((m: any) => m.creator_id);
+      const approvedIds: string[] = Array.isArray(job.approved_creator_ids) ? job.approved_creator_ids : [];
+      const everyCreatorDone = approvedIds.length > 0 && instances.length > 0 &&
+        approvedIds.every((cid) => {
+          const theirs = instances.filter((m: any) => m.creator_id === cid);
+          return theirs.length > 0 && theirs.every((m: any) => m.status === 'approved');
+        });
+      const poolReached = pool > 0 && Math.round(newReleased * 100) >= Math.round(pool * 100);
+      const done = poolReached || everyCreatorDone;
       await this.jobs.update(job.id, {
         released_total: newReleased,
         funding_status: done ? 'released' : 'partially_released',

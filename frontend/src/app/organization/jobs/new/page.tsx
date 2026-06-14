@@ -44,6 +44,7 @@ export default function NewJobPage() {
   const [postType, setPostType] = useState('video');
   const [postTypeOther, setPostTypeOther] = useState('');
   const [budget, setBudget] = useState('');
+  const [creatorSlots, setCreatorSlots] = useState('1');
   const [payoutType, setPayoutType] = useState<'milestone' | 'full'>('full');
   const [deadline, setDeadline] = useState('');
   const [hashtags, setHashtags] = useState<string[]>([]);
@@ -72,11 +73,14 @@ export default function NewJobPage() {
   const removeMilestone = (i: number) =>
     setMilestones(milestones.filter((_, idx) => idx !== i));
 
-  // Milestone allocation vs budget. For milestone-based payout the stage amounts
-  // must add up to the total budget (the escrow/permission is sized to it).
+  // total_budget is the POOL; each of the hired creators earns an equal cut =
+  // pool / slots. Milestones describe ONE creator's journey, so the stage amounts
+  // must add up to that per-creator cut (not the whole pool).
   const budgetNum = Number(budget) || 0;
+  const slotsNum = Math.max(1, Number(creatorSlots) || 1);
+  const perCreator = budgetNum / slotsNum;
   const allocated = milestones.reduce((s, m) => s + (Number(m.amount) || 0), 0);
-  const milestonesBalanced = budgetNum > 0 && Math.round(allocated * 100) === Math.round(budgetNum * 100);
+  const milestonesBalanced = perCreator > 0 && Math.round(allocated * 100) === Math.round(perCreator * 100);
   const canSubmit = payoutType !== 'milestone' || (milestones.length > 0 && milestonesBalanced);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,9 +96,9 @@ export default function NewJobPage() {
       }
       if (!milestonesBalanced) {
         toast.error(
-          allocated > budgetNum
-            ? `Milestones total $${allocated.toLocaleString()} — $${(allocated - budgetNum).toLocaleString()} over the $${budgetNum.toLocaleString()} budget`
-            : `Milestones total $${allocated.toLocaleString()} — $${(budgetNum - allocated).toLocaleString()} of the $${budgetNum.toLocaleString()} budget is unallocated`
+          allocated > perCreator
+            ? `Milestones total $${allocated.toLocaleString()} — $${(allocated - perCreator).toLocaleString()} over the $${perCreator.toLocaleString()} per-creator cut`
+            : `Milestones total $${allocated.toLocaleString()} — $${(perCreator - allocated).toLocaleString()} of the $${perCreator.toLocaleString()} per-creator cut is unallocated`
         );
         return;
       }
@@ -131,6 +135,7 @@ export default function NewJobPage() {
         post_type: postType,
         post_type_other: postType === 'other' ? postTypeOther.trim() : undefined,
         total_budget: Number(budget),
+        creator_slots: Math.max(1, Number(creatorSlots) || 1),
         payout_type: payoutType,
         deadline: deadline ? new Date(deadline).toISOString() : null,
         required_elements: { hashtags, mentions: [] },
@@ -283,26 +288,43 @@ export default function NewJobPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-xs font-bold text-[#9ca3af] mb-2 uppercase tracking-wide">Total Budget (USDC) *</label>
+                <label className="block text-xs font-bold text-[#9ca3af] mb-2 uppercase tracking-wide">
+                  Total Budget (USDC) *
+                </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6b7280] font-bold">$</span>
-                  <input 
+                  <input
                     type="number" value={budget} onChange={(e) => setBudget(e.target.value)}
-                    placeholder="0.00" 
-                    className="w-full pl-8 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all" 
+                    placeholder="0.00"
+                    className="w-full pl-8 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all"
                     style={inputStyle}
-                    required 
+                    required
                   />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-bold text-[#9ca3af] mb-2 uppercase tracking-wide">Overall Deadline</label>
-                <input 
-                  type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} 
-                  className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all" 
-                  style={{...inputStyle, colorScheme: 'dark'}} 
+                <input
+                  type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all"
+                  style={{...inputStyle, colorScheme: 'dark'}}
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#9ca3af] mb-2 uppercase tracking-wide">Number of Creators to Hire</label>
+              <input
+                type="number" min="1" step="1" value={creatorSlots}
+                onChange={(e) => setCreatorSlots(e.target.value)}
+                className="w-full md:w-48 px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-white transition-all"
+                style={inputStyle}
+              />
+              <p className="text-xs font-semibold text-[#6b7280] mt-2">
+                Your ${budgetNum.toLocaleString()} pool is split across {slotsNum} creator{slotsNum > 1 ? 's' : ''} — each earns{' '}
+                <span className="font-bold text-[#22c55e]">${perCreator.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDC</span>
+                {payoutType === 'milestone' ? ' (your milestones must sum to this).' : ' on completion.'}
+              </p>
             </div>
 
             <div>
@@ -398,16 +420,16 @@ export default function NewJobPage() {
 
               {milestones.length > 0 && (
                 <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid #1a1a1a' }}>
-                  <span className="text-xs font-bold text-[#6b7280] uppercase tracking-wider">Allocated</span>
+                  <span className="text-xs font-bold text-[#6b7280] uppercase tracking-wider">Allocated <span className="normal-case text-[#4b5563]">(per creator)</span></span>
                   <div className="text-right">
                     <span className={`text-sm font-bold ${milestonesBalanced ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
-                      ${allocated.toLocaleString()} / ${budgetNum.toLocaleString()}
+                      ${allocated.toLocaleString()} / ${perCreator.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                     </span>
                     {!milestonesBalanced && (
                       <p className="text-[11px] font-semibold text-[#ef4444] mt-0.5">
-                        {allocated > budgetNum
-                          ? `Over budget by $${(allocated - budgetNum).toLocaleString()}`
-                          : `$${(budgetNum - allocated).toLocaleString()} unallocated`}
+                        {allocated > perCreator
+                          ? `Over the per-creator cut by $${(allocated - perCreator).toLocaleString()}`
+                          : `$${(perCreator - allocated).toLocaleString()} of the per-creator cut unallocated`}
                       </p>
                     )}
                   </div>

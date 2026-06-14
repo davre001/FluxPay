@@ -5,6 +5,9 @@ export function createMilestoneRecord(input) {
   return {
     id: generateMilestoneId(),
     job_id: input.job_id,
+    // null = a job-level template milestone (the deal's definition). A non-null
+    // creator_id marks a per-creator instance that one approved creator works on.
+    creator_id: input.creator_id ?? null,
     title: input.title,
     description: input.description || '',
     amount: input.amount,
@@ -47,6 +50,9 @@ export class InMemoryMilestoneRepository {
     const matches = [...this.milestones.values()].filter((m: any) => {
       if (filters.job_id && m.job_id !== filters.job_id) return false;
       if (filters.status && m.status !== filters.status) return false;
+      // 'creator_id' in filters lets callers ask for templates (null) or one
+      // creator's instances explicitly; omitting it returns templates + instances.
+      if ('creator_id' in filters && (m.creator_id ?? null) !== filters.creator_id) return false;
       return true;
     });
 

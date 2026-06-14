@@ -4,6 +4,7 @@ import { InMemoryMilestoneRepository } from '../models/milestone.ts';
 import { InMemoryProfileRepository } from '../models/profile.ts';
 import { NotFoundError, ValidationError } from '../utils/errors.ts';
 import { assertJobStatus, parseApplicationInput, parseJobInput, parseMilestoneInput, isValidHttpUrl, urlMatchesPlatform } from '../utils/validators.ts';
+import { collectCreatorMilestones } from '../utils/reputation.ts';
 
 const MILESTONE_TRANSITIONS: Record<string, string[]> = {
   pending: ['submitted'],
@@ -32,11 +33,15 @@ export class JobService {
 
   private async enrichJob(job: any) {
     if (!job) return null;
-    const [milestones, applications] = await Promise.all([
+    const [allMilestones, applications] = await Promise.all([
       this.milestones.findMany({ job_id: job.id }),
       this.applications.findMany({ job_id: job.id }),
     ]);
-    return { ...job, milestones, application_count: applications.length };
+    // Templates (creator_id null) are the deal definition shown on cards; the
+    // per-creator instances are the actual working sets each approved creator runs.
+    const milestones = allMilestones.filter((m: any) => (m.creator_id ?? null) === null);
+    const creator_milestones = allMilestones.filter((m: any) => m.creator_id);
+    return { ...job, milestones, creator_milestones, application_count: applications.length };
   }
 
   async createJob(organizationId: string, jobData: any) {
@@ -123,16 +128,17 @@ export class JobService {
   // Mirrors ProfileService.computeCreatorScore; kept here so application listings
   // can enrich without a cross-service dependency.
   private async creatorReputation(creatorId: string): Promise<number> {
-    const creatorJobs = await this.jobs.findMany({ selected_creator_id: creatorId });
-    const completedDeals = creatorJobs.filter((j: any) => j.status === 'completed').length;
+    const byJob = await collectCreatorMilestones(this.jobs, this.milestones, creatorId);
     let approvedMs = 0;
     let disputes = 0;
-    for (const cj of creatorJobs) {
-      const ms = await this.milestones.findMany({ job_id: cj.id });
+    let completedDeals = 0;
+    for (const ms of byJob.values()) {
       for (const m of ms) {
         if (m.status === 'approved') approvedMs++;
         if (m.status === 'disputed') disputes++;
       }
+      // A deal is "completed" for this creator once all their milestones are approved.
+      if (ms.length > 0 && ms.every((m: any) => m.status === 'approved')) completedDeals++;
     }
     const profile = await this.profiles.findByUserId(creatorId).catch(() => null) as any;
     const socialBonus = Math.min(20, ['instagram', 'twitter', 'youtube', 'tiktok'].filter((k) => profile?.[k]).length * 5);
@@ -163,22 +169,71 @@ export class JobService {
     return { qualified, reasons };
   }
 
-  async selectCreator(jobId: string, creatorId: string) {
+  // Clone the job's template milestones (creator_id null) into a fresh per-creator
+  // instance set the approved creator will work on independently.
+  private async cloneMilestonesForCreator(jobId: string, creatorId: string) {
+    const templates = await this.milestones.findMany({ job_id: jobId, creator_id: null });
+    for (const t of templates) {
+      await this.milestones.create({
+        job_id: jobId,
+        creator_id: creatorId,
+        title: t.title,
+        description: t.description,
+        amount: t.amount,
+        metric: t.metric,
+        target: t.target,
+        due_date: t.due_date,
+      });
+    }
+  }
+
+  // Brand approves an applicant onto the deal. Multi-hire: this does NOT reject the
+  // other applicants — the brand approves as many as it wants up to creator_slots.
+  // Each approval clones the milestone template into the creator's own instances.
+  async approveApplicant(jobId: string, creatorId: string) {
     const job = await this.jobs.findById(jobId);
     if (!job) throw new NotFoundError('Job not found');
-    if (job.status !== 'open') throw new ValidationError('Job is not open for selection');
+    if (job.status !== 'open' && job.status !== 'in_progress') {
+      throw new ValidationError('Job is not open for approvals');
+    }
 
     const allApplications = await this.applications.findMany({ job_id: jobId });
     const chosen = allApplications.find((a: any) => a.creator_id === creatorId);
     if (!chosen) throw new NotFoundError('No application from this creator');
 
-    for (const app of allApplications) {
-      await this.applications.update(app.id, {
-        status: app.creator_id === creatorId ? 'accepted' : 'rejected',
-      });
+    const approved: string[] = Array.isArray(job.approved_creator_ids) ? job.approved_creator_ids : [];
+    if (approved.includes(creatorId)) return this.enrichJob(job); // idempotent
+
+    const slots = Number(job.creator_slots || 1);
+    if (approved.length >= slots) {
+      throw new ValidationError(`All ${slots} creator slot(s) are already filled`);
     }
 
-    return this.jobs.update(jobId, { status: 'in_progress', selected_creator_id: creatorId });
+    await this.applications.update(chosen.id, { status: 'accepted' });
+    await this.cloneMilestonesForCreator(jobId, creatorId);
+    const newApproved = [...approved, creatorId];
+
+    // Once every slot is filled, decline the remaining pending applicants (this is
+    // also what preserves single-winner behaviour: slots=1 → others rejected).
+    if (newApproved.length >= slots) {
+      for (const app of allApplications) {
+        if (app.status === 'pending' && app.creator_id !== creatorId) {
+          await this.applications.update(app.id, { status: 'rejected' });
+        }
+      }
+    }
+
+    const updated = await this.jobs.update(jobId, {
+      status: 'in_progress',
+      approved_creator_ids: newApproved,
+      selected_creator_id: job.selected_creator_id || creatorId,
+    });
+    return this.enrichJob(updated);
+  }
+
+  // Back-compat alias — the route/api-client still call "select".
+  async selectCreator(jobId: string, creatorId: string) {
+    return this.approveApplicant(jobId, creatorId);
   }
 
   async cancelJob(jobId: string) {
@@ -197,10 +252,19 @@ export class JobService {
     });
   }
 
+  // The deal's milestone definition (templates). Per-creator working sets are
+  // returned via enrichJob.creator_milestones / listCreatorMilestones.
   async listMilestones(jobId: string) {
     const job = await this.jobs.findById(jobId);
     if (!job) throw new NotFoundError('Job not found');
-    return this.milestones.findMany({ job_id: jobId });
+    return this.milestones.findMany({ job_id: jobId, creator_id: null });
+  }
+
+  // One approved creator's own milestone instances for a deal.
+  async listCreatorMilestones(jobId: string, creatorId: string) {
+    const job = await this.jobs.findById(jobId);
+    if (!job) throw new NotFoundError('Job not found');
+    return this.milestones.findMany({ job_id: jobId, creator_id: creatorId });
   }
 
   async submitMilestone(milestoneId: string, data: any) {
@@ -232,7 +296,7 @@ export class JobService {
   // and run through the autonomous settlement loop (AI judges each stage's goal
   // independently). `settle` is the SettlementService, injected by the route so
   // the service layering stays clean.
-  async submitDealDeliverable(jobId: string, _creatorId: string, data: any, settle?: any) {
+  async submitDealDeliverable(jobId: string, creatorId: string, data: any, settle?: any) {
     const job = await this.jobs.findById(jobId);
     if (!job) throw new NotFoundError('Job not found');
 
@@ -245,7 +309,9 @@ export class JobService {
       throw new ValidationError(`Deliverable must be a ${job.target_platform} link`);
     }
 
-    const milestones = await this.milestones.findMany({ job_id: jobId });
+    // Only the submitting creator's own instances are touched — co-hired creators
+    // on the same deal submit and get judged independently.
+    const milestones = await this.milestones.findMany({ job_id: jobId, creator_id: creatorId });
     const open = milestones.filter((m: any) => m.status === 'pending' || m.status === 'disputed');
     if (open.length === 0) throw new ValidationError('No milestones are awaiting submission');
 

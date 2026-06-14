@@ -58,6 +58,9 @@ export const SCHEMA_STATEMENTS: string[] = [
      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
    )`,
   `CREATE INDEX IF NOT EXISTS milestones_job_idx ON milestones (job_id)`,
+  // creator_id lives in the JSONB blob (null for templates, set for per-creator
+  // instances) — index it so per-creator milestone queries don't scan the table.
+  `CREATE INDEX IF NOT EXISTS milestones_creator_idx ON milestones ((data->>'creator_id'))`,
 
   `CREATE TABLE IF NOT EXISTS payments (
      id TEXT PRIMARY KEY,

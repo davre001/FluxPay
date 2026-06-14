@@ -43,6 +43,13 @@ export function createJobRecord(input) {
     released_total: input.released_total ?? 0,
     // true only for demo/seed deals — lets them be deleted without touching real ones.
     seeded: input.seeded || false,
+    // How many creators the brand will hire on this deal. 1 = single-winner (the
+    // default). Each approved creator earns up to total_budget; the funded pool is
+    // total_budget × creator_slots.
+    creator_slots: input.creator_slots ?? 1,
+    // Every creator the brand has approved (multi-hire). selected_creator_id stays
+    // the first approved creator for back-compat reads.
+    approved_creator_ids: input.approved_creator_ids || [],
     selected_creator_id: input.selected_creator_id || null,
     organization: input.organization || { brand_name: input.organization_id },
     created_at: timestamp,

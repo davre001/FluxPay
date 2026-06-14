@@ -14,6 +14,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { jobAPI, milestoneAPI, profileAPI } from '@/lib/api-client';
 import { validateDeliverableUrl, placeholderForPlatform } from '@/lib/deliverable';
 import { useDeal } from '@/hooks/useDeals';
+import { useUserStore } from '@/stores/userStore';
 
 const XLogo = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
@@ -281,7 +282,11 @@ export default function CreatorDealPage() {
     </div>
   );
 
-  const milestones = deal.milestones ?? [];
+  // Show THIS creator's own milestone instances (multi-hire). Falls back to the
+  // deal's template definition for mock deals or before the creator is approved.
+  const myId = useUserStore((s) => s.user?.id);
+  const myInstances = (deal.creator_milestones ?? []).filter((m: any) => m.creator_id === myId);
+  const milestones = myInstances.length > 0 ? myInstances : (deal.milestones ?? []);
   const approved = milestones.filter((m: any) => m.status === 'approved').length;
   const progress = milestones.length > 0 ? (approved / milestones.length) * 100 : 0;
   const earned = milestones.filter((m: any) => m.status === 'approved').reduce((s: number, m: any) => s + m.amount, 0);

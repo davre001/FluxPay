@@ -212,6 +212,12 @@ export class PgMilestoneRepository {
     const add = (sql: string, value: any) => { params.push(value); conds.push(sql.replace('?', `$${params.length}`)); };
     if (filters.job_id) add('job_id = ?', filters.job_id);
     if (filters.status) add('status = ?', filters.status);
+    // creator_id lives in the JSONB blob (indexed via milestones_creator_idx).
+    // null selects template milestones; a value selects one creator's instances.
+    if ('creator_id' in filters) {
+      if (filters.creator_id === null) conds.push("data->>'creator_id' IS NULL");
+      else add("data->>'creator_id' = ?", filters.creator_id);
+    }
     const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
     const rows = await query(`SELECT data FROM milestones ${where} ORDER BY created_at ASC`, params);
     return rows.map((r: any) => r.data);
