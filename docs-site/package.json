@@ -1,0 +1,26 @@
+{
+  "name": "fluxpay-docs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "postbuild": "pagefind --site .next/server/app --output-path public/_pagefind",
+    "start": "next start",
+    "convert": "node scripts/convert.mjs"
+  },
+  "dependencies": {
+    "next": "^15.1.6",
+    "nextra": "^4.6.1",
+    "nextra-theme-docs": "^4.6.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "pagefind": "^1.3.0"
+  },
+  "overrides": {
+    "zod": "4.1.12"
+  }
+}

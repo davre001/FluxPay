@@ -1,0 +1,55 @@
+---
+description: A creator-brand deal escrow platform powered by AI and on-chain smart accounts.
+---
+
+import { Cards } from 'nextra/components'
+
+# Introduction
+
+**FluxPay** is a creator-brand deal escrow platform. Brands post deals, creators apply, and USDC is locked in smart contracts per milestone. AI verifies deliverables automatically — payments release on approval, no trust required.
+
+## How It Works
+
+1. **Brand posts a deal** — sets milestones, budget, and content requirements. Funds lock into escrow.
+2. **Creators apply** — browse open deals and submit an application with a cover note.
+3. **Brand selects a creator** — reviews reputation, portfolio, and application.
+4. **Creator submits deliverables** — uploads the content link per milestone. AI reviews it instantly against the brief.
+5. **Funds release automatically** — on AI approval, USDC flows to the creator and on-chain reputation scores update.
+
+## The Autonomous Settlement Loop
+
+What makes FluxPay stand out is a single autonomous loop that fuses three sponsor technologies:
+
+| Sponsor Technology                                  | Role in FluxPay                                                               |
+| --------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **MetaMask Smart Accounts** (ERC-7715 / ERC-7710)   | Brands grant a spending permission; the agent redeems it to pay creators      |
+| **Venice AI**                                        | Scores each deliverable against the brief and *decides the payout amount*     |
+| **1Shot API**                                        | Relays payouts so gas is paid in **USDC** (mainnet)                           |
+
+> A creator submits work → **Venice scores it** → the agent **releases the AI-determined amount of USDC** from the brand's pre-signed permission — with no human clicking "approve." Quality-weighted, autonomous, on-chain.
+
+## User Roles
+
+| Role                       | Description                                                                                                 |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Creator**                | Applies to brand jobs, delivers content, earns USDC per milestone. Tracks applications, manages wallet.     |
+| **Organization (Brand)**   | Posts deals, selects creators, funds escrow, monitors delivery. Reviews applications, approves milestones.  |
+
+## Technology Stack at a Glance
+
+| Layer        | Technologies                                                     |
+| ------------ | ---------------------------------------------------------------- |
+| **Frontend** | Next.js 14, Tailwind CSS, Zustand, TanStack Query, Web3Auth     |
+| **Backend**  | Node.js (raw `node:http`), TypeScript, Neon Postgres             |
+| **Chain**    | Solidity, viem, wagmi, EIP-7702, USDC on 8+ chains              |
+| **AI**       | Venice AI (OpenAI-compatible)                                    |
+| **Relayer**  | 1Shot (USDC-gas, permissionless)                                 |
+
+## Quick Links
+
+<Cards>
+  <Cards.Card title="Prerequisites" href="/getting-started/prerequisites" />
+  <Cards.Card title="Installation" href="/getting-started/installation" />
+  <Cards.Card title="Settlement Engine" href="/architecture/settlement-engine" />
+  <Cards.Card title="Overview" href="/api-reference/overview" />
+</Cards>

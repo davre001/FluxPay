@@ -1,0 +1,41 @@
+---
+description: Zustand stores and TanStack Query for state management.
+---
+
+import { Callout } from 'nextra/components'
+
+# State Management
+
+## Client State — Zustand
+
+| Store           | File                | State                                    | Persistence    |
+| --------------- | ------------------- | ---------------------------------------- | -------------- |
+| `useUserStore`  | `stores/userStore.ts` | `user`, `token`, `isAuthenticated`      | `localStorage` |
+| `useJobStore`   | `stores/jobStore.ts`  | Job-related UI state                    | —              |
+
+### `useUserStore` Actions
+
+```typescript
+// Set auth state after login
+setAuth(user, token)
+
+// Clear state on logout
+logout()
+
+// Update wallet address
+updateWallet(address)
+```
+
+The store persists to `localStorage` under key `fluxpay-user`, so sessions survive page refreshes.
+
+## Server State — TanStack Query
+
+API data is managed via TanStack Query v5 through custom hooks in `hooks/useApi.ts`:
+
+* Automatic caching and background refetching
+* Mutation hooks for create/update operations
+* Query invalidation after mutations
+
+<Callout type="info">
+**Rule of thumb:** Use Zustand for client-only state (auth, UI), TanStack Query for server-fetched data (jobs, profiles, transactions).
+</Callout>

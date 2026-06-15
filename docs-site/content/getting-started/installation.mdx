@@ -1,0 +1,42 @@
+---
+description: Clone the repository and install dependencies.
+---
+
+import { Callout } from 'nextra/components'
+
+# Installation
+
+## 1. Clone the Repository
+
+```bash
+git clone https://github.com/Dami904/FluxPay.git
+cd FluxPay
+```
+
+## 2. Set Up Remotes (One-Time)
+
+So that a single `git push` updates both the upstream repo and the team fork, each team member runs this once:
+
+```bash
+bash scripts/setup-remotes.sh
+```
+
+From then on, `git push` sends commits to both repos simultaneously. It's safe to re-run.
+
+## 3. Install Frontend Dependencies
+
+```bash
+cd frontend
+npm install
+```
+
+## 4. Install Backend Dependencies
+
+```bash
+cd ../backend
+npm install
+```
+
+<Callout type="default">
+Both `frontend/` and `backend/` are independent npm projects with their own `package.json`. You can install and run them separately.
+</Callout>
