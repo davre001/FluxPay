@@ -4,6 +4,10 @@ import { useCallback, useState } from 'react';
 import { useAccount, useBalance, useChainId, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { Address, parseUnits, formatUnits } from 'viem';
 import { getChainConfig, getToken, getTokens } from '@/config/chains';
+import { useDemoBalance } from '@/stores/demoBalance';
+import { useUserStore } from '@/stores/userStore';
+
+const DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
 // --- Interfaces ---
 interface UseUSDCApprovalOptions {
@@ -161,6 +165,11 @@ export function useTokenBalance(symbol: string) {
   const token = getToken(chainId, symbol);
   const isErc20 = !!token && token.address !== 'native';
 
+  // Demo mode: show the illustrative per-identity USDC balance (ticks with
+  // settlements) instead of the real on-chain read. Purely cosmetic, no funds.
+  const uid = useUserStore((s) => s.user?.id);
+  const demoUsdc = useDemoBalance((s) => s.balanceFor(uid));
+
   const { data, isLoading, refetch } = useReadContract({
     address: isErc20 ? (token.address as `0x${string}`) : undefined,
     abi: USDC_ABI,
@@ -168,6 +177,10 @@ export function useTokenBalance(symbol: string) {
     args: address ? [address] : undefined,
     query: { enabled: !!address && isErc20 },
   });
+
+  if (DEMO && symbol.toUpperCase() === 'USDC') {
+    return { balance: String(demoUsdc), symbol, decimals: token?.decimals ?? 6, isLoading: false, refetch };
+  }
 
   return {
     balance: data !== undefined ? formatUnits(data as bigint, token?.decimals ?? 6) : '0',
