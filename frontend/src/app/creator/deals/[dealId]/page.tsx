@@ -240,6 +240,7 @@ function MilestoneCard({ milestone, platform, onRefresh }: { milestone: any; pla
               {milestone.settlement?.oneshot?.feeToken && (
                 <p className="mt-2 pt-2 border-t border-[#0a331a] flex items-center gap-1.5 text-xs font-semibold text-[#f59e0b]">
                   <Zap size={12} fill="currentColor" /> Gas sponsored by 1Shot — paid in {milestone.settlement.oneshot.feeToken.symbol}
+                  {milestone.settlement.simulated && <span className="text-[#6b7280] font-medium">(mainnet rail, simulated on testnet)</span>}
                 </p>
               )}
             </div>
