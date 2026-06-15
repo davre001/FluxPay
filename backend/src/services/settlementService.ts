@@ -129,8 +129,13 @@ export class SettlementService {
     const settlement = {
       via: payout.via,
       simulated: Boolean(payout.simulated),
+      amount: payout.amount ?? null,
+      recipient: payout.recipient || null,
       tx: payout.txHash || null,
+      // Live 1Shot rail proof: the chain quoted and the USDC fee token gas is
+      // paid in. `feeToken` is `{ symbol, address }` from getCapabilities.
       oneshot: payout.oneshot ? { chainId: payout.oneshot.chainId, feeToken: payout.oneshot.feeToken } : null,
+      at: new Date().toISOString(),
     };
     return this.milestones.update(milestoneId, { settlement }).catch(() => null);
   }
