@@ -64,7 +64,7 @@ export function useTokenBalances() {
   // Subscribe to the demo ledger (per identity) so the balance re-renders as
   // deals settle for the current persona.
   const uid = useUserStore((s) => s.user?.id);
-  const demoUsdc = useDemoBalance((s) => s.balanceFor(uid));
+  const demoUsdc = useDemoBalance((s) => s.balanceFor(uid)); // base $1000 (NEXT_PUBLIC_DEMO_BALANCE)
 
   const query = useQuery({
     queryKey: ['token-balances', chainId, address],

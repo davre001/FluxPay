@@ -171,8 +171,8 @@ export function createApp(options: any = {}) {
   // 1Shot live-proof (read-only, public) — powers the judge "settlement rail" panel.
   const oneshotRoutes = createOneshotRoutes();
 
-  // Presenter-unlock validation (server-only secret).
-  const demoRoutes = createDemoRoutes();
+  // Demo helpers — presenter-unlock validation + first-login brand deal seeding.
+  const demoRoutes = createDemoRoutes(jobService);
 
   const skipAuth: boolean = options.skipAuth ?? false;
   const mockUser: any = options.mockUser;
@@ -257,10 +257,12 @@ export function createApp(options: any = {}) {
           throw new NotFoundError('Route not found');
         }
       } else if (parts[0] === 'demo') {
-        // Public presenter-unlock check — validates a passphrase against the
-        // server-only secret; never reveals it.
         if (req.method === 'POST' && parts[1] === 'unlock') {
+          // Public presenter-unlock check — never reveals the secret.
           response = await demoRoutes.unlock(await readJsonBody(req));
+        } else if (req.method === 'POST' && parts[1] === 'ensure-deals') {
+          const user = await requireAuth(req, authService, skipAuth, mockUser);
+          response = await demoRoutes.ensureBrandDeals(user);
         } else {
           throw new NotFoundError('Route not found');
         }

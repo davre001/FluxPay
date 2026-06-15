@@ -6,7 +6,7 @@ import { persist } from 'zustand/middleware'
 // down when it pays, a creator ticks up when it gets paid. Starts every identity
 // at NEXT_PUBLIC_DEMO_BALANCE. Persisted per browser; reset via the presenter
 // control. Purely cosmetic — no real funds.
-const BASE = Number(process.env.NEXT_PUBLIC_DEMO_BALANCE || 400)
+const BASE = Number(process.env.NEXT_PUBLIC_DEMO_BALANCE || 1000)
 
 interface DemoBalanceStore {
   deltas: Record<string, number>

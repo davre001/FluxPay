@@ -10,7 +10,6 @@ import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { useWeb3AuthConnect, useWeb3AuthDisconnect } from '@web3auth/modal/react';
 import { useUserStore } from '@/stores/userStore';
-import DemoRoleToggle from '@/components/demo/DemoRoleToggle';
 import { profileAPI } from '@/lib/api-client';
 
 const creatorLinks = [
@@ -182,7 +181,6 @@ export default function Navbar() {
               <span>Connect Wallet</span>
             </button>
           )}
-          <div className="mb-2"><DemoRoleToggle /></div>
           <button
             onClick={handleLogout}
             className="flex items-center gap-2.5 w-full px-4 py-3 rounded-xl text-xs font-bold text-[#6b7280] hover:text-[#ef4444] hover:bg-[#1a0f0f] transition-all"

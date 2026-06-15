@@ -7,10 +7,13 @@ import {
   CheckCircle, Zap, Eye, EyeOff, Wallet as WalletIcon, ChevronRight 
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { profileAPI } from '@/lib/api-client';
+import { useQueryClient } from '@tanstack/react-query';
+import { profileAPI, demoAPI } from '@/lib/api-client';
 import { useMyJobs } from '@/hooks/useDeals';
 import { useUserStore } from '@/stores/userStore';
 import { cn } from '@/lib/utils';
+
+const DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
 const StatCard = ({ icon: Icon, label, value, color, sub, blur }: any) => (
   <motion.div 
@@ -53,7 +56,17 @@ const MOCK_JOBS = [
 
 export default function OrgDashboard() {
   const { user } = useUserStore();
-  const { jobs: myJobs } = useMyJobs();
+  const { jobs: myJobs, isLoading: jobsLoading } = useMyJobs();
+  const qc = useQueryClient();
+
+  // First demo login as a brand: seed 3 starter deals so the dashboard isn't
+  // empty, then refresh. Idempotent server-side (skips if the brand has deals).
+  useEffect(() => {
+    if (!DEMO || !user?.id || jobsLoading || myJobs.length > 0) return;
+    demoAPI.ensureDeals()
+      .then(({ data }: any) => { if (data?.created) qc.invalidateQueries({ queryKey: ['my-jobs'] }); })
+      .catch(() => {});
+  }, [user?.id, jobsLoading, myJobs.length, qc]);
   // Real posted jobs when signed in — a brand-new brand sees a clean, empty slate.
   // Demo jobs only for a logged-out viewer (the page is auth-gated anyway).
   const jobs = myJobs.length > 0 ? myJobs : (user?.id ? [] : MOCK_JOBS);

@@ -43,12 +43,12 @@ export default function DemoRoleToggle() {
     <button
       onClick={switchRole}
       disabled={busy}
-      className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-bold text-[#d1d5db] hover:text-white transition-colors"
-      style={{ background: '#111111', border: '1px solid #1f1f1f' }}
+      className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold text-white transition-colors disabled:opacity-60"
+      style={{ background: '#1a1a1a', border: '1px solid #2a2a2a' }}
       title="Demo: switch dashboard"
     >
       {busy ? <Loader2 size={14} className="animate-spin" /> : <Repeat size={14} className="text-[#a855f7]" />}
-      Switch to {isBrand ? 'Creator' : 'Brand'}
+      Viewing as <span className="text-[#a855f7]">{isBrand ? 'Brand' : 'Creator'}</span> · Switch to {isBrand ? 'Creator' : 'Brand'}
     </button>
   );
 }

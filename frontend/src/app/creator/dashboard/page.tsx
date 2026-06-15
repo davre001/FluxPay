@@ -15,6 +15,8 @@ import { useDeals, useMyApplications, useApplyToDeal } from '@/hooks/useDeals';
 import { profileAPI, jobAPI } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 
+const DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
 const PLATFORMS = ['all', 'instagram', 'twitter', 'youtube', 'tiktok', 'facebook', 'other'];
 const POST_TYPES = ['all', 'video', 'image', 'content_writing', 'other'];
 
@@ -143,6 +145,9 @@ export default function CreatorDashboard() {
   const active = myApplications.filter((a: any) => a.status === 'accepted').length;
 
   const filteredJobs = openJobs.filter((j) => {
+    // Demo: a single account plays both sides — only surface deals the connected
+    // account posted as a brand, so the creator view stays focused on those.
+    if (DEMO && user?.id && j.organization_id !== user.id) return false;
     if (platform !== 'all' && j.target_platform !== platform) return false;
     if (postType !== 'all' && j.post_type !== postType) return false;
     if (minBudget && j.total_budget < Number(minBudget)) return false;

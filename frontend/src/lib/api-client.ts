@@ -164,6 +164,8 @@ export const demoAPI = {
   // Validates a passphrase against the server-only secret. The secret never
   // reaches the client, so source analysis can't reveal it.
   unlock: (code: string) => request<{ ok: boolean }>('POST', '/api/demo/unlock', { code }),
+  // Idempotently seed 3 starter deals for the calling brand (first demo login).
+  ensureDeals: () => request<{ created: number }>('POST', '/api/demo/ensure-deals'),
 }
 
 export default { authAPI, profileAPI, jobAPI, milestoneAPI, walletAPI, reputationAPI, applicationAPI, faucetAPI, permissionAPI, verificationAPI, oneshotAPI, demoAPI }

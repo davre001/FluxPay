@@ -6,6 +6,7 @@ import Navbar from '@/components/shared/Navbar'
 import { useUserStore } from '@/stores/userStore'
 import { usePathname } from 'next/navigation'
 import PresenterSwitcher from '@/components/demo/PresenterSwitcher'
+import DemoTopBar from '@/components/demo/DemoTopBar'
 
 // Hidden presenter control — only mounted in the demo build; invisible until the
 // secret combo. Keeps the live app looking finished to judges.
@@ -42,6 +43,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
       <div className={`flex min-h-screen ${isCreatorPage ? 'creator-theme' : ''}`}>
         {showNavbar && <Navbar />}
         <main className={`flex-1 min-h-screen ${needsTopPad ? 'pt-16' : 'md:pl-0'}`}>
+          {!isAuthPage && !isOnboarding && <DemoTopBar />}
           {children}
         </main>
       </div>
