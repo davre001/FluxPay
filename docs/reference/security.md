@@ -1,0 +1,33 @@
+---
+description: Security practices for authentication, smart contracts, and API.
+---
+
+# Security
+
+## Authentication
+
+* All Web3Auth `idToken`s are verified server-side on every request (signature + expiry + issuer)
+* The backend never trusts the client's claimed identity
+* JWT verification supports both JWKS (dynamic) and static PEM key (preferred)
+* CORS is restricted to `FRONTEND_URL` in production
+
+## Smart Contracts
+
+* Private keys must never appear in frontend code
+* ERC-7715 permissions are scoped per job and capped at the deal budget
+* A2A redelegation limits exposure: settlement agent key compromise is bounded to a single job's cap
+
+## API
+
+* Request body size is limited to 4MB
+* Input validation on all endpoints
+* Error responses never leak internal state
+
+## Data
+
+* Auth tokens stored in `localStorage` (browser-only)
+* Demo unlock code lives server-side only — never shipped to the client
+
+{% hint style="danger" %}
+**Never commit `.env` files.** Use `.env.example` as templates.
+{% endhint %}

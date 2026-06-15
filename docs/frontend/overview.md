@@ -1,0 +1,55 @@
+---
+description: Frontend technology stack and architecture overview.
+---
+
+# Frontend Overview
+
+## Tech Stack
+
+| Layer              | Technology                      | Version        |
+| ------------------ | ------------------------------- | -------------- |
+| Framework          | Next.js 14 (App Router)         | ^14.2          |
+| Styling            | Tailwind CSS                    | ^3.4           |
+| State              | Zustand (persisted)             | Latest         |
+| Server State       | TanStack Query                  | v5             |
+| Auth / Wallet      | Web3Auth (MetaMask Embedded)    | v11            |
+| EVM                | wagmi + viem                    | Latest         |
+| Solana             | Web3Auth SolanaProvider         | Latest         |
+| 3D                 | Three.js + React Three Fiber    | ^0.184         |
+| Animations         | Framer Motion                   | v12            |
+| Icons              | Lucide React                    | ^0.395         |
+| Charts             | Recharts                        | v3.8           |
+
+## Provider Hierarchy
+
+The `WalletProvider` wraps the entire app:
+
+```tsx
+<Web3AuthProvider>         // Web3Auth SDK context (outermost)
+  <QueryClientProvider>    // TanStack Query for server state
+    <WagmiProvider>        // EVM chain hooks (wagmi)
+      <SolanaProvider>     // Solana chain hooks
+        {children}
+      </SolanaProvider>
+    </WagmiProvider>
+  </QueryClientProvider>
+</Web3AuthProvider>
+```
+
+{% hint style="info" %}
+Provider order matters. `Web3AuthProvider` must wrap everything so the SDK context is available. Both `WagmiProvider` and `SolanaProvider` are driven by the same Web3Auth login.
+{% endhint %}
+
+## Key Directories
+
+| Directory        | Purpose                                      |
+| ---------------- | -------------------------------------------- |
+| `src/app/`       | Next.js App Router pages                     |
+| `src/components/`| Reusable UI components                       |
+| `src/hooks/`     | Custom React hooks                           |
+| `src/lib/`       | API client, mock data, utilities             |
+| `src/stores/`    | Zustand state stores                         |
+| `src/contracts/` | Smart contract ABIs + addresses              |
+| `src/config/`    | Web3Auth + blockchain settings               |
+| `src/context/`   | React context providers                      |
+| `src/types/`     | TypeScript type definitions                  |

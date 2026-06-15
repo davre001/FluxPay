@@ -1,0 +1,33 @@
+---
+description: What you need before setting up FluxPay.
+---
+
+# Prerequisites
+
+## Required
+
+| Requirement    | Version       | Notes                                           |
+| -------------- | ------------- | ----------------------------------------------- |
+| **Node.js**    | v20.0.0+      | Required for both frontend and backend           |
+| **npm**        | v10+          | Comes bundled with Node.js 20                    |
+| **Git**        | Latest        | For cloning and version control                  |
+
+## Accounts
+
+| Service           | Purpose                              | Link                                                        |
+| ----------------- | ------------------------------------ | ----------------------------------------------------------- |
+| **Web3Auth**      | Embedded wallet + social login       | [Web3Auth Dashboard](https://dashboard.web3auth.io/)        |
+
+You'll need a free Web3Auth `clientId` — create a project at the dashboard link above.
+
+## Optional (for full features)
+
+| Service              | Purpose                     | Required For                       |
+| -------------------- | --------------------------- | ---------------------------------- |
+| **Neon Postgres**    | Persistent database         | Production (falls back to memory)  |
+| **Venice AI**        | AI deliverable verification | Autonomous settlement              |
+| **Pimlico/ZeroDev**  | AA Bundler + Paymaster      | Smart account gas sponsorship      |
+
+{% hint style="info" %}
+The backend runs entirely without external services — it falls back to in-memory storage when `DATABASE_URL` is unset, and AI verification no-ops when `VENICE_API_KEY` is unset.
+{% endhint %}
