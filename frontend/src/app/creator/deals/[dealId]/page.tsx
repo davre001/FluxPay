@@ -126,7 +126,7 @@ function MilestoneCard({ milestone, deal, platform, onRefresh }: { milestone: an
             <div className="flex items-center gap-2 mt-1">
               <span className="font-bold text-[#22c55e] text-xs">${milestone.amount}</span>
               <span className="text-xs text-[#4b5563]">USDC</span>
-              {milestone.due_date && <span className="text-xs text-[#6b7280]">· Due {new Date(milestone.due_date).toLocaleDateString()}</span>}
+              {milestone.due_date && <span suppressHydrationWarning className="text-xs text-[#6b7280]">· Due {new Date(milestone.due_date).toLocaleDateString()}</span>}
             </div>
           </div>
         </div>
@@ -330,8 +330,10 @@ export default function CreatorDealPage() {
 
   // Show THIS creator's own milestone instances (multi-hire). Falls back to the
   // deal's template definition for mock deals or before the creator is approved.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const myId = useUserStore((s) => s.user?.id);
-  const myInstances = (deal.creator_milestones ?? []).filter((m: any) => m.creator_id === myId);
+  const myInstances = mounted ? (deal.creator_milestones ?? []).filter((m: any) => m.creator_id === myId) : [];
   const milestones = myInstances.length > 0 ? myInstances : (deal.milestones ?? []);
   const approved = milestones.filter((m: any) => m.status === 'approved').length;
   const progress = milestones.length > 0 ? (approved / milestones.length) * 100 : 0;
@@ -473,7 +475,7 @@ export default function CreatorDealPage() {
               {deal.deadline && (
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b7280] mb-1">Final Deadline</p>
-                  <p className="text-sm font-semibold text-white">{new Date(deal.deadline).toLocaleDateString()}</p>
+                  <p suppressHydrationWarning className="text-sm font-semibold text-white">{new Date(deal.deadline).toLocaleDateString()}</p>
                 </div>
               )}
             </div>
