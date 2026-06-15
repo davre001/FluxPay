@@ -50,12 +50,24 @@ export function adjustDemoBalance(amountUsdc: number) {
 // Reflect a milestone settlement on BOTH sides of the same demo account: the
 // brand balance ticks down, the creator balance ticks up — so whichever
 // dashboard the judge views shows the transfer. Demo only.
-export function settleDemoBalance(amountUsdc: number) {
+export function settleDemoBalance(amountUsdc: number, brandId?: string | null, creatorId?: string | null) {
   if (process.env.NEXT_PUBLIC_DEMO_MODE !== 'true') return
-  const u = useUserStore.getState().user
-  if (!u?.id) return
   const amt = Number(amountUsdc) || 0
   const store = useDemoBalance.getState()
-  store.adjust(keyFor(u.id, 'organization'), -amt) // brand pays
-  store.adjust(keyFor(u.id, 'creator'), amt)        // creator receives
+  
+  if (brandId) {
+    store.adjust(keyFor(brandId, 'organization'), -amt) // brand pays
+  } else {
+    // Fallback for older calls
+    const u = useUserStore.getState().user
+    if (u?.id) store.adjust(keyFor(u.id, 'organization'), -amt)
+  }
+  
+  if (creatorId) {
+    store.adjust(keyFor(creatorId, 'creator'), amt) // creator receives
+  } else {
+    // Fallback for older calls
+    const u = useUserStore.getState().user
+    if (u?.id) store.adjust(keyFor(u.id, 'creator'), amt)
+  }
 }

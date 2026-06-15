@@ -79,7 +79,7 @@ const MOCK_DEALS: Record<string, any> = {
   }
 };
 
-function MilestoneCard({ milestone, platform, onRefresh }: { milestone: any; platform?: string; onRefresh: () => void; }) {
+function MilestoneCard({ milestone, deal, platform, onRefresh }: { milestone: any; deal?: any; platform?: string; onRefresh: () => void; }) {
   const [open, setOpen] = useState(milestone.status === 'pending' || milestone.status === 'disputed' || milestone.status === 'submitted');
   const [url, setUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -97,7 +97,7 @@ function MilestoneCard({ milestone, platform, onRefresh }: { milestone: any; pla
     setSubmitting(true);
     try {
       const { data }: any = await milestoneAPI.recheck(milestone.id, override ? { deliverable_url: override } : {});
-      if (data?.settled) settleDemoBalance(Number(data.scored_amount ?? milestone.amount)); // creator paid → ticks up
+      if (data?.settled) settleDemoBalance(Number(data.scored_amount ?? milestone.amount), deal?.organization_id, milestone.creator_id); // creator paid → ticks up
       toast.success(data?.settled ? 'Detected — milestone approved & released!' : 'Re-checked — not detected yet.');
       onRefresh();
     } catch (e: any) {
@@ -287,7 +287,7 @@ export default function CreatorDealPage() {
       const releasedCount = settledResults.length;
       // Creator paid → balance ticks up by the total released across stages.
       const totalReleased = settledResults.reduce((s: number, r: any) => s + Number(r.scored_amount ?? 0), 0);
-      if (totalReleased > 0) settleDemoBalance(totalReleased);
+      if (totalReleased > 0) settleDemoBalance(totalReleased, deal?.organization_id, deal?.selected_creator_id);
       toast.success(releasedCount > 0
         ? `Submitted — AI approved & released ${releasedCount} milestone${releasedCount > 1 ? 's' : ''}!`
         : 'Submitted — AI is reviewing each milestone.');
@@ -439,7 +439,7 @@ export default function CreatorDealPage() {
               className="space-y-4"
             >
               {milestones.map((m: any) => (
-                <MilestoneCard key={m.id} milestone={m} platform={deal.target_platform} onRefresh={refresh} />
+                <MilestoneCard key={m.id} milestone={m} deal={deal} platform={deal.target_platform} onRefresh={refresh} />
               ))}
             </motion.div>
           )}

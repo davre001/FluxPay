@@ -37,7 +37,7 @@ const MOCK_JOBS = [
   { id: 'mock_6', title: 'Holiday Special Post', status: 'cancelled', target_platform: 'instagram', post_type: 'image', total_budget: 1000, application_count: 0, description: 'Static feed post featuring our holiday discount code.' }
 ];
 
-function MilestoneRow({ milestone, onAction }: { milestone: any; onAction: () => void; }) {
+function MilestoneRow({ milestone, job, onAction }: { milestone: any; job?: any; onAction: () => void; }) {
   const [open, setOpen] = useState(milestone.status === 'submitted');
   const [acting, setActing] = useState<string | null>(null);
   const [disputeOpen, setDisputeOpen] = useState(false);
@@ -56,7 +56,7 @@ function MilestoneRow({ milestone, onAction }: { milestone: any; onAction: () =>
       const paid = payout?.ok;
       if (paid && released != null) {
         toast.success(`Approved — $${Number(released).toFixed(2)} USDC released.`);
-        settleDemoBalance(Number(released)); // brand ticks down, creator ticks up
+        settleDemoBalance(Number(released), job?.organization_id, milestone.creator_id); // brand ticks down, creator ticks up
         if (payout?.oneshot?.feeToken) toast.success(`⚡ Gas sponsored by 1Shot — paid in ${payout.oneshot.feeToken.symbol}`);
       }
       else if (paid === false) toast.success('Approved, but payout pending. Check the deal permission.');
@@ -333,26 +333,29 @@ export default function OrgJobDetailPage() {
       // The brand's ERC-7715 permission funds the whole pool (per-creator cut ×
       // slots) and is granted once, on the first approval. Later approvals reuse it.
       if (isFirstApproval) {
-        try {
-          // total_budget IS the pool — grant the permission for the whole pool.
-          const poolUsdc = Number(job?.total_budget ?? 0);
-          if (poolUsdc > 0 && DEMO) {
-            // Demo mode: no real wallet signing — store a placeholder permission
-            // so the simulated 1Shot settlement resolves and funds "release". No funds.
-            await permissionAPI.store({
-              jobId, organizationId: job?.organization_id, creatorId,
-              token_address: '0x0000000000000000000000000000000000000000',
-              chain_id: 84532, amount: poolUsdc,
-              permissions_context: '0xDEMO',
-              delegation_manager: '0x000000000000000000000000000000000000C0DE',
-            });
-            toast.success(`Auto-release armed for $${poolUsdc} USDC ⚡`);
-          } else if (poolUsdc > 0) {
+        const poolUsdc = Number(job?.total_budget ?? 0);
+        if (poolUsdc > 0) {
+          try {
+            // Attempt the real Web3 grant first so judges can see the wallet verification popup
             await grant({ jobId, organizationId: job?.organization_id, creatorId, budgetUsdc: poolUsdc });
             toast.success(`Approved auto-release of up to $${poolUsdc} USDC 🔐`);
+          } catch (permErr: any) {
+            if (DEMO) {
+              // If the real signature fails (e.g., user cancels, or using Google login without external wallet),
+              // seamlessly fall back to the simulated permission so the demo doesn't break.
+              console.log('Real grant failed/cancelled in DEMO mode, falling back to simulated permission.', permErr);
+              await permissionAPI.store({
+                jobId, organizationId: job?.organization_id, creatorId,
+                token_address: '0x0000000000000000000000000000000000000000',
+                chain_id: 84532, amount: poolUsdc,
+                permissions_context: '0xDEMO',
+                delegation_manager: '0x000000000000000000000000000000000000C0DE',
+              });
+              toast.success(`Auto-release armed for $${poolUsdc} USDC ⚡`);
+            } else {
+              toast.error(permErr?.message || 'Permission not granted — you can retry from the deal page');
+            }
           }
-        } catch (permErr: any) {
-          toast.error(permErr?.message || 'Permission not granted — you can retry from the deal page');
         }
       }
 
@@ -587,7 +590,7 @@ export default function OrgJobDetailPage() {
                 <>
                   <p className="text-sm font-semibold text-[#6b7280] mb-2">Milestone plan (applies to each hired creator). Approve an applicant to start tracking their progress.</p>
                   {milestones.map((m: any) => (
-                    <MilestoneRow key={m.id} milestone={m} onAction={refresh} />
+                    <MilestoneRow key={m.id} milestone={m} job={job} onAction={refresh} />
                   ))}
                 </>
               ) : (
@@ -609,7 +612,7 @@ export default function OrgJobDetailPage() {
                         </span>
                       </div>
                       {theirs.map((m: any) => (
-                        <MilestoneRow key={m.id} milestone={m} onAction={refresh} />
+                        <MilestoneRow key={m.id} milestone={m} job={job} onAction={refresh} />
                       ))}
                     </div>
                   );
