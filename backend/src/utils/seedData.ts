@@ -238,7 +238,7 @@ export async function seedInitialData(locals: any) {
     const demoCreatorWallet = process.env.DEMO_CREATOR_WALLET || '0x000000000000000000000000000000000000bEEF';
 
     await userRepository.upsert({ key: DEMO_BRAND, email: 'brand@fluxpay.demo', profileType: 'organization', walletAddress: demoBrandWallet });
-    await profileRepository.upsert(DEMO_BRAND, { type: 'organization', name: 'Aurora Labs (Demo Brand)', bio: 'A demo brand judges can test the FluxPay flow against.' });
+    await profileRepository.upsert(DEMO_BRAND, { type: 'organization', name: 'Demo Brand', bio: 'A demo brand judges can test the FluxPay flow against.' });
     await userRepository.upsert({ key: DEMO_CREATOR, email: 'creator@fluxpay.demo', profileType: 'creator', walletAddress: demoCreatorWallet });
     await profileRepository.upsert(DEMO_CREATOR, { type: 'creator', name: 'Nova (Demo Creator)', bio: 'A demo creator judges can settle a deal with.' });
 
@@ -248,7 +248,7 @@ export async function seedInitialData(locals: any) {
     const demoJob = await jobRepository.create({
       title: 'Demo — Instagram Reel ($200, gas sponsored by 1Shot)',
       organization_id: DEMO_BRAND,
-      organization: { brand_name: 'Aurora Labs (Demo Brand)' },
+      organization: { brand_name: 'Demo Brand' },
       description: 'Judge demo deal. Apply as the demo creator, get approved by the demo brand, submit the reel, and watch Venice AI verify it and 1Shot settle the $200 payout with gas paid in USDC — no real funds.',
       category: 'Demo', skills: ['Instagram', 'Reels'],
       target_platform: 'instagram', post_type: 'video',

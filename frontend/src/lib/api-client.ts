@@ -46,6 +46,9 @@ export const authAPI = {
     request<{ user: AuthUser }>('POST', '/api/auth/session', data),
   // Returns the verified user for the bearer idToken (Authorization header).
   me: () => request<{ user: AuthUser }>('GET', '/api/auth/me'),
+  // Demo-only: switch the caller's active role (Brand ⇄ Creator).
+  setRole: (profileType: 'creator' | 'organization') =>
+    request<{ user: AuthUser }>('POST', '/api/auth/role', { profileType }),
 }
 
 // ─── Profile ─────────────────────────────────────────────────────────────────

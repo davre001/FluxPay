@@ -33,15 +33,21 @@ export class JobService {
 
   private async enrichJob(job: any) {
     if (!job) return null;
-    const [allMilestones, applications] = await Promise.all([
+    const [allMilestones, applications, orgProfile] = await Promise.all([
       this.milestones.findMany({ job_id: job.id }),
       this.applications.findMany({ job_id: job.id }),
+      this.profiles.findByUserId(job.organization_id).catch(() => null),
     ]);
     // Templates (creator_id null) are the deal definition shown on cards; the
     // per-creator instances are the actual working sets each approved creator runs.
     const milestones = allMilestones.filter((m: any) => (m.creator_id ?? null) === null);
     const creator_milestones = allMilestones.filter((m: any) => m.creator_id);
-    return { ...job, milestones, creator_milestones, application_count: applications.length };
+    // Always show the brand's CURRENT profile name (not a stale snapshot), so a
+    // deal reflects the name the brand set on their profile.
+    const organization = (orgProfile as any)?.name
+      ? { ...job.organization, brand_name: (orgProfile as any).name }
+      : job.organization;
+    return { ...job, organization, milestones, creator_milestones, application_count: applications.length };
   }
 
   async createJob(organizationId: string, jobData: any) {

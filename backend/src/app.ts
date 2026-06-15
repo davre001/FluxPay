@@ -195,7 +195,12 @@ export function createApp(options: any = {}) {
       if (req.method === 'GET' && pathname === '/health') {
         response = { statusCode: 200, body: { status: 'ok', service: 'fluxpay-backend', storage: isDbEnabled() ? 'postgres' : 'memory' } };
       } else if (parts[0] === 'auth') {
-        response = await dispatchAuthRoute(req, parts, authRoutes);
+        if (req.method === 'POST' && parts[1] === 'role') {
+          const user = await requireAuth(req, authService, skipAuth, mockUser);
+          response = await authRoutes.setRole(user, await readJsonBody(req));
+        } else {
+          response = await dispatchAuthRoute(req, parts, authRoutes);
+        }
       } else if (parts[0] === 'payments') {
         response = await dispatchPaymentRoute(req, parts, url.searchParams, routes);
       } else if (parts[0] === 'jobs') {

@@ -58,6 +58,17 @@ export class AuthService {
     return { user };
   }
 
+  // Switch a user's active role. Demo-only (gated by DEMO_MODE) so judges can
+  // explore both dashboards on one account; never exposed in production.
+  async setRole(userKey: string, profileType?: string) {
+    if (!config.demo.enabled) throw new UnauthorizedError('Role switching is disabled');
+    if (!profileType || !VALID_PROFILE_TYPES.includes(profileType)) {
+      throw new ValidationError('Invalid profileType');
+    }
+    const user = await this.repository.upsert({ key: userKey, profileType });
+    return { user };
+  }
+
   // Verifies the bearer idToken and returns the stored user (role included).
   async getMe(idToken: string) {
     if (!idToken) {

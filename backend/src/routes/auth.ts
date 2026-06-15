@@ -17,5 +17,15 @@ export function createAuthRoutes(service = new AuthService()) {
         body: await service.getMe(idToken),
       };
     },
+
+    // POST /api/auth/role  { profileType }  — switch the caller's active role.
+    // Demo aid so judges can explore both the Brand and Creator dashboards on one
+    // account; only exposed when DEMO_MODE is on.
+    async setRole(user, body) {
+      return {
+        statusCode: 200,
+        body: await service.setRole(user.id, body?.profileType),
+      };
+    },
   };
 }
