@@ -264,6 +264,11 @@ export default function CreatorDealPage() {
   const [dealNote, setDealNote] = useState('');
   const [dealSubmitting, setDealSubmitting] = useState(false);
 
+  // Hydration safety for user state
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const myId = useUserStore((s) => s.user?.id);
+
   // Real brand reputation (0–100) — from the brand's public profile.
   const [brandRep, setBrandRep] = useState<number | null>(null);
   const orgId = deal?.organization_id;
@@ -330,9 +335,6 @@ export default function CreatorDealPage() {
 
   // Show THIS creator's own milestone instances (multi-hire). Falls back to the
   // deal's template definition for mock deals or before the creator is approved.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  const myId = useUserStore((s) => s.user?.id);
   const myInstances = mounted ? (deal.creator_milestones ?? []).filter((m: any) => m.creator_id === myId) : [];
   const milestones = myInstances.length > 0 ? myInstances : (deal.milestones ?? []);
   const approved = milestones.filter((m: any) => m.status === 'approved').length;
