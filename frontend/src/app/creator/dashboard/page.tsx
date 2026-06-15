@@ -103,8 +103,8 @@ export default function CreatorDashboard() {
   // accepted deals (USDC). Starts at $0 — no hardcoded figure.
   const acceptedJobIds = myApps.filter((a: any) => a.status === 'accepted').map((a: any) => a.job_id).filter(Boolean);
   const { data: earned = 0 } = useQuery({
-    queryKey: ['creator-earnings', acceptedJobIds.join(',')],
-    enabled: acceptedJobIds.length > 0,
+    queryKey: ['creator-earnings', acceptedJobIds.join(','), user?.id],
+    enabled: acceptedJobIds.length > 0 && Boolean(user?.id),
     staleTime: 30_000,
     queryFn: async () => {
       const deals = await Promise.all(
@@ -112,7 +112,9 @@ export default function CreatorDashboard() {
       );
       let sum = 0;
       for (const d of deals as any[]) {
-        for (const m of (d?.milestones ?? [])) if (m?.status === 'approved') sum += Number(m.amount) || 0;
+        for (const m of (d?.creator_milestones ?? [])) {
+          if (m?.status === 'approved' && m?.creator_id === user?.id) sum += Number(m.amount) || 0;
+        }
       }
       return sum;
     },
