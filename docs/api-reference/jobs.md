@@ -22,3 +22,15 @@ description: Deal lifecycle — create, list, apply, select, fund.
 {% hint style="warning" %}
 Applying to a job is `jobAPI.apply(jobId, { cover_note })` — **not** `applicationAPI.apply(...)`. The `applicationAPI` only has `listMine`.
 {% endhint %}
+
+## Posting a Deal
+
+A brand posts a deal with title, platform, content type, budget, and a milestone breakdown:
+
+![Post a Deal — deal details and budget](/images/post-deal.png)
+
+## Managing Deals
+
+All of a brand's active deals, with budgets and applicant counts:
+
+![All Jobs — active brand deals](/images/all-jobs.png)

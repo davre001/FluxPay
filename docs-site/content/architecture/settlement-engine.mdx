@@ -20,28 +20,18 @@ The settlement engine is FluxPay's core innovation — a single autonomous loop 
 
 ## The Flow
 
-```
-Creator submits deliverable
-        │
-        ▼
-  Venice AI scores the work
-        │
-        ▼
-   Score ≥ minimum? ──── No ──→ Rejected (no payment)
-        │
-       Yes
-        │
-        ▼
-   Release (score × amount) in USDC
-        │
-        ▼
-   Brand's MetaMask permission (ERC-7715/7710)
-        │
-        ▼
-   1Shot relays (gas paid in USDC)
-        │
-        ▼
-   Creator paid 💸
+```mermaid
+flowchart TD
+    A([Creator submits deliverable]) --> B[Venice AI scores the work]
+    B --> C{Score ≥ minimum?}
+    C -->|No| D([Rejected — no payment])
+    C -->|Yes| E[Release score × amount in USDC]
+    E --> F[Redeem brand's MetaMask permission<br/>ERC-7715 / ERC-7710]
+    F --> G[1Shot relays — gas paid in USDC]
+    G --> H([Creator paid 💸])
+
+    classDef tech fill:#312e81,stroke:#6366f1,color:#e0e7ff;
+    class B,F,G tech;
 ```
 
 ## Example Scenario

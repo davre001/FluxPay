@@ -8,6 +8,8 @@ description: Web3Auth login flow and session management.
 
 FluxPay uses **Web3Auth (MetaMask Embedded Wallets)** for authentication. Users can sign in with social accounts (Google, etc.) or existing wallets, and receive a MetaMask smart account (EIP-7702).
 
+![Sign in — Google, X, Facebook, email, or MetaMask](/images/sign-in.png)
+
 ## Login Sequence
 
 1. User clicks "Sign In" → Web3Auth SDK opens its modal

@@ -4,6 +4,18 @@ description: Directory layout of the FluxPay monorepo.
 
 # Project Structure
 
+Three workspaces, two deploy targets:
+
+```mermaid
+flowchart LR
+    Repo["📦 FluxPay monorepo"] --> FE["frontend/<br/>Next.js 14"]
+    Repo --> BE["backend/<br/>Node.js API"]
+    Repo --> DOCS["docs-site/<br/>Nextra docs"]
+    FE -->|deploys to| V1["▲ Vercel"]
+    DOCS -->|deploys to| V2["▲ Vercel"]
+    BE -->|deploys to| R["Render"]
+```
+
 ```
 FluxPay/
 ├── frontend/                        # Next.js 14 app (deployed to Vercel)

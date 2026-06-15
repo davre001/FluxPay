@@ -94,8 +94,13 @@ export class PayoutService {
       // balance. relayRedemption assembles the real 7710 payload + fetches a real
       // live gas-in-USDC fee quote, then returns a clearly-labelled simulated
       // result without broadcasting. The amounts are illustrative.
+      //
+      // Quote against the 1Shot-supported MAINNET chain (config.oneshot.chainId),
+      // never the testnet permission chain: 1Shot returns empty capabilities for
+      // testnets, so quoting Base Sepolia here would fail the whole simulation.
+      // This mirrors what buildStatus() uses for the live rail panel.
       const relay = await this.relayer.relayRedemption({
-        chainId: opts.chainId || permission.chain_id,
+        chainId: opts.chainId || config.oneshot.chainId,
         permissionsContext: permission.permissions_context,
         delegationManager: permission.delegation_manager,
         executions: [{ target: tokenAddress, value: '0x0', callData }],

@@ -47,6 +47,22 @@ ACTIVE_CHAIN_ID=42161
 The active chain drives the agent RPC, USDC address, faucet, and redeem chain. Flip one env var and the whole backend moves networks.
 {% endhint %}
 
+## Settlement Paths
+
+The release path depends on the active network — **1Shot does not support testnets**, so Base Sepolia redeems directly:
+
+```mermaid
+flowchart TD
+    A{Active network?} -->|Mainnet<br/>1–8453–42161–…| B[1Shot relayer]
+    A -->|Base Sepolia<br/>84532| C[Direct redeem]
+    B --> D["USDC payout<br/>gas paid in USDC"]
+    C --> D
+    D --> E([Creator paid])
+
+    classDef tech fill:#312e81,stroke:#6366f1,color:#e0e7ff;
+    class B,C tech;
+```
+
 ## Chain Registry
 
 All chain definitions live in `backend/src/config/chains.ts` — a single source of truth. USDC addresses are sourced from 1Shot's `getCapabilities` response.

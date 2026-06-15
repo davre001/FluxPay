@@ -4,6 +4,10 @@ description: Submit, approve, dispute, and recheck milestones.
 
 # Milestones
 
+Deals are split into milestone stages, each with its own metric, requirement, and USDC amount:
+
+![Milestone-based payout — stages with metrics and amounts](/images/milestone-payout.png)
+
 All endpoints require authentication.
 
 | Method   | Path                              | Body                                          |

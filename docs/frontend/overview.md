@@ -4,6 +4,12 @@ description: Frontend technology stack and architecture overview.
 
 # Frontend Overview
 
+The two primary surfaces — the creator dashboard and the organization (brand) dashboard:
+
+![Creator dashboard — applications, active deals, earnings, reputation](/images/creator-dashboard.png)
+
+![Organization (brand) dashboard — active jobs, escrow funds, applicants](/images/org-dashboard.png)
+
 ## Tech Stack
 
 | Layer              | Technology                      | Version        |

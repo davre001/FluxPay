@@ -4,6 +4,10 @@ description: Start the frontend and backend dev servers.
 
 # Running the Project
 
+Once both servers are up, the app's landing page is served at the frontend URL:
+
+![FluxPay landing — Creator-Brand Deals, secured on-chain](/images/landing-hero.png)
+
 ## Frontend (Next.js dev server)
 
 ```bash

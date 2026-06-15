@@ -8,6 +8,8 @@ description: Permissionless USDC-gas payout relay for mainnet.
 
 A payout rail where **gas is paid in USDC** instead of ETH, via 1Shot's permissionless relayer (no API key needed).
 
+![Open opportunities — a demo Instagram Reel deal with gas sponsored by 1Shot](/images/opportunities-1shot.png)
+
 ## How It Works
 
 1. `RelayerService` speaks 1Shot's JSON-RPC protocol

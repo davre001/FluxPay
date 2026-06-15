@@ -4,6 +4,10 @@ description: Track and manage job applications.
 
 # Applications
 
+The brand's approvals inbox — incoming applicants with reputation scores and cover notes:
+
+![Approvals inbox — applicants with rep scores, approve or decline](/images/approvals-inbox.png)
+
 All endpoints require authentication.
 
 | Method   | Path                                | Query      |

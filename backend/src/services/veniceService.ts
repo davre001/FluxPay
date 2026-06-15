@@ -1,69 +1,96 @@
 import { config } from '../config/index.ts';
 
+type Provider = { name: 'venice' | 'gemini'; baseUrl: string; apiKey: string; model: string };
+
 // Thin client for AI chat/completions (OpenAI-compatible). Venice is the
-// primary provider; Gemini is a testing-only fallback when VENICE_API_KEY is
-// unset. Both expose the same OpenAI-compatible /chat/completions endpoint.
-// Never used directly by routes — the VerificationService builds the prompts
-// and parses the verdicts.
+// primary provider; Gemini is a fallback. Both expose the same OpenAI-compatible
+// /chat/completions endpoint. Never used directly by routes — the
+// VerificationService builds the prompts and parses the verdicts.
+//
+// Fallback is RUNTIME, not config-time: when both keys are set Venice is tried
+// first, and if a Venice call FAILS (e.g. the API is up in config but erroring),
+// the same request is retried against Gemini so verification still returns a
+// verdict. The provider that actually answered is reported via `providerModel`.
 export class VeniceService {
-  private enabled: boolean;
-  private _provider: 'venice' | 'gemini' | null;
-  private _baseUrl: string;
-  private _apiKey: string;
-  private _model: string;
+  private providers: Provider[];
+  private _lastUsed: Provider | null = null;
 
   constructor() {
+    const providers: Provider[] = [];
     if (config.venice.apiKey) {
-      // Primary: Venice
-      this.enabled = true;
-      this._provider = 'venice';
-      this._baseUrl = config.venice.baseUrl;
-      this._apiKey = config.venice.apiKey;
-      this._model = config.venice.model;
-    } else if (config.gemini.apiKey) {
-      // Testing fallback: Gemini (OpenAI-compatible endpoint)
-      this.enabled = true;
-      this._provider = 'gemini';
-      this._baseUrl = config.gemini.baseUrl;
-      this._apiKey = config.gemini.apiKey;
-      this._model = config.gemini.model;
-      console.log(`[ai] Using Gemini (${this._model}) as testing fallback — set VENICE_API_KEY for production.`);
-    } else {
-      this.enabled = false;
-      this._provider = null;
-      this._baseUrl = '';
-      this._apiKey = '';
-      this._model = '';
+      providers.push({
+        name: 'venice',
+        baseUrl: config.venice.baseUrl,
+        apiKey: config.venice.apiKey,
+        model: config.venice.model,
+      });
+    }
+    if (config.gemini.apiKey) {
+      providers.push({
+        name: 'gemini',
+        baseUrl: config.gemini.baseUrl,
+        apiKey: config.gemini.apiKey,
+        model: config.gemini.model,
+      });
+    }
+    this.providers = providers;
+
+    const names = providers.map((p) => p.name).join(' → ');
+    if (providers.length) {
+      console.log(`[ai] Providers (priority order): ${names}.`);
     }
   }
 
   isEnabled() {
-    return this.enabled;
+    return this.providers.length > 0;
   }
 
-  /** Which AI backend is active: 'venice', 'gemini', or null if disabled. */
+  /** The primary (first-choice) AI backend: 'venice', 'gemini', or null. */
   get provider(): string | null {
-    return this._provider;
+    return this.providers[0]?.name ?? null;
   }
 
-  /** The model string including provider prefix, e.g. 'venice/claude-opus-4-7'. */
+  /**
+   * Model string of the provider that last answered (so recorded metadata is
+   * accurate after a runtime fallback), e.g. 'gemini/gemini-2.5-flash'. Falls
+   * back to the primary provider before any call has run.
+   */
   get providerModel(): string {
-    return this._provider ? `${this._provider}/${this._model}` : 'none';
+    const p = this._lastUsed ?? this.providers[0];
+    return p ? `${p.name}/${p.model}` : 'none';
   }
 
-  // Sends chat messages and returns the assistant's text content.
+  // Sends chat messages and returns the assistant's text content. Tries each
+  // configured provider in priority order; on failure falls through to the next.
   // `json: true` asks the model to return a strict JSON object.
   async chat(messages: any[], { json = true }: { json?: boolean } = {}): Promise<string> {
-    if (!this.enabled) throw new Error('ai_not_configured');
+    if (!this.providers.length) throw new Error('ai_not_configured');
 
-    const res = await fetch(`${this._baseUrl}/chat/completions`, {
+    const errors: string[] = [];
+    for (const p of this.providers) {
+      try {
+        const content = await this.callProvider(p, messages, json);
+        this._lastUsed = p;
+        if (p !== this.providers[0]) {
+          console.log(`[ai] ${this.providers[0].name} failed; answered via fallback ${p.name}.`);
+        }
+        return content;
+      } catch (error) {
+        errors.push(`${p.name}: ${(error as Error).message}`);
+      }
+    }
+    throw new Error(`ai_all_providers_failed (${errors.join(' | ')})`);
+  }
+
+  private async callProvider(p: Provider, messages: any[], json: boolean): Promise<string> {
+    const res = await fetch(`${p.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${this._apiKey}`,
+        Authorization: `Bearer ${p.apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: this._model,
+        model: p.model,
         messages,
         temperature: 0.2,
         ...(json ? { response_format: { type: 'json_object' } } : {}),
@@ -72,7 +99,7 @@ export class VeniceService {
 
     if (!res.ok) {
       const text = await res.text().catch(() => '');
-      throw new Error(`${this._provider}_http_${res.status}: ${text.slice(0, 200)}`);
+      throw new Error(`${p.name}_http_${res.status}: ${text.slice(0, 200)}`);
     }
 
     const data = await res.json();

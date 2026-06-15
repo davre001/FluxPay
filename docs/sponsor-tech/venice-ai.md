@@ -8,6 +8,8 @@ description: AI-powered deliverable scoring that determines payout amounts.
 
 Replaces manual milestone approval with AI judgment. The Venice score directly determines the payment amount — a $100 milestone that scores 0.85 releases exactly $85 USDC.
 
+![AI verification in progress — payout released autonomously once complete](/images/ai-verification.png)
+
 ## How It Works
 
 1. `VerificationService` builds a **brief** from the job (target platform, post type, required hashtags/mentions/brand tag)

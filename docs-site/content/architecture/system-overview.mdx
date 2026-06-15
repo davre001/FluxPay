@@ -8,27 +8,28 @@ description: High-level architecture of FluxPay's frontend, backend, and blockch
 
 FluxPay is a three-tier system: a Next.js frontend (Vercel), a Node.js backend (Render), and smart contracts on EVM chains.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     Frontend (Vercel)                           │
-│  Next.js 14 · Tailwind · Zustand · TanStack Query · Web3Auth   │
-│  wagmi + viem (contract hooks) · Solana Provider                │
-└──────────────────────┬──────────────────────────────────────────┘
-                       │ HTTP /api
-┌──────────────────────▼──────────────────────────────────────────┐
-│                     Backend (Render)                            │
-│  node:http dispatcher · Services · Repositories                │
-│  ┌───────────┐  ┌───────────┐  ┌───────────┐                  │
-│  │ Venice AI │  │ 1Shot     │  │ Delegation│                   │
-│  │ Verify    │  │ Relayer   │  │ Toolkit   │                   │
-│  └───────────┘  └───────────┘  └───────────┘                  │
-└──────────────────────┬──────────────────────────────────────────┘
-                       │ Neon Postgres / In-Memory
-┌──────────────────────▼──────────────────────────────────────────┐
-│                     Data & Chain                               │
-│  Neon Postgres (JSONB) · EVM chains (ERC-7710 redeem)          │
-│  USDC on 8 mainnets + Base Sepolia testnet                     │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph FE["🖥️ Frontend — Vercel"]
+        F1["Next.js 14 · Tailwind · Zustand · TanStack Query"]
+        F2["Web3Auth · wagmi + viem · Solana Provider"]
+    end
+    subgraph BE["⚙️ Backend — Render"]
+        B0["node:http dispatcher · Services · Repositories"]
+        B1["Venice AI<br/>Verify"]
+        B2["1Shot<br/>Relayer"]
+        B3["Delegation<br/>Toolkit"]
+    end
+    subgraph DC["🗄️ Data & Chain"]
+        D1["Neon Postgres (JSONB)"]
+        D2["EVM chains · ERC-7710 redeem<br/>USDC on 8 mainnets + Base Sepolia"]
+    end
+
+    FE -->|"HTTP /api"| BE
+    BE -->|"Neon / In-Memory"| DC
+
+    classDef tech fill:#312e81,stroke:#6366f1,color:#e0e7ff;
+    class B1,B2,B3 tech;
 ```
 
 ## Backend Architecture Pattern

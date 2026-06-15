@@ -20,6 +20,27 @@ Every user gets a **MetaMask smart account** (EIP-7702) at sign-in via Web3Auth.
 2. USDC transfers from the brand's smart account to the creator
 3. **No per-payout signature** from the brand is needed
 
+## Flow Diagram
+
+One signature from the brand (ERC-7715), then the agent redeems per milestone (ERC-7710) with no further signatures:
+
+```mermaid
+sequenceDiagram
+    participant Brand as Brand (Smart Account)
+    participant API as FluxPay Backend
+    participant Agent as Agent Wallet
+    participant Creator
+
+    Brand->>Brand: Sign ONE permission (ERC-7715)
+    Brand->>API: POST /api/permissions (permissionsContext)
+    Note over API: Stored once for the job
+    loop Per approved milestone
+        API->>Agent: Redeem stored permission (ERC-7710)
+        Agent->>Creator: Transfer milestone USDC
+    end
+    Note over Brand,Creator: Brand never signs again
+```
+
 ## Example
 
 > Nike signs **one** permission when hiring Joshua. Across three milestones, the agent releases funds three times — Nike never signs again. _"Funds release automatically, no trust required."_

@@ -4,6 +4,8 @@ description: Profile management and social OAuth.
 
 # Profile
 
+![Brand profile — verification status, reputation, industry verticals, socials](/images/brand-profile.png)
+
 All endpoints require authentication unless noted.
 
 | Method   | Path                                       | Description               |
