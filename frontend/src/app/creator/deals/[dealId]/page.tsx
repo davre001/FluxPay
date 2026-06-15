@@ -455,7 +455,7 @@ export default function CreatorDealPage() {
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b7280] mb-1">Status</p>
                 <span className="inline-flex px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest text-[#22c55e]" style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)' }}>
-                  {deal.status.replace('_', ' ')}
+                  {deal.status?.replace('_', ' ')}
                 </span>
               </div>
               
@@ -495,7 +495,7 @@ export default function CreatorDealPage() {
                   <img src={deal.organization.logo_url} alt="Logo" className="w-10 h-10 rounded-lg object-contain bg-white p-1" style={{ border: '1px solid #252525' }} />
                 ) : (
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ background: '#1a1a1a', border: '1px solid #252525' }}>
-                    {deal.organization.brand_name[0].toUpperCase()}
+                    {deal.organization?.brand_name ? deal.organization.brand_name[0].toUpperCase() : '?'}
                   </div>
                 )}
                 <div>
