@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Zap, LayoutDashboard, Briefcase, User, Wallet, Star,
-  LogOut, Menu, X, ChevronRight, Building2, FileText,
+  LogOut, Menu, X, ChevronRight, Building2, FileText, BookOpen
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
@@ -20,6 +20,7 @@ const creatorLinks = [
   { href: '/creator/profile',   label: 'Profile',      icon: User },
   { href: '/creator/wallet',    label: 'Wallet',       icon: Wallet },
   { href: '/creator/reputation',label: 'Reputation',   icon: Star },
+  { href: 'https://flux-paydocs.vercel.app/', label: 'Docs', icon: BookOpen },
 ];
 
 const orgLinks = [
@@ -30,6 +31,7 @@ const orgLinks = [
   { href: '/organization/profile',   label: 'Profile',      icon: User },
   { href: '/organization/wallet',    label: 'Wallet',       icon: Wallet },
   { href: '/organization/reputation',label: 'Reputation',   icon: Star },
+  { href: 'https://flux-paydocs.vercel.app/', label: 'Docs', icon: BookOpen },
 ];
 
 export default function Navbar() {
@@ -94,6 +96,7 @@ export default function Navbar() {
           )}
           {!isAuthenticated && (
             <div className="flex items-center gap-4">
+              <a href="https://flux-paydocs.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-[#d1d5db] hover:text-white transition-colors">Docs</a>
               <Link href="/auth/login" className="text-sm font-semibold text-[#d1d5db] hover:text-white transition-colors">Log in</Link>
               <Link href="/auth/signup?type=organization" className="bg-white text-black hover:bg-[#f0f0f0] text-xs py-2 px-5 font-bold transition-all rounded-lg active:scale-95">Sign up</Link>
             </div>
@@ -148,6 +151,7 @@ export default function Navbar() {
               <Link
                 key={href}
                 href={href}
+                {...(href.startsWith('http') ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                   active 
                     ? 'bg-white text-black shadow-sm' 
@@ -217,7 +221,8 @@ export default function Navbar() {
                 <Link
                   key={href}
                   href={href}
-                  onClick={() => setMobileOpen(false)}
+                  onClick={() => !href.startsWith('http') && setMobileOpen(false)}
+                  {...(href.startsWith('http') ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                   className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
                     active 
                       ? 'bg-white text-black shadow-sm' 

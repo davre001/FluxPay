@@ -418,7 +418,7 @@ function MiniNavbar() {
   const navLinksData = [
     { label: 'Website', href: '/' },
     { label: 'Security', href: '#' },
-    { label: 'Escrow Docs', href: '#' },
+    { label: 'Escrow Docs', href: 'https://flux-paydocs.vercel.app/' },
   ];
 
   return (

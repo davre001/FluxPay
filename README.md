@@ -5,6 +5,7 @@
 <h1 align="center">FluxPay</h1>
 
 <p align="center">
+  <a href="https://flux-paydocs.vercel.app/"><strong>Official Documentation</strong></a> &nbsp;&bull;&nbsp;
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen" alt="Node.js Version" /></a>
   <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-14-black" alt="Next.js" /></a>
@@ -93,8 +94,9 @@ flowchart LR
     class Venice,Perm,OneShot tech;
 ```
 
-📖 **Full backend documentation — every feature, endpoint, env var, and scenario —
-lives in [`backend/BackendReadme.md`](backend/BackendReadme.md).**
+📖 **Official Documentation:** Visit the [FluxPay Official Docs](https://flux-paydocs.vercel.app/) for a comprehensive guide on the entire platform.
+
+*(For detailed backend specifics, see [`backend/BackendReadme.md`](backend/BackendReadme.md)).*
 
 ---
 

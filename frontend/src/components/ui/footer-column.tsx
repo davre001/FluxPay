@@ -26,6 +26,7 @@ const data = {
     faqs: '/faqs',
     support: '/about',
     livechat: '/about',
+    docs: 'https://flux-paydocs.vercel.app/',
   },
   contact: {
     phone: '( +234 ) 807-296-6135',
@@ -57,6 +58,7 @@ const serviceLinks = [
 ];
 
 const helpfulLinks = [
+  { text: 'Documentation', href: data.help.docs },
   { text: 'FAQs', href: data.help.faqs },
 ];
 
