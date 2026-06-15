@@ -6,6 +6,7 @@ import ClientLayout from './client-layout'
 export const metadata = {
   title: 'FluxPay — Creator-Brand Deal Escrow',
   description: 'The escrow platform securing creator-brand deals with AI milestone verification and on-chain payments.',
+  icons: { icon: '/Fluxpay icon light.png' },
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
