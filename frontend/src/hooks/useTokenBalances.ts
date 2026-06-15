@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAccount, useChainId } from 'wagmi';
 import { useSolanaWallet } from '@web3auth/modal/react/solana';
+import { useDemoBalance } from '@/stores/demoBalance';
 
 export interface WalletToken {
   symbol: string;
@@ -41,10 +42,26 @@ function summarize(query: ReturnType<typeof useQuery<WalletToken[]>>) {
   };
 }
 
+// Demo mode shows an illustrative USDC balance so the no-real-funds walkthrough
+// is coherent without depending on faucet/agent funds. It ticks down/up with
+// settlements (see the demoBalance store). Purely cosmetic.
+const DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
+function withDemoBalance(tokens: WalletToken[], usdc: number): WalletToken[] {
+  const token: WalletToken = {
+    symbol: 'USDC', name: 'USD Coin', address: '0x0000000000000000000000000000000000000000',
+    decimals: 6, logo: null, balance: String(usdc), balanceRaw: String(Math.round(usdc * 1e6)),
+    usdValue: usdc, isNative: false,
+  };
+  return [token, ...tokens.filter((t) => t.symbol.toUpperCase() !== 'USDC')];
+}
+
 // EVM token balances for the active wagmi chain.
 export function useTokenBalances() {
   const { address } = useAccount();
   const chainId = useChainId();
+  // Subscribe to the demo ledger so the balance re-renders as deals settle.
+  const demoUsdc = useDemoBalance((s) => Math.max(0, Math.round((Number(process.env.NEXT_PUBLIC_DEMO_BALANCE || 400) + s.delta) * 100) / 100));
 
   const query = useQuery({
     queryKey: ['token-balances', chainId, address],
@@ -53,7 +70,11 @@ export function useTokenBalances() {
     queryFn: () => fetchBalances(chainId, address as string),
   });
 
-  return summarize(query);
+  const base = summarize(query);
+  if (!DEMO) return base;
+  // Illustrative balance — render immediately, independent of the live fetch.
+  const tokens = withDemoBalance(base.tokens, demoUsdc);
+  return { ...base, tokens, totalUsd: tokens.reduce((s, t) => s + (t.usdValue ?? 0), 0), isLoading: false, isError: false };
 }
 
 // Solana token balances for the embedded wallet's Solana account.

@@ -12,6 +12,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { jobAPI, milestoneAPI } from '@/lib/api-client';
 import { useGrantMilestonePermission } from '@/hooks/useGrantMilestonePermission';
 import { useDeal, useJobApplications } from '@/hooks/useDeals';
+import { adjustDemoBalance } from '@/stores/demoBalance';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const containerVariants = {
@@ -52,6 +53,7 @@ function MilestoneRow({ milestone, onAction }: { milestone: any; onAction: () =>
       const paid = payout?.ok;
       if (paid && released != null) {
         toast.success(`Approved — $${Number(released).toFixed(2)} USDC released.`);
+        adjustDemoBalance(-Number(released)); // brand pays → balance ticks down
         if (payout?.oneshot?.feeToken) toast.success(`⚡ Gas sponsored by 1Shot — paid in ${payout.oneshot.feeToken.symbol}`);
       }
       else if (paid === false) toast.success('Approved, but payout pending. Check the deal permission.');

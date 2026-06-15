@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useUserStore } from '@/stores/userStore';
+import { useDemoBalance } from '@/stores/demoBalance';
 import { faucetAPI, demoAPI } from '@/lib/api-client';
 
 const UNLOCK_KEY = 'fp_presenter_ok';
@@ -19,6 +20,7 @@ export default function PresenterSwitcher() {
   const [code, setCode] = useState('');
   const [unlocked, setUnlocked] = useState(false);
   const wallet = useUserStore((s) => s.user?.walletAddress);
+  const resetBalance = useDemoBalance((s) => s.reset);
 
   useEffect(() => {
     setUnlocked(typeof window !== 'undefined' && sessionStorage.getItem(UNLOCK_KEY) === '1');
@@ -94,6 +96,10 @@ export default function PresenterSwitcher() {
       <button onClick={drip}
         className="w-full text-left px-2 py-2 rounded-lg text-xs font-semibold text-[#22c55e] hover:bg-[#1a1a1a] transition-colors">
         Re-fund wallet
+      </button>
+      <button onClick={() => { resetBalance(); toast.success('Demo balance reset'); }}
+        className="w-full text-left px-2 py-2 rounded-lg text-xs font-semibold text-[#d1d5db] hover:bg-[#1a1a1a] transition-colors">
+        Reset balance
       </button>
       <button onClick={() => setOpen(false)}
         className="w-full text-left px-2 py-2 rounded-lg text-xs font-semibold text-[#6b7280] hover:bg-[#1a1a1a] transition-colors">

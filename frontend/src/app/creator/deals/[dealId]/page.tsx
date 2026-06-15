@@ -15,6 +15,7 @@ import { jobAPI, milestoneAPI, profileAPI } from '@/lib/api-client';
 import { validateDeliverableUrl, placeholderForPlatform } from '@/lib/deliverable';
 import { useDeal } from '@/hooks/useDeals';
 import { useUserStore } from '@/stores/userStore';
+import { adjustDemoBalance } from '@/stores/demoBalance';
 
 const XLogo = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
@@ -96,6 +97,7 @@ function MilestoneCard({ milestone, platform, onRefresh }: { milestone: any; pla
     setSubmitting(true);
     try {
       const { data }: any = await milestoneAPI.recheck(milestone.id, override ? { deliverable_url: override } : {});
+      if (data?.settled) adjustDemoBalance(Number(data.scored_amount ?? milestone.amount)); // creator paid → ticks up
       toast.success(data?.settled ? 'Detected — milestone approved & released!' : 'Re-checked — not detected yet.');
       onRefresh();
     } catch (e: any) {
@@ -280,7 +282,11 @@ export default function CreatorDealPage() {
     setDealSubmitting(true);
     try {
       const { data }: any = await jobAPI.submitDeliverable(dealId as string, { deliverable_url: dealUrl, deliverable_note: dealNote || undefined });
-      const releasedCount = Array.isArray(data?.results) ? data.results.filter((r: any) => r?.settled).length : 0;
+      const settledResults = Array.isArray(data?.results) ? data.results.filter((r: any) => r?.settled) : [];
+      const releasedCount = settledResults.length;
+      // Creator paid → balance ticks up by the total released across stages.
+      const totalReleased = settledResults.reduce((s: number, r: any) => s + Number(r.scored_amount ?? 0), 0);
+      if (totalReleased > 0) adjustDemoBalance(totalReleased);
       toast.success(releasedCount > 0
         ? `Submitted — AI approved & released ${releasedCount} milestone${releasedCount > 1 ? 's' : ''}!`
         : 'Submitted — AI is reviewing each milestone.');
