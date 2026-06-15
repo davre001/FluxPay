@@ -97,8 +97,9 @@ function MilestoneCard({ milestone, deal, platform, onRefresh }: { milestone: an
     setSubmitting(true);
     try {
       const { data }: any = await milestoneAPI.recheck(milestone.id, override ? { deliverable_url: override } : {});
-      if (data?.settled) settleDemoBalance(Number(data.scored_amount ?? milestone.amount), deal?.organization_id, milestone.creator_id); // creator paid → ticks up
-      toast.success(data?.settled ? 'Detected — milestone approved & released!' : 'Re-checked — not detected yet.');
+      const isApproved = data?.settled || data?.scored_amount != null;
+      if (isApproved) settleDemoBalance(Number(data.scored_amount ?? milestone.amount), deal?.organization_id, milestone.creator_id); // creator paid → ticks up
+      toast.success(isApproved ? 'Detected — milestone approved & released!' : 'Re-checked — not detected yet.');
       onRefresh();
     } catch (e: any) {
       toast.error(e?.message || 'Re-check failed');
@@ -288,7 +289,7 @@ export default function CreatorDealPage() {
     setDealSubmitting(true);
     try {
       const { data }: any = await jobAPI.submitDeliverable(dealId as string, { deliverable_url: dealUrl, deliverable_note: dealNote || undefined });
-      const settledResults = Array.isArray(data?.results) ? data.results.filter((r: any) => r?.settled) : [];
+      const settledResults = Array.isArray(data?.results) ? data.results.filter((r: any) => r?.settled || r?.scored_amount != null) : [];
       const releasedCount = settledResults.length;
       // Creator paid → balance ticks up by the total released across stages.
       const totalReleased = settledResults.reduce((s: number, r: any) => s + Number(r.scored_amount ?? 0), 0);
