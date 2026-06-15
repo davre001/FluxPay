@@ -72,7 +72,7 @@ export default function Navbar() {
         <div className="container-custom flex items-center justify-between py-4">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-              <Image src="/Fluxpay icon light.png" alt="FluxPay" width={32} height={32} className="rounded-lg" />
+              <Image src="/fluxpay-icon-light.png" alt="FluxPay" width={32} height={32} className="rounded-lg" />
             </div>
             <span className="font-extrabold text-lg text-white tracking-tight">Flux<span className="text-[#6b7280]">Pay</span></span>
           </Link>
@@ -113,7 +113,7 @@ export default function Navbar() {
         <div className="px-6 py-6" style={{ borderBottom: '1px solid #161616' }}>
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105">
-              <Image src="/Fluxpay icon light.png" alt="FluxPay" width={32} height={32} className="rounded-lg" />
+              <Image src="/fluxpay-icon-light.png" alt="FluxPay" width={32} height={32} className="rounded-lg" />
             </div>
             <span className="font-extrabold text-lg text-white tracking-tight">Flux<span className="text-[#6b7280]">Pay</span></span>
           </Link>
@@ -197,7 +197,7 @@ export default function Navbar() {
               style={{ background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(20px)' }}>
         <Link href="/" className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center">
-            <Image src="/Fluxpay icon light.png" alt="FluxPay" width={28} height={28} className="rounded-lg" />
+            <Image src="/fluxpay-icon-light.png" alt="FluxPay" width={28} height={28} className="rounded-lg" />
           </div>
           <span className="font-extrabold text-base text-white">Flux<span className="text-[#6b7280]">Pay</span></span>
         </Link>
