@@ -57,7 +57,15 @@ export class JobService {
 
     const job = await this.jobs.create({ ...input, organization_id: organizationId, organization });
 
-    for (const msDef of input.milestones) {
+    // Every deal needs at least one milestone to submit/verify/approve against.
+    // A single-payment ("full") deal becomes one implicit milestone for the whole
+    // per-creator cut, so the same flow (submit → AI verdict → approve & release)
+    // works uniformly. Per-creator cut = total_budget / creator_slots.
+    const slots = Number(input.creator_slots || 1);
+    const msDefs = (input.milestones && input.milestones.length > 0)
+      ? input.milestones
+      : [{ title: 'Final deliverable', description: 'Complete and submit the deliverable for this deal', amount: Math.round((input.total_budget / slots) * 1e6) / 1e6 }];
+    for (const msDef of msDefs) {
       const msInput = parseMilestoneInput(msDef);
       await this.milestones.create({ ...msInput, job_id: job.id, deadline: msDef.deadline });
     }

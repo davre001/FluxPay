@@ -13,8 +13,10 @@ import { jobAPI, milestoneAPI, permissionAPI } from '@/lib/api-client';
 import { useUserStore } from '@/stores/userStore';
 import { useGrantMilestonePermission } from '@/hooks/useGrantMilestonePermission';
 import { useDeal, useJobApplications } from '@/hooks/useDeals';
-import { adjustDemoBalance } from '@/stores/demoBalance';
+import { settleDemoBalance } from '@/stores/demoBalance';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -54,7 +56,7 @@ function MilestoneRow({ milestone, onAction }: { milestone: any; onAction: () =>
       const paid = payout?.ok;
       if (paid && released != null) {
         toast.success(`Approved — $${Number(released).toFixed(2)} USDC released.`);
-        adjustDemoBalance(useUserStore.getState().user?.id, -Number(released)); // brand pays → ticks down
+        settleDemoBalance(Number(released)); // brand ticks down, creator ticks up
         if (payout?.oneshot?.feeToken) toast.success(`⚡ Gas sponsored by 1Shot — paid in ${payout.oneshot.feeToken.symbol}`);
       }
       else if (paid === false) toast.success('Approved, but payout pending. Check the deal permission.');
@@ -334,10 +336,9 @@ export default function OrgJobDetailPage() {
         try {
           // total_budget IS the pool — grant the permission for the whole pool.
           const poolUsdc = Number(job?.total_budget ?? 0);
-          const isDemoPersona = user?.id === 'demo-brand' || user?.id === 'demo-creator';
-          if (poolUsdc > 0 && isDemoPersona) {
-            // Demo personas have no signable wallet — store a placeholder
-            // permission so the simulated 1Shot settlement resolves. No funds.
+          if (poolUsdc > 0 && DEMO) {
+            // Demo mode: no real wallet signing — store a placeholder permission
+            // so the simulated 1Shot settlement resolves and funds "release". No funds.
             await permissionAPI.store({
               jobId, organizationId: job?.organization_id, creatorId,
               token_address: '0x0000000000000000000000000000000000000000',

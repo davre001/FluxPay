@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAccount, useChainId } from 'wagmi';
 import { useSolanaWallet } from '@web3auth/modal/react/solana';
-import { useDemoBalance } from '@/stores/demoBalance';
+import { useDemoBalance, demoBalance } from '@/stores/demoBalance';
 import { useUserStore } from '@/stores/userStore';
 
 export interface WalletToken {
@@ -61,10 +61,10 @@ function withDemoBalance(tokens: WalletToken[], usdc: number): WalletToken[] {
 export function useTokenBalances() {
   const { address } = useAccount();
   const chainId = useChainId();
-  // Subscribe to the demo ledger (per identity) so the balance re-renders as
-  // deals settle for the current persona.
-  const uid = useUserStore((s) => s.user?.id);
-  const demoUsdc = useDemoBalance((s) => s.balanceFor(uid)); // base $1000 (NEXT_PUBLIC_DEMO_BALANCE)
+  // Subscribe to the demo ledger (per role + identity): brand starts funded,
+  // creator starts at $0. Re-renders as deals settle.
+  const user = useUserStore((s) => s.user);
+  const demoUsdc = useDemoBalance((s) => demoBalance(s.deltas, user?.id, user?.profileType));
 
   const query = useQuery({
     queryKey: ['token-balances', chainId, address],

@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 import { useAccount, useBalance, useChainId, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { Address, parseUnits, formatUnits } from 'viem';
 import { getChainConfig, getToken, getTokens } from '@/config/chains';
-import { useDemoBalance } from '@/stores/demoBalance';
+import { useDemoBalance, demoBalance } from '@/stores/demoBalance';
 import { useUserStore } from '@/stores/userStore';
 
 const DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
@@ -165,10 +165,10 @@ export function useTokenBalance(symbol: string) {
   const token = getToken(chainId, symbol);
   const isErc20 = !!token && token.address !== 'native';
 
-  // Demo mode: show the illustrative per-identity USDC balance (ticks with
-  // settlements) instead of the real on-chain read. Purely cosmetic, no funds.
-  const uid = useUserStore((s) => s.user?.id);
-  const demoUsdc = useDemoBalance((s) => s.balanceFor(uid));
+  // Demo mode: show the illustrative per-(role,identity) USDC balance (brand
+  // starts funded, creator at $0; ticks with settlements). Cosmetic, no funds.
+  const demoUser = useUserStore((s) => s.user);
+  const demoUsdc = useDemoBalance((s) => demoBalance(s.deltas, demoUser?.id, demoUser?.profileType));
 
   const { data, isLoading, refetch } = useReadContract({
     address: isErc20 ? (token.address as `0x${string}`) : undefined,
