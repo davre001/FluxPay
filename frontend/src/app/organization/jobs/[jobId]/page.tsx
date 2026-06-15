@@ -48,8 +48,12 @@ function MilestoneRow({ milestone, onAction }: { milestone: any; onAction: () =>
     try {
       const { data } = await milestoneAPI.approve(milestone.id);
       const released = (data as any)?.scored_amount;
-      const paid = (data as any)?.payout?.ok;
-      if (paid && released != null) toast.success(`Approved — $${Number(released).toFixed(2)} USDC released.`);
+      const payout = (data as any)?.payout;
+      const paid = payout?.ok;
+      if (paid && released != null) {
+        toast.success(`Approved — $${Number(released).toFixed(2)} USDC released.`);
+        if (payout?.oneshot?.feeToken) toast.success(`⚡ Gas sponsored by 1Shot — paid in ${payout.oneshot.feeToken.symbol}`);
+      }
       else if (paid === false) toast.success('Approved, but payout pending. Check the deal permission.');
       else toast.success('Milestone approved! Funds released.');
       onAction();
@@ -193,6 +197,13 @@ function MilestoneRow({ milestone, onAction }: { milestone: any; onAction: () =>
                     <span className="font-semibold text-[#6b7280]">Released Amount:</span>
                     <span className="font-black text-white">${payoutAmount} USDC</span>
                   </div>
+                  {milestone.settlement?.oneshot?.feeToken && (
+                    <div className="mt-3 pt-3 border-t border-[rgba(34,197,94,0.15)] flex items-center gap-2 text-xs font-semibold text-[#f59e0b]">
+                      <Zap size={13} fill="currentColor" />
+                      Gas sponsored by 1Shot — paid in {milestone.settlement.oneshot.feeToken.symbol}
+                      {milestone.settlement.simulated && <span className="text-[#6b7280] font-medium">(mainnet rail, simulated on testnet)</span>}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -60,6 +60,13 @@ export interface Milestone {
   due_date?: string | null;
   dispute_reason?: string | null;
   ai_verification?: AiVerification;
+  // How the milestone settled: the rail used + live 1Shot gas-in-USDC proof.
+  settlement?: {
+    via?: 'direct' | 'relayer';
+    simulated?: boolean;
+    tx?: string | null;
+    oneshot?: { chainId?: number; feeToken?: { symbol: string; address: string } | null } | null;
+  };
   created_at: string;
   updated_at: string;
 }

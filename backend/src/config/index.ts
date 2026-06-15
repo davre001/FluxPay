@@ -90,6 +90,21 @@ export const config = {
     // Defaults to the active chain when it's a mainnet; falls back to Base
     // mainnet on testnet (1Shot can't relay on testnets anyway).
     chainId: Number(process.env.ONESHOT_CHAIN_ID || (isTestnetMode() ? 8453 : activeChain.id)),
+    // Demo aid: when true, the relay path assembles the REAL 7710 payload and
+    // fetches a REAL gas-in-USDC fee quote, but returns a clearly-labelled
+    // *simulated* result instead of broadcasting — so judges see the full
+    // mainnet 1Shot UX on testnet without spending. Auto-on in demo/testnet.
+    simulate: (process.env.ONESHOT_SIMULATE || (isTestnetMode() ? 'true' : 'false')).toLowerCase() === 'true',
+  },
+
+  // Demo mode: enables judge-facing affordances + the seeded demo deal. Never
+  // bypasses auth — sign-in stays real Web3Auth.
+  demo: {
+    enabled: (process.env.DEMO_MODE || (isTestnetMode() ? 'true' : 'false')).toLowerCase() === 'true',
+    // Secret that unlocks the hidden presenter control. Lives ONLY here (server
+    // env, gitignored) — never shipped to the client, so reading the frontend or
+    // backend source can't reveal it. Empty = no gate (local dev convenience).
+    unlockCode: process.env.DEMO_UNLOCK_CODE || '',
   },
 
   // Web3Auth (MetaMask Embedded Wallets) — used to verify the idToken the

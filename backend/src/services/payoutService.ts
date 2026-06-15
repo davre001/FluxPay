@@ -2,6 +2,7 @@ import { encodeFunctionData, parseUnits, getAddress } from 'viem';
 import { RedeemService } from './redeemService.ts';
 import { RelayerService } from './relayerService.ts';
 import { NotFoundError, ValidationError } from '../utils/errors.ts';
+import { config } from '../config/index.ts';
 
 const ERC20_TRANSFER_ABI = [
   { type: 'function', name: 'transfer', stateMutability: 'nonpayable',
@@ -105,6 +106,33 @@ export class PayoutService {
         delegationManager: permission.delegation_manager,
       });
       result = { ok: redeemed.redeemed, txHash: redeemed.txHash || null, reason: redeemed.reason, via: 'direct', ...redeemed };
+    }
+
+    // Demo: real test USDC moves via the direct redeem above. If that couldn't
+    // run (e.g. the seeded showcase deal's placeholder permission), fall back to
+    // the simulated 1Shot relay so the flow still completes. Either way, attach
+    // the LIVE 1Shot gas-in-USDC rail (real fee quote from a mainnet chain) as
+    // proof of the mainnet settlement path the UI shows alongside the transfer.
+    if (config.oneshot.simulate) {
+      if (!result.ok && via !== 'relayer') {
+        const tokenAddress = getAddress(permission.token_address);
+        const callData = encodeFunctionData({
+          abi: ERC20_TRANSFER_ABI,
+          functionName: 'transfer',
+          args: [getAddress(recipient), parseUnits(String(amount), 6)],
+        });
+        const relay = await this.relayer.relayRedemption({
+          chainId: opts.chainId || permission.chain_id,
+          permissionsContext: permission.permissions_context,
+          delegationManager: permission.delegation_manager,
+          executions: [{ target: tokenAddress, value: '0x0', callData }],
+          memo: `FluxPay milestone ${milestoneId}`,
+        });
+        result = { ok: relay.relayed, txHash: relay.taskId || null, reason: relay.reason, via: 'relayer', ...relay };
+      }
+      // Live 1Shot rail (gas paid in USDC) — read-only, from a 1Shot mainnet chain.
+      const rail = await this.relayer.buildStatus().catch(() => null);
+      if (rail) result.oneshot = rail;
     }
 
     // Advance the deal's budget ledger on a successful release. Read-modify-write

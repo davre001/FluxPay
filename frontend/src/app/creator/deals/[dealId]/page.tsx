@@ -156,14 +156,35 @@ function MilestoneCard({ milestone, platform, onRefresh }: { milestone: any; pla
             </div>
           )}
 
-          {/* AI detection result for a submitted-but-not-yet-approved stage */}
+          {/* Full Venice AI verdict for a submitted-but-not-yet-approved stage —
+              score, reasoning, and a "what to fix" checklist so the creator sees
+              exactly how the AI judged their work. */}
           {milestone.ai_verification && milestone.status !== 'approved' && (
-            <div className="p-3 rounded-lg" style={{ background: '#1a1305', border: '1px solid #33250a' }}>
-              <p className="text-sm font-semibold text-[#f59e0b] flex items-center gap-2">
-                <AlertCircle size={14} /> Not detected yet
-              </p>
+            <div className="p-4 rounded-lg" style={{ background: '#1a1305', border: '1px solid #33250a' }}>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-bold text-[#f59e0b] flex items-center gap-2">
+                  <Zap size={14} fill="currentColor" /> AI Review
+                </p>
+                {typeof milestone.ai_verification.score === 'number' && (
+                  <span className="px-2 py-1 rounded text-[11px] font-bold bg-[#111111] border border-[#33250a] text-[#e5e7eb]">
+                    Score {Math.round(milestone.ai_verification.score * 100)}%
+                  </span>
+                )}
+              </div>
               {milestone.ai_verification.reasoning && (
-                <p className="text-xs text-[#9ca3af] italic mt-1">"{milestone.ai_verification.reasoning}"</p>
+                <p className="text-xs text-[#d1d5db] italic leading-relaxed">"{milestone.ai_verification.reasoning}"</p>
+              )}
+              {Array.isArray(milestone.ai_verification.missing) && milestone.ai_verification.missing.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#f59e0b] mb-1.5">What to fix</p>
+                  <ul className="space-y-1">
+                    {milestone.ai_verification.missing.map((m: string, i: number) => (
+                      <li key={i} className="flex items-start gap-2 text-xs text-[#d1d5db]">
+                        <AlertCircle size={12} className="text-[#f59e0b] mt-0.5 shrink-0" /> <span>{m}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
           )}
@@ -199,8 +220,26 @@ function MilestoneCard({ milestone, platform, onRefresh }: { milestone: any; pla
           )}
 
           {milestone.status === 'approved' && (
-            <div className="flex items-center gap-2 text-sm font-semibold text-[#22c55e] bg-[#051a0d] p-3 rounded-lg border border-[#0a331a]">
-              <CheckCircle size={14} /> Approved! Funds have been released to your Smart Wallet.
+            <div className="p-4 rounded-lg bg-[#051a0d] border border-[#0a331a]">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-bold text-[#22c55e] flex items-center gap-2">
+                  <CheckCircle size={14} /> AI Verified & Paid
+                </p>
+                {typeof milestone.ai_verification?.score === 'number' && (
+                  <span className="px-2 py-1 rounded text-[11px] font-bold bg-[#0a0a0a] border border-[#0a331a] text-[#e5e7eb]">
+                    Score {Math.round(milestone.ai_verification.score * 100)}%
+                  </span>
+                )}
+              </div>
+              {milestone.ai_verification?.reasoning && (
+                <p className="text-xs text-[#d1d5db] italic leading-relaxed mb-2">"{milestone.ai_verification.reasoning}"</p>
+              )}
+              <p className="text-xs font-semibold text-[#22c55e]">Funds released to your Smart Wallet.</p>
+              {milestone.settlement?.oneshot?.feeToken && (
+                <p className="mt-2 pt-2 border-t border-[#0a331a] flex items-center gap-1.5 text-xs font-semibold text-[#f59e0b]">
+                  <Zap size={12} fill="currentColor" /> Gas sponsored by 1Shot — paid in {milestone.settlement.oneshot.feeToken.symbol}
+                </p>
+              )}
             </div>
           )}
         </div>

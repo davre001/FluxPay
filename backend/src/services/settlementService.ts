@@ -56,6 +56,7 @@ export class SettlementService {
       via: opts.via || 'direct',
       amountUsdc: scoredAmount,
     });
+    await this.recordSettlement(milestoneId, payout);
 
     return {
       settled: Boolean(payout.ok),
@@ -106,15 +107,32 @@ export class SettlementService {
       payout = { ok: false, reason: (error as Error).message };
     }
 
+    // Record how it settled on the milestone so the UI can show the rail (real
+    // transfer + live 1Shot gas-in-USDC) on the settled card.
+    const settled = await this.recordSettlement(milestoneId, payout) || updated;
+
     // Spread the updated milestone so callers expecting the record (status:
     // 'approved') keep working, then attach the release metadata.
     return {
-      ...updated,
+      ...settled,
       approved: true,
       scored_amount: amountUsdc,
       milestone_amount: milestone.amount,
       payout,
     };
+  }
+
+  // Persist a compact settlement summary (rail used, 1Shot fee proof) onto the
+  // milestone. Never throws — surfacing must not break the payout response.
+  private async recordSettlement(milestoneId: string, payout: any) {
+    if (!payout?.ok) return null;
+    const settlement = {
+      via: payout.via,
+      simulated: Boolean(payout.simulated),
+      tx: payout.txHash || null,
+      oneshot: payout.oneshot ? { chainId: payout.oneshot.chainId, feeToken: payout.oneshot.feeToken } : null,
+    };
+    return this.milestones.update(milestoneId, { settlement }).catch(() => null);
   }
 }
 

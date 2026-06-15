@@ -148,4 +148,19 @@ export const verificationAPI = {
     request('POST', '/api/settle', { milestoneId, ...options }),
 }
 
-export default { authAPI, profileAPI, jobAPI, milestoneAPI, walletAPI, reputationAPI, applicationAPI, faucetAPI, permissionAPI, verificationAPI }
+// ─── 1Shot (settlement rail proof) ────────────────────────────────────────────
+export const oneshotAPI = {
+  // Live, read-only proof the 1Shot integration is wired: supported chains, the
+  // USDC fee token, and a real gas-in-USDC fee quote. No auth, no funds.
+  status: (chainId?: number) =>
+    request('GET', '/api/oneshot/status', undefined, chainId ? { chainId } : undefined),
+}
+
+// ─── Demo (presenter unlock) ──────────────────────────────────────────────────
+export const demoAPI = {
+  // Validates a passphrase against the server-only secret. The secret never
+  // reaches the client, so source analysis can't reveal it.
+  unlock: (code: string) => request<{ ok: boolean }>('POST', '/api/demo/unlock', { code }),
+}
+
+export default { authAPI, profileAPI, jobAPI, milestoneAPI, walletAPI, reputationAPI, applicationAPI, faucetAPI, permissionAPI, verificationAPI, oneshotAPI, demoAPI }

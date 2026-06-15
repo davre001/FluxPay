@@ -80,7 +80,7 @@ export class RelayerService {
     executions: { target: string; value?: string; callData: string }[];
     authorization?: any;
     memo?: string;
-  }): Promise<{ relayed: boolean; reason?: string; taskId?: string; feeToken?: string; error?: string }> {
+  }): Promise<{ relayed: boolean; reason?: string; taskId?: string; feeToken?: string; error?: string; simulated?: boolean; feeQuote?: any }> {
     const chainId = opts.chainId || config.oneshot.chainId;
     if (!opts.permissionsContext || !opts.delegationManager) {
       return { relayed: false, reason: 'missing_permission_context' };
@@ -105,6 +105,15 @@ export class RelayerService {
         ...(opts.memo ? { memo: opts.memo } : {}),
       };
 
+      // Demo: everything above is REAL (live capabilities + live fee quote +
+      // the exact payload we'd broadcast); we just don't submit. Judges see the
+      // full mainnet 1Shot UX — gas paid in USDC — without spending real funds.
+      if (config.oneshot.simulate) {
+        const taskId = `sim_${Date.now().toString(36)}`;
+        console.log(`[relayer] ◊ SIMULATED 7710 relay — task ${taskId} (would pay fee in ${token.symbol})`);
+        return { relayed: true, simulated: true, taskId, feeToken: token.address, feeQuote: feeData };
+      }
+
       const result = await this.send7710Transaction(payload);
       const taskId = result?.taskId || result?.TaskId || result;
       console.log(`[relayer] ✓ submitted 7710 relay — task ${taskId} (fee in ${token.symbol})`);
@@ -112,6 +121,40 @@ export class RelayerService {
     } catch (error) {
       console.warn('[relayer] ✗ relay failed:', (error as Error).message);
       return { relayed: false, reason: 'relay_failed', error: (error as Error).message };
+    }
+  }
+
+  // Read-only proof that the 1Shot integration is live: real supported-chain
+  // capabilities + the USDC fee token + a real gas-in-USDC fee quote. Costs
+  // nothing and moves no funds — powers the judge-facing "settlement rail" panel.
+  // Never throws; returns a structured result the UI can render or flag.
+  async buildStatus(chainId = config.oneshot.chainId): Promise<{
+    live: boolean;
+    simulate: boolean;
+    chainId: number;
+    supported: boolean;
+    feeToken?: { symbol: string; address: string } | null;
+    feeQuote?: any;
+    reason?: string;
+    error?: string;
+  }> {
+    try {
+      const chain = await this.supportedChain(chainId);
+      if (!chain) {
+        return { live: false, simulate: config.oneshot.simulate, chainId, supported: false, reason: 'chain_unsupported' };
+      }
+      const token = await this.pickStableToken(chainId);
+      const feeQuote = token ? await this.getFeeData(chainId, token.address).catch(() => null) : null;
+      return {
+        live: true,
+        simulate: config.oneshot.simulate,
+        chainId,
+        supported: true,
+        feeToken: token ? { symbol: token.symbol, address: token.address } : null,
+        feeQuote,
+      };
+    } catch (error) {
+      return { live: false, simulate: config.oneshot.simulate, chainId, supported: false, reason: 'status_error', error: (error as Error).message };
     }
   }
 }

@@ -27,6 +27,8 @@ import { PayoutService } from './services/payoutService.ts';
 import { InMemoryPermissionRepository } from './models/permission.ts';
 import { PgPermissionRepository } from './models/postgres.ts';
 import { createVerificationRoutes } from './routes/verification.ts';
+import { createOneshotRoutes } from './routes/oneshot.ts';
+import { createDemoRoutes } from './routes/demo.ts';
 import { VerificationService } from './services/verificationService.ts';
 import { SettlementService } from './services/settlementService.ts';
 import { PaymentService } from './services/paymentService.ts';
@@ -166,6 +168,12 @@ export function createApp(options: any = {}) {
     || new SettlementService(verificationService, payoutService, milestoneRepository);
   const verificationRoutes = createVerificationRoutes(verificationService, settlementService);
 
+  // 1Shot live-proof (read-only, public) — powers the judge "settlement rail" panel.
+  const oneshotRoutes = createOneshotRoutes();
+
+  // Presenter-unlock validation (server-only secret).
+  const demoRoutes = createDemoRoutes();
+
   const skipAuth: boolean = options.skipAuth ?? false;
   const mockUser: any = options.mockUser;
 
@@ -235,6 +243,22 @@ export function createApp(options: any = {}) {
       } else if (parts[0] === 'settle') {
         const user = await requireAuth(req, authService, skipAuth, mockUser);
         response = await dispatchSettleRoute(req, parts, verificationRoutes, user);
+      } else if (parts[0] === 'oneshot') {
+        // Public read-only 1Shot proof — no auth, no funds.
+        if (req.method === 'GET' && parts[1] === 'status') {
+          const chainId = Number(url.searchParams.get('chainId')) || undefined;
+          response = await oneshotRoutes.status(chainId);
+        } else {
+          throw new NotFoundError('Route not found');
+        }
+      } else if (parts[0] === 'demo') {
+        // Public presenter-unlock check — validates a passphrase against the
+        // server-only secret; never reveals it.
+        if (req.method === 'POST' && parts[1] === 'unlock') {
+          response = await demoRoutes.unlock(await readJsonBody(req));
+        } else {
+          throw new NotFoundError('Route not found');
+        }
       } else {
         throw new NotFoundError('Route not found');
       }
