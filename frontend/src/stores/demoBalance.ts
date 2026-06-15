@@ -1,36 +1,37 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-// Demo-only illustrative balance ledger. Starts at NEXT_PUBLIC_DEMO_BALANCE and
-// is nudged by settlements — down when the judge pays as a brand, up when they
-// get paid as a creator — so the no-real-funds walkthrough feels live. Persisted
-// per browser; reset via the hidden presenter control.
+// Demo-only illustrative balance ledger, keyed PER identity (real judge wallet,
+// demo-brand, demo-creator) so each party has its own balance: a brand ticks
+// down when it pays, a creator ticks up when it gets paid. Starts every identity
+// at NEXT_PUBLIC_DEMO_BALANCE. Persisted per browser; reset via the presenter
+// control. Purely cosmetic — no real funds.
 const BASE = Number(process.env.NEXT_PUBLIC_DEMO_BALANCE || 400)
 
 interface DemoBalanceStore {
-  delta: number
-  // Net the running balance (BASE + delta), never below 0.
-  balance: () => number
-  adjust: (amountUsdc: number) => void   // +receive / -pay
+  deltas: Record<string, number>
+  adjust: (id: string, amountUsdc: number) => void   // +receive / -pay
+  balanceFor: (id?: string | null) => number
   reset: () => void
 }
 
 export const useDemoBalance = create<DemoBalanceStore>()(
   persist(
     (set, get) => ({
-      delta: 0,
-      balance: () => Math.max(0, Math.round((BASE + get().delta) * 100) / 100),
-      adjust: (amountUsdc) =>
-        set((s) => ({ delta: s.delta + (Number(amountUsdc) || 0) })),
-      reset: () => set({ delta: 0 }),
+      deltas: {},
+      adjust: (id, amountUsdc) =>
+        set((s) => ({ deltas: { ...s.deltas, [id]: (s.deltas[id] || 0) + (Number(amountUsdc) || 0) } })),
+      balanceFor: (id) =>
+        Math.max(0, Math.round((BASE + (id ? get().deltas[id] || 0 : 0)) * 100) / 100),
+      reset: () => set({ deltas: {} }),
     }),
     { name: 'fluxpay-demo-balance' },
   ),
 )
 
-// Convenience: adjust only when the demo build is active.
-export function adjustDemoBalance(amountUsdc: number) {
-  if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-    useDemoBalance.getState().adjust(amountUsdc)
+// Adjust the current identity's demo balance, only when the demo build is active.
+export function adjustDemoBalance(id: string | null | undefined, amountUsdc: number) {
+  if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && id) {
+    useDemoBalance.getState().adjust(id, amountUsdc)
   }
 }

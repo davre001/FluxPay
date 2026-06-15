@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useUserStore } from '@/stores/userStore';
 import { useDemoBalance } from '@/stores/demoBalance';
-import { faucetAPI, demoAPI } from '@/lib/api-client';
+import { faucetAPI, demoAPI, authAPI } from '@/lib/api-client';
 
 const UNLOCK_KEY = 'fp_presenter_ok';
 
@@ -20,7 +20,27 @@ export default function PresenterSwitcher() {
   const [code, setCode] = useState('');
   const [unlocked, setUnlocked] = useState(false);
   const wallet = useUserStore((s) => s.user?.walletAddress);
+  const setAuth = useUserStore((s) => s.setAuth);
   const resetBalance = useDemoBalance((s) => s.reset);
+
+  // Assume a seeded demo persona (presenter-only). Sets the bearer to the demo
+  // token, resolves the seeded user server-side, then routes to its dashboard so
+  // the operator can transact as that brand/creator.
+  const assume = async (token: 'demo-brand' | 'demo-creator', path: string) => {
+    if (typeof window !== 'undefined') localStorage.setItem('auth_token', token);
+    try {
+      const { data }: any = await authAPI.me();
+      setAuth(
+        { id: data.user.id, email: data.user.email || '', profileType: data.user.profileType, walletAddress: data.user.walletAddress || '' },
+        token,
+      );
+      setOpen(false);
+      router.push(path);
+      toast.success(`Acting as ${token === 'demo-brand' ? 'Demo Brand' : 'Demo Creator'}`);
+    } catch {
+      toast.error('Demo persona unavailable (DEMO_MODE off?)');
+    }
+  };
 
   useEffect(() => {
     setUnlocked(typeof window !== 'undefined' && sessionStorage.getItem(UNLOCK_KEY) === '1');
@@ -83,16 +103,18 @@ export default function PresenterSwitcher() {
     <div className="fixed bottom-4 left-4 z-[1000] w-56 rounded-xl p-2 shadow-2xl"
          style={{ background: '#0a0a0a', border: '1px solid #262626', fontFamily: "'Inter', sans-serif" }}>
       <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#4b5563] px-2 pt-1 pb-2">Presenter</p>
-      {[
-        ['Brand view', '/organization/dashboard'],
-        ['Creator view', '/creator/dashboard'],
-        ['Judge guide', '/judges'],
-      ].map(([label, path]) => (
-        <button key={path} onClick={() => go(path)}
-          className="w-full text-left px-2 py-2 rounded-lg text-xs font-semibold text-[#d1d5db] hover:bg-[#1a1a1a] transition-colors">
-          {label}
-        </button>
-      ))}
+      <button onClick={() => assume('demo-brand', '/organization/dashboard')}
+        className="w-full text-left px-2 py-2 rounded-lg text-xs font-semibold text-[#d1d5db] hover:bg-[#1a1a1a] transition-colors">
+        Act as Demo Brand
+      </button>
+      <button onClick={() => assume('demo-creator', '/creator/dashboard')}
+        className="w-full text-left px-2 py-2 rounded-lg text-xs font-semibold text-[#d1d5db] hover:bg-[#1a1a1a] transition-colors">
+        Act as Demo Creator
+      </button>
+      <button onClick={() => go('/judges')}
+        className="w-full text-left px-2 py-2 rounded-lg text-xs font-semibold text-[#d1d5db] hover:bg-[#1a1a1a] transition-colors">
+        Judge guide
+      </button>
       <button onClick={drip}
         className="w-full text-left px-2 py-2 rounded-lg text-xs font-semibold text-[#22c55e] hover:bg-[#1a1a1a] transition-colors">
         Re-fund wallet

@@ -9,7 +9,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { jobAPI, milestoneAPI } from '@/lib/api-client';
+import { jobAPI, milestoneAPI, permissionAPI } from '@/lib/api-client';
+import { useUserStore } from '@/stores/userStore';
 import { useGrantMilestonePermission } from '@/hooks/useGrantMilestonePermission';
 import { useDeal, useJobApplications } from '@/hooks/useDeals';
 import { adjustDemoBalance } from '@/stores/demoBalance';
@@ -53,7 +54,7 @@ function MilestoneRow({ milestone, onAction }: { milestone: any; onAction: () =>
       const paid = payout?.ok;
       if (paid && released != null) {
         toast.success(`Approved — $${Number(released).toFixed(2)} USDC released.`);
-        adjustDemoBalance(-Number(released)); // brand pays → balance ticks down
+        adjustDemoBalance(useUserStore.getState().user?.id, -Number(released)); // brand pays → ticks down
         if (payout?.oneshot?.feeToken) toast.success(`⚡ Gas sponsored by 1Shot — paid in ${payout.oneshot.feeToken.symbol}`);
       }
       else if (paid === false) toast.success('Approved, but payout pending. Check the deal permission.');
@@ -281,6 +282,7 @@ export default function OrgJobDetailPage() {
   const [selecting, setSelecting] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const { grant } = useGrantMilestonePermission();
+  const user = useUserStore((s) => s.user);
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ['deal', jobId] });
@@ -332,7 +334,19 @@ export default function OrgJobDetailPage() {
         try {
           // total_budget IS the pool — grant the permission for the whole pool.
           const poolUsdc = Number(job?.total_budget ?? 0);
-          if (poolUsdc > 0) {
+          const isDemoPersona = user?.id === 'demo-brand' || user?.id === 'demo-creator';
+          if (poolUsdc > 0 && isDemoPersona) {
+            // Demo personas have no signable wallet — store a placeholder
+            // permission so the simulated 1Shot settlement resolves. No funds.
+            await permissionAPI.store({
+              jobId, organizationId: job?.organization_id, creatorId,
+              token_address: '0x0000000000000000000000000000000000000000',
+              chain_id: 84532, amount: poolUsdc,
+              permissions_context: '0xDEMO',
+              delegation_manager: '0x000000000000000000000000000000000000C0DE',
+            });
+            toast.success(`Auto-release armed for $${poolUsdc} USDC ⚡`);
+          } else if (poolUsdc > 0) {
             await grant({ jobId, organizationId: job?.organization_id, creatorId, budgetUsdc: poolUsdc });
             toast.success(`Approved auto-release of up to $${poolUsdc} USDC 🔐`);
           }

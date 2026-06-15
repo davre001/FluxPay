@@ -97,7 +97,7 @@ function MilestoneCard({ milestone, platform, onRefresh }: { milestone: any; pla
     setSubmitting(true);
     try {
       const { data }: any = await milestoneAPI.recheck(milestone.id, override ? { deliverable_url: override } : {});
-      if (data?.settled) adjustDemoBalance(Number(data.scored_amount ?? milestone.amount)); // creator paid → ticks up
+      if (data?.settled) adjustDemoBalance(useUserStore.getState().user?.id, Number(data.scored_amount ?? milestone.amount)); // creator paid → ticks up
       toast.success(data?.settled ? 'Detected — milestone approved & released!' : 'Re-checked — not detected yet.');
       onRefresh();
     } catch (e: any) {
@@ -286,7 +286,7 @@ export default function CreatorDealPage() {
       const releasedCount = settledResults.length;
       // Creator paid → balance ticks up by the total released across stages.
       const totalReleased = settledResults.reduce((s: number, r: any) => s + Number(r.scored_amount ?? 0), 0);
-      if (totalReleased > 0) adjustDemoBalance(totalReleased);
+      if (totalReleased > 0) adjustDemoBalance(useUserStore.getState().user?.id, totalReleased);
       toast.success(releasedCount > 0
         ? `Submitted — AI approved & released ${releasedCount} milestone${releasedCount > 1 ? 's' : ''}!`
         : 'Submitted — AI is reviewing each milestone.');

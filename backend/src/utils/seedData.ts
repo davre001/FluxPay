@@ -1,5 +1,4 @@
 import { isDbEnabled, query } from '../database/client.ts';
-import { activeChain } from '../config/chains.ts';
 import { config } from '../config/index.ts';
 
 // Bump this to force a clean reseed of the demo data (jobs, milestones,
@@ -7,7 +6,7 @@ import { config } from '../config/index.ts';
 // this value, those three tables are cleared and rebuilt from the seed below;
 // other tables (users, profiles, wallets, permissions) are left untouched.
 // With no DATABASE_URL (in-memory) data resets every restart, so it's unused there.
-const SEED_VERSION = '2026-06-14-judge-demo-1';
+const SEED_VERSION = '2026-06-15-judge-demo-2';
 
 // Master switch. Set SEED_DEMO_DATA=false (e.g. in Render) once you're running on
 // real data: the seeder then never clears or inserts demo deals again, so every
@@ -153,7 +152,7 @@ export async function seedInitialData(locals: any) {
   if (!SEED_DEMO_DATA) return;       // demo seeding off — leave all data untouched
   if (DEALS.length === 0) return;    // nothing to seed — never wipe existing data
 
-  const { jobRepository, milestoneRepository, applicationRepository, profileRepository, userRepository, permissionRepository } = locals;
+  const { jobRepository, milestoneRepository, applicationRepository, profileRepository, userRepository } = locals;
 
   // Decide whether to (re)seed.
   if (isDbEnabled()) {
@@ -243,35 +242,23 @@ export async function seedInitialData(locals: any) {
     await userRepository.upsert({ key: DEMO_CREATOR, email: 'creator@fluxpay.demo', profileType: 'creator', walletAddress: demoCreatorWallet });
     await profileRepository.upsert(DEMO_CREATOR, { type: 'creator', name: 'Nova (Demo Creator)', bio: 'A demo creator judges can settle a deal with.' });
 
-    // $200 deal, creator hired, deliverable already submitted — one click to
-    // Approve & Release → Venice verifies → 1Shot settles, gas paid in USDC.
+    // An OPEN $200 deal owned by the demo brand — the demo creator can apply, the
+    // demo brand approves, the creator submits, and it settles (simulated 1Shot).
+    // The brand can also post brand-new deals; both personas fully transact.
     const demoJob = await jobRepository.create({
       title: 'Demo — Instagram Reel ($200, gas sponsored by 1Shot)',
       organization_id: DEMO_BRAND,
       organization: { brand_name: 'Aurora Labs (Demo Brand)' },
-      description: 'Judge demo deal. Approve the submitted milestone to watch Venice AI verify it and 1Shot settle the $200 payout with gas paid in USDC — no real funds.',
+      description: 'Judge demo deal. Apply as the demo creator, get approved by the demo brand, submit the reel, and watch Venice AI verify it and 1Shot settle the $200 payout with gas paid in USDC — no real funds.',
       category: 'Demo', skills: ['Instagram', 'Reels'],
       target_platform: 'instagram', post_type: 'video',
       payout_type: 'milestone', total_budget: 200,
-      deadline: inDays(14), status: 'in_progress', funding_status: 'funded',
-      selected_creator_id: DEMO_CREATOR, approved_creator_ids: [DEMO_CREATOR],
+      deadline: inDays(14), status: 'open', funding_status: 'funded',
       seeded: true,
     });
-    // Template + the creator's submitted instance (multi-hire model).
+    // One template milestone; per-creator instances are cloned on approval, and a
+    // placeholder permission is created on approval in demo mode.
     await milestoneRepository.create({ job_id: demoJob.id, title: 'Publish reel', description: 'Publish the reel with the required tags', amount: 200 });
-    const inst = await milestoneRepository.create({ job_id: demoJob.id, creator_id: DEMO_CREATOR, title: 'Publish reel', description: 'Publish the reel with the required tags', amount: 200 });
-    await milestoneRepository.update(inst.id, { status: 'submitted', deliverable_url: 'https://instagram.com/p/demo-reel', deliverable_note: 'Published with all required tags.' });
-    const demoApp = await applicationRepository.create({ job_id: demoJob.id, creator_id: DEMO_CREATOR, cover_note: 'Demo creator application.' });
-    await applicationRepository.update(demoApp.id, { status: 'accepted' });
-    // Placeholder permission so the payout path resolves; the simulated 1Shot
-    // relay never broadcasts, so no real grant/funds are needed for the demo.
-    if (permissionRepository) {
-      await permissionRepository.create({
-        job_id: demoJob.id, organization_id: DEMO_BRAND, creator_id: DEMO_CREATOR,
-        token_address: activeChain.usdc, chain_id: config.oneshot.chainId, amount: 200,
-        permissions_context: '0xDEMO', delegation_manager: '0x000000000000000000000000000000000000C0DE',
-      });
-    }
   }
 
   // Record the applied version so unchanged future deploys skip reseeding.

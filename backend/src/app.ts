@@ -39,7 +39,7 @@ import { AuthService } from './services/authService.ts';
 import { buildJsonResponse } from './utils/helpers.ts';
 import { NotFoundError, UnauthorizedError, ValidationError } from './utils/errors.ts';
 
-const MAX_BODY_BYTES = 1024 * 1024;
+const MAX_BODY_BYTES = 4 * 1024 * 1024; // 4MB safety net; images are downscaled client-side
 
 async function readJsonBody(req) {
   const chunks: any[] = [];

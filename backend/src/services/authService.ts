@@ -1,8 +1,15 @@
 import { verifyWeb3AuthToken } from '../utils/web3auth.ts';
 import { InMemoryUserRepository } from '../models/user.ts';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../utils/errors.ts';
+import { config } from '../config/index.ts';
 
 const VALID_PROFILE_TYPES = ['creator', 'organization'];
+
+// Presenter-only demo personas. Resolving these bypasses Web3Auth, so it's gated
+// strictly behind DEMO_MODE (only the testnet, no-real-funds demo deployment) and
+// is reached only via the passphrase-gated presenter control. Judges still sign in
+// through the real Web3Auth/MetaMask modal.
+const DEMO_PERSONAS = ['demo-brand', 'demo-creator'];
 
 // Derives a stable identity from a verified Web3Auth token payload.
 function deriveIdentity(payload) {
@@ -55,6 +62,13 @@ export class AuthService {
   async getMe(idToken: string) {
     if (!idToken) {
       throw new UnauthorizedError('Missing authorization token');
+    }
+    // Demo persona (presenter-only, DEMO_MODE-gated): resolve the seeded brand /
+    // creator without Web3Auth so the operator can drive a two-sided demo.
+    if (config.demo.enabled && DEMO_PERSONAS.includes(idToken)) {
+      const user = await this.repository.findByKey(idToken);
+      if (user) return { user };
+      throw new UnauthorizedError('Demo persona not seeded');
     }
     let payload;
     try {

@@ -1,4 +1,5 @@
 'use client';
+import { downscaleImage } from '@/lib/image';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -103,9 +104,7 @@ export default function OrganizationOnboarding() {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => setPicUrl(reader.result as string);
-                          reader.readAsDataURL(file);
+                          downscaleImage(file).then(setPicUrl);
                         }
                       }}
                     />
