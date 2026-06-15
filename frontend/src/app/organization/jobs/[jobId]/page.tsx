@@ -45,7 +45,7 @@ function MilestoneRow({ milestone, job, onAction }: { milestone: any; job?: any;
 
   const approve = async () => {
     setActing('approve');
-    if (milestone.id.startsWith('m')) {
+    if (milestone.id.length < 10) {
       setTimeout(() => { toast.success('Mock milestone approved!'); setActing(null); onAction(); }, 800);
       return;
     }
@@ -71,7 +71,7 @@ function MilestoneRow({ milestone, job, onAction }: { milestone: any; job?: any;
     if (!trimmed) return;
     setActing('dispute');
     setDisputeOpen(false);
-    if (milestone.id.startsWith('m')) {
+    if (milestone.id.length < 10) {
       setTimeout(() => { toast.success('Mock dispute raised.'); setActing(null); setReason(''); onAction(); }, 800);
       return;
     }
