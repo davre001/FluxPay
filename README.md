@@ -1,11 +1,19 @@
-# FluxPay
+<p align="center">
+  <img src="docs/images/hero-banner.png" alt="FluxPay: Creator-Brand Deals, Secured On-Chain" width="100%" />
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
-[![Solidity](https://img.shields.io/badge/solidity-%5E0.8.0-blue)](https://soliditylang.org/)
+<h1 align="center">FluxPay</h1>
 
-**FluxPay** is a creator-brand deal escrow platform. Brands post deals, creators apply, and USDC is locked in smart contracts per milestone. AI verifies deliverables automatically — payments release on approval, no trust required.
+<p align="center">
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen" alt="Node.js Version" /></a>
+  <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-14-black" alt="Next.js" /></a>
+  <a href="https://soliditylang.org/"><img src="https://img.shields.io/badge/solidity-%5E0.8.0-blue" alt="Solidity" /></a>
+</p>
+
+<p align="center">
+  <strong>FluxPay</strong> is a creator-brand deal escrow platform. Brands post deals, creators apply, and USDC is locked in smart contracts per milestone. AI verifies deliverables automatically — payments release on approval, no trust required.
+</p>
 
 ---
 
@@ -28,6 +36,10 @@
 
 ## How it works
 
+<p align="center">
+  <img src="docs/images/deal-flow-banner.png" alt="FluxPay Deal Flow" width="700" />
+</p>
+
 1. **Brand posts a deal** — sets milestones, budget, and content requirements. Funds lock into escrow.
 2. **Creators apply** — browse open deals and submit an application with a cover note.
 3. **Brand selects a creator** — reviews reputation, portfolio, and application.
@@ -35,12 +47,25 @@
 5. **Funds release automatically** — on AI approval, USDC flows to the creator and on-chain reputation scores update.
 
 Two user roles:
-- **Creator** — applies to brand jobs, delivers content, earns USDC per milestone.
-- **Organization (Brand)** — posts deals, selects creators, funds escrow, monitors delivery.
+
+<table>
+  <tr>
+    <td width="80" align="center"><img src="frontend/public/creator_icon.png" alt="Creator" width="60" /></td>
+    <td><strong>Creator</strong> — applies to brand jobs, delivers content, earns USDC per milestone.</td>
+  </tr>
+  <tr>
+    <td width="80" align="center"><img src="frontend/public/brand_icon.png" alt="Brand" width="60" /></td>
+    <td><strong>Organization (Brand)</strong> — posts deals, selects creators, funds escrow, monitors delivery.</td>
+  </tr>
+</table>
 
 ---
 
 ## ⚙️ The settlement engine (backend)
+
+<p align="center">
+  <img src="docs/images/settlement-engine.png" alt="FluxPay Settlement Engine" width="500" />
+</p>
 
 The backend is where the three sponsor stacks fuse into one autonomous loop:
 
@@ -368,6 +393,10 @@ Authorization: Bearer <idToken>
 ---
 
 ## Smart Contracts
+
+<p align="center">
+  <img src="docs/images/smart-contract-escrow.png" alt="Smart Contract Escrow" width="500" />
+</p>
 
 Three contracts are deployed and their ABIs are committed under `frontend/src/contracts/abis/`.
 
